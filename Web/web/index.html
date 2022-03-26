@@ -1,0 +1,45 @@
+
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title id='title'></title>
+    <link id='icon' rel="shortcut icon" href="lib/py.jpg">
+    <script src="lib/bootstrap/jquery-3.2.1.js"></script>
+    <script src="lib/bootstrap/popper.min.js"></script>
+    <script src="lib/bootstrap/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="lib/bootstrap/bootstrap.min.css">
+    <script src="lib/jswrt/py_full.js"></script>
+  </head>
+
+<body onload="start()">
+  <script>
+    function stdout(text) {
+      if (text.trim()!='') console.log(text)
+    }
+    function stderr(text) {
+      if (text.trim()!='') console.error(text)
+    }
+    function run(src) {
+      let rt = create_jswrt()
+      rt.start_and_run(null, stdout, stderr, src, null)
+
+    }
+    function start() {
+      fetch('main.py').then(res => {
+        if (res.status != 200) {
+          console.error(res.statusText)
+          return
+        }
+        res.text()
+          .then(run)
+          .catch(stderr)
+      })
+    }
+  </script>
+</body>
+
+</html>
