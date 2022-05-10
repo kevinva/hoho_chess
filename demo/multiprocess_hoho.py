@@ -91,10 +91,10 @@ def run_queue():
     queue = mp.Queue(maxsize=4)
     queue.put(True)
     queue.put([0, None, object])
-    queue.qsize()
+    print('qsize: ', queue.qsize())
     print(queue.get())
     print(queue.get())
-    queue.qsize()
+    print('qsize: ', queue.qsize())
 
     processes = [mp.Process(target=func1, args=(queue,)),
                  mp.Process(target=func1, args=(queue,))]
