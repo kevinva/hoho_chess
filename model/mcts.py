@@ -4,7 +4,10 @@ import threading
 import time
 import random
 from numba import jit
+from copy import deepcopy
 from config import *
+from utils import *
+
 
 @jit(nopython=True)
 def select(nodes, c_puct=C_PUCT):
@@ -30,6 +33,7 @@ def dirichlet_noise(probas):
     dim = (probas.shape[0])
     new_probas = (1 - P_EPSILON) * probas + P_EPSILON * np.random.dirichlet(np.full(dim, ))
 
+
 class Node:
 
     def __init__(self, parent=None, proba=None, move=None):
@@ -52,6 +56,146 @@ class Node:
         self.childrens = [Node(parent=self, proba=probas[idx], move=idx) for idx in range(probas.shape[0]) if probas[idx] > 0]
 
 
+# To ensure we always generate the best quality data, 
+# we evaluate each new neural network checkpoint against 
+# the current best network θ∗f before using it for data generation
+class EvaluatorThread(threading.Tread):
+
+    def __init__(self, player, eval_queue, condition_search, condition_eval):
+        pass
+
+
+class SearchThread(threading.Thread):
+    # 用来跑一次模拟
+
+    def __init__(self, mcts, game, eval_queue, result_queue, thread_id, lock, condition_search, condition_eval):
+        threading.Thread.__init__(self)
+        self.eval_queue = eval_queue
+        self.result_queue = result_queue
+        self.mcts = mcts
+        self.game = game
+        self.lock = lock
+        self.thread_id = thread_id
+        self.condition_eval = condition_eval
+        self.condition_search = condition_search
+
+    def run(self):
+        game = deepcopy(self.game)
+        state = game.state
+        current_node = self.mcts.root
+        done = False
+        
+        while not current_node.is_leaf() and not done:
+            idx_selected = select(np.array([[node.q, node.n, node.p] for node in current_node.childrens]))
+            current_node = current_node.childrens[idx_selected]
+            
+            self.lock.acquire()
+            current_node.n += 1
+            self.lock.release()
+
+            state, _, done = game.step(current_node.move)
+
+        if not done:
+            self.condition_search.acquire()
+
+            # Expand and evaluate (Fig. 2b). The leaf node sL is 
+            # added to a queue for neural net-work evaluation, (di(p), v) = fθ(di(sL)), 
+            # where di is a dihedral reflection or rotation selected uniformly at random from i in [1..8]
+            
+            # sample_rotation是diheral变换，根据论文输入网络前，施加给状态s
+            self.eval_queue[self.thread_id] = sample_rotation(state, num=1)
+            
+            self.condition_search.notify()
+            self.condition_search.release()
+
+            self.condition_eval.acquire()
+            while self.thread_id not in self.result_queue.keys():
+                self.condition_eval.wait()
+            
+            result = self.result_queue.pop(self.thread_id)
+            probas = np.array(result[0])
+            v = float(result[1])
+            self.condition_eval.release()
+
+            if not current_node.parent:
+                # Self-Play: ... Additional exploration is achieved by adding Dirichlet noise 
+                # to the prior probabilities in the root node s0, specifically P(s, a) = (1 − ε)pa + εηa, 
+                # where η ∼ Dir(0.03) and ε = 0.25; this noise ensures that all moves may be tried, but the search may still overrule bad moves.
+                probas = dirichlet_noise(probas)
+
+            valid_moves = game.get_legal_moves()  # hoho: todo
+            illegal_moves = np.setdiff1d(np.arange(game.board_size ** 2 + 1), np.array(valid_moves))
+            probas[illegal_moves] = 0
+            total = np.sum(probas)
+            probas /= total
+
+            self.lock.acquire()
+            current_node.expand(probas)  # Expand
+
+            while current_node.parent:
+                current_node.update(v)  # Backpropagate
+                current_node = current_node.parent
+            self.lock.release()
+
+
 class MCTS:
 
-    def __init__(self)
+    def __init__(self):
+        self.root = Node()
+
+    def _draw_move(self, action_scores, competitive=False):
+        # 生成走子的策略
+        if competitive:
+            moves = np.where(action_scores == np.max(action_scores))[0]
+            move = np.random.choice(moves)
+            total = np.sum(action_scores)
+            probas = action_scores / total
+        else:
+            total = np.sum(action_scores)
+            probas = action_scores / total
+            move = np.random.choice(action_scores.shape[0], p=probas)
+        
+        return move, probas
+
+    def advance(self, move):
+        final_idx = 0
+        for idx in range(len(self.root.childrens)):
+            if self.root.childrens[idx].move == move:
+                final_idx = idx
+                break
+        self.root = self.root.childrens[final_idx]
+
+    def search(self, current_game, player, competitive=False):
+        condition_eval = threading.Condition()
+        condition_search = threading.Condition()
+        lock = threading.Lock()
+
+        eval_queue = OrderedDict()
+        result_queue = {}
+        evaluator = EvaluatorThread(player, eval_queue, result_queue, condition_search, condition_eval)
+        evaluator.start()
+
+        threads = []
+        for sim in range(MCTS_SIMULATION // MCTS_PARALLEL):
+            for idx in range(MCTS_PARALLEL):
+                threads.append(SearchThread(self, current_game, eval_queue, result_queue, idx, lock, condition_search, condition_eval))
+                threads[-1].start()
+
+            for thread in threads:
+                thread.join()
+        evaluator.join()
+
+        # visit count 向量
+        action_scores = np.zeros((current_game.board_size ** 2 + 1,))  # hoho:改棋盘大小
+        for node in self.root.childrens:
+            action_scores[node.move] = node.n
+
+        # 选最好的走法
+        final_move, final_probas = self._draw_move(action_scores, competitive=competitive)
+
+        for idx in range(len(self.root.childrens)):
+            if self.root.childrens[idx].move == final_move:
+                break
+        self.root = self.root.childrens[idx]
+
+        return final_probas, final_move
