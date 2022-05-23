@@ -3,10 +3,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from config import RESIDUAL_BLOCK_NUM
+from config import *
 
 
-class Agent:
+class Player:
 
     def __init__(self):
         self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, OUT_PLANES_NUM, RESIDUAL_BLOCK_NUM).to(DEVICE)
@@ -15,10 +15,16 @@ class Agent:
         self.passed = False
     
     def predict(self, state):
-        board_features = self.extractor(state)
+        board_features = self.plane_extractor(state)
         win_score = self.value_net(board_features)
         prob = self.policy_net(board_features)
+        print(f'prob:', prob.size())
         return prob, win_score
+
+    def printModel(self):
+        print('extractor: ', self.plane_extractor)
+        print('value head: ', self.value_net)
+        print('policy head: ', self.policy_net)
 
     def save_models(self, state, current_time):
         for model in ['plane_extractor', 'policy_net', 'value_net']:  # 注意跟属性名对应
@@ -118,40 +124,46 @@ class ValueNet(nn.Module):
     输出胜负价值[-1, 1]
     """
 
-    def __init__(self, inplanes, mid_dim):
+    def __init__(self, inplanes, action_dim):
         super(ValueNet, self).__init__()
 
-        self.mid_dim = mid_dim
+        self.action_dim = action_dim
         self.conv = nn.Conv2d(inplanes, 1, kernel_size=1)
         self.bn = nn.BatchNorm2d(1)
-        self.fc1 = nn.Linear(mid_dim, 256)
+        self.fc1 = nn.Linear(action_dim - 1, 256)
         self.fc2 = nn.Linear(256, 1)
 
     def forward(self, x):
         x = F.relu(self.bn(self.conv(x)))
-        x = x.view(-1, self.mid_dim)
+        x = x.view(-1, self.action_dim - 1)
         x = F.relu(self.fc1(x))
         win_score = torch.tanh(self.fc2(x))
         return win_score
 
 if __name__ == '__main__':
-    in_channel = 1
-    out_channel = 1
-    action_dim = 11
+    # in_channel = 1
+    # out_channel = 1
+    # action_dim = 11
 
-    input = torch.ones((1, in_channel, 5, 10)).float()
-    extractor = PlaneExtractor(in_channel, out_channel)
-    extractor_output = extractor(input)
-    print(f'input: {input}')
-    print(f'extractor output: {extractor_output}')
+    # input = torch.ones((1, in_channel, 5, 10)).float()
 
-    policy_net = PolicyNet(out_channel, action_dim)
-    policy_output = policy_net(extractor_output)
-    print(f'policy_net output: {policy_output}')
+    # extractor = PlaneExtractor(in_channel, out_channel)
+    # extractor_output = extractor(input)
+    # print(f'input: {input}')
+    # print(f'extractor output: {extractor_output}')
 
-    value_in_dim = extractor_output.size()[2] * extractor_output.size()[3]
-    value_net = ValueNet(out_channel, value_in_dim)
-    value_output = value_net(extractor_output)
-    print(f'value_new output: {value_output}')
+    # policy_net = PolicyNet(out_channel, action_dim)
+    # policy_output = policy_net(extractor_output)
+    # print(f'policy_net output: {policy_output}')
 
-    print(f"{os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'saved_models', '12312412')}")
+    # value_in_dim = extractor_output.size()[2] * extractor_output.size()[3]
+    # value_net = ValueNet(out_channel, value_in_dim)
+    # value_output = value_net(extractor_output)
+    # print(f'value_new output: {value_output}')
+
+    # print(f"{os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'saved_models', '12312412')}")
+
+    batch_size = 1
+    state = torch.ones((batch_size, IN_PLANES_NUM, GOBAN_SIZE, GOBAN_SIZE)).float()
+    player = Player()
+    print(player.printModel())

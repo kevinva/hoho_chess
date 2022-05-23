@@ -56,13 +56,37 @@ class Node:
         self.childrens = [Node(parent=self, proba=probas[idx], move=idx) for idx in range(probas.shape[0]) if probas[idx] > 0]
 
 
-# To ensure we always generate the best quality data, 
-# we evaluate each new neural network checkpoint against 
-# the current best network θ∗f before using it for data generation
-class EvaluatorThread(threading.Tread):
+class EvaluatorThread(threading.Thread):
 
     def __init__(self, player, eval_queue, condition_search, condition_eval):
-        pass
+        threading.Thread.__init__(self)
+        self.eval_queue = eval_queue
+        self.result_queue = result_queue
+        self.player = player
+        self.condition_search = condition_search
+        self.condition_eval = condition_eval
+
+    def run(self):
+        for sim in range(MCTS_SIMULATION // MCTS_PARAllEL):
+            self.condition_search.acquire()
+            while len(self.eval_queue) < MCTS_PARALLEL:
+                self.condition_search.wait()   # 等待search线程的完成，search下一个节点
+            self.condition_search.release()
+
+            self.condition_eval.acquire()
+            while len(self.result_queue) < MCTS_PARALLEL:
+                keys = list(self.eval_queue.keys())
+                max_len = BATCH_SIZE_EVAL if len(keys) > BATCH_SIZE_EVAL else len(keys)
+
+                states = torch.tensor(np.array(list(self.eval_queue.values()))[0:max_len], dtype=torch.float, device=DEVICE)
+                v, probas = self.player.predict(states) # evaluate阶段，输出叶节点的的输赢价值v和下一步走子的概率p
+
+                for idx, i in zip(keys, range(max_len)):
+                    del self.eval_queue[idx]
+                    self.result_queue[idx] = (probas[i].cpu().data.numpy(), v[i])  # 存放evaluate结果到队列，待expand和update阶段
+
+                self.condition_eval.notifyAll()
+            self.condition_eval.release()
 
 
 class SearchThread(threading.Thread):
@@ -86,6 +110,7 @@ class SearchThread(threading.Thread):
         done = False
         
         while not current_node.is_leaf() and not done:
+            # select阶段
             idx_selected = select(np.array([[node.q, node.n, node.p] for node in current_node.childrens]))
             current_node = current_node.childrens[idx_selected]
             
@@ -102,7 +127,8 @@ class SearchThread(threading.Thread):
             # added to a queue for neural net-work evaluation, (di(p), v) = fθ(di(sL)), 
             # where di is a dihedral reflection or rotation selected uniformly at random from i in [1..8]
             
-            # sample_rotation是diheral变换，根据论文输入网络前，施加给状态s
+            # 这时叶节点，把需要evaluat的节点放入队列待EvaluatorThread处理
+            # sample_rotation是diheral变换，根据论文，输入网络前需施加给状态s
             self.eval_queue[self.thread_id] = sample_rotation(state, num=1)
             
             self.condition_search.notify()
@@ -130,10 +156,10 @@ class SearchThread(threading.Thread):
             probas /= total
 
             self.lock.acquire()
-            current_node.expand(probas)  # Expand
+            current_node.expand(probas)  # expand阶段
 
             while current_node.parent:
-                current_node.update(v)  # Backpropagate
+                current_node.update(v)  # backpropagate阶段
                 current_node = current_node.parent
             self.lock.release()
 
@@ -199,3 +225,4 @@ class MCTS:
         self.root = self.root.childrens[idx]
 
         return final_probas, final_move
+
