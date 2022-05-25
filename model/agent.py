@@ -9,16 +9,15 @@ from config import *
 class Player:
 
     def __init__(self):
-        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, OUT_PLANES_NUM, RESIDUAL_BLOCK_NUM).to(DEVICE)
-        self.value_net = ValueNet(OUT_PLANES_NUM, ACTION_DIM).to(DEVICE)
-        self.policy_net = PolicyNet(OUT_PLANES_NUM, ACTION_DIM).to(DEVICE)
+        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, FILTER_SIZE, RESIDUAL_BLOCK_NUM).to(DEVICE)
+        self.value_net = ValueNet(FILTER_SIZE, ACTION_POSITION_NUM).to(DEVICE)
+        self.policy_net = PolicyNet(FILTER_SIZE, ACTION_POSITION_NUM, ACTION_DIM).to(DEVICE)
         self.passed = False
     
     def predict(self, state):
         board_features = self.plane_extractor(state)
         win_score = self.value_net(board_features)
         prob = self.policy_net(board_features)
-        print(f'prob:', prob.size())
         return prob, win_score
 
     def printModel(self):
@@ -53,13 +52,13 @@ class ResidualBlock(nn.Module):
     残差块
     """
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inchannels, outchannels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
 
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv1 = nn.Conv2d(inchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(outchannels)
+        self.conv2 = nn.Conv2d(outchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(outchannels)
 
     def forward(self, x):
         residual = x
@@ -79,15 +78,15 @@ class PlaneExtractor(nn.Module):
     棋盘state特征提取，
     """
 
-    def __init__(self, inplanes, outplanes, residual_num=RESIDUAL_BLOCK_NUM):
+    def __init__(self, inchannels, outchannels, residual_num):
         super(PlaneExtractor, self).__init__()
         
         self.residual_num = residual_num
-        self.conv1 = nn.Conv2d(inplanes, outplanes, stride=1, kernel_size=3, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(outplanes)
+        self.conv1 = nn.Conv2d(inchannels, outchannels, stride=1, kernel_size=3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(outchannels)
 
         for block in range(self.residual_num):
-            setattr(self, 'res{}'.format(block), ResidualBlock(outplanes, outplanes))
+            setattr(self, 'res{}'.format(block), ResidualBlock(outchannels, outchannels))
     
     def forward(self, x):
         x = F.relu(self.bn1(self.conv1(x)))
@@ -102,18 +101,18 @@ class PolicyNet(nn.Module):
     输出动作概率分布
     """
 
-    def __init__(self, inplanes, action_dim):
+    def __init__(self, inplanes, position_dim, action_dim):
         super(PolicyNet, self).__init__()
 
-        self.action_dim = action_dim
-        self.conv = nn.Conv2d(inplanes, 1, kernel_size=1)  # hoho: 原论文不是2个filter么，输出channel应该为2个？
-        self.bn = nn.BatchNorm2d(1)
+        self.position_dim = position_dim
+        self.conv = nn.Conv2d(inplanes, 2, kernel_size=1) 
+        self.bn = nn.BatchNorm2d(2)
         self.softmax = nn.Softmax(dim=1)
-        self.fc = nn.Linear(action_dim - 1, action_dim)   # action_dim为动作数，包括pass这个动作
+        self.fc = nn.Linear(position_dim * 2, action_dim)   # action_dim为动作数，包括pass这个动作
 
     def forward(self, x):
         x = F.relu(self.bn(self.conv(x)))
-        x = x.view(-1, self.action_dim - 1)
+        x = x.view(-1, self.position_dim * 2)
         x = self.fc(x)
         action_probs = self.softmax(x)
         return action_probs
@@ -124,18 +123,18 @@ class ValueNet(nn.Module):
     输出胜负价值[-1, 1]
     """
 
-    def __init__(self, inplanes, action_dim):
+    def __init__(self, inplanes, position_dim):
         super(ValueNet, self).__init__()
 
-        self.action_dim = action_dim
+        self.position_dim = position_dim
         self.conv = nn.Conv2d(inplanes, 1, kernel_size=1)
         self.bn = nn.BatchNorm2d(1)
-        self.fc1 = nn.Linear(action_dim - 1, 256)
+        self.fc1 = nn.Linear(position_dim, 256)
         self.fc2 = nn.Linear(256, 1)
 
     def forward(self, x):
         x = F.relu(self.bn(self.conv(x)))
-        x = x.view(-1, self.action_dim - 1)
+        x = x.view(-1, self.position_dim)
         x = F.relu(self.fc1(x))
         win_score = torch.tanh(self.fc2(x))
         return win_score
@@ -163,7 +162,8 @@ if __name__ == '__main__':
 
     # print(f"{os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'saved_models', '12312412')}")
 
-    batch_size = 1
-    state = torch.ones((batch_size, IN_PLANES_NUM, GOBAN_SIZE, GOBAN_SIZE)).float()
+    state = torch.FloatTensor(torch.ones((BATCH_SIZE, IN_PLANES_NUM, BOARD_WIDTH, BOARD_HEIGHT))).to(DEVICE)
     player = Player()
-    print(player.printModel())
+    prob, score = player.predict(state)
+    print(f'prob: {prob.size()}')
+    print(f'score: {score.size()}')
