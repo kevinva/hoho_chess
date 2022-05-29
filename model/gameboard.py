@@ -1,4 +1,16 @@
-import config import BOARD_WIDTH, BOARD_LENGTH
+from config import BOARD_WIDTH, BOARD_HEIGHT
+
+# K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
+pieces_order = 'KARBNPCkarbnpc' # 9 x 10 x 14
+ind = {pieces_order[i]: i for i in range(14)}
+
+labels_array = create_all_moves()  # 所有走法
+labels_len = len(labels_array)
+flipped_labels = flipped_moves_labels(labels_array)  # 所有走法的镜像
+unflipped_index = [labels_array.index(x) for x in flipped_labels]  # hoho: 将走法翻转一下，又求回在未翻转数组下的序号，意义是啥？多此一举！
+
+i2label = {i: val for i, val in enumerate(labels_array)}
+label2i = {val: i for i, val in enumerate(labels_array)}
 
 
 # 所有走子动作，一共有2086个走法
@@ -38,13 +50,60 @@ def create_all_moves():
     return moves
 
 
+def create_position_labels():
+    labels_array = []
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+    letters.reverse()
+    numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+    for l1 in range(9):
+        for n1 in range(10):
+            move = letters[8 - l1] + numbers[n1]  # hoho: 前面不用reverse，这里也就不用8去减了！多此一举！
+            labels_array.append(move)
+#     labels_array.reverse()
+    return labels_array
+
+def create_position_labels_reverse():
+    labels_array = []
+    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+    letters.reverse()
+    numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+    for l1 in range(9):
+        for n1 in range(10):
+            move = letters[l1] + numbers[n1]
+            labels_array.append(move)
+    labels_array.reverse()
+    return labels_array
+
+
+# 相当于以中间河为镜子，将走法翻转，如走d7e8则其镜像为d2e1
+def flipped_moves_labels(param):
+    def repl(x):
+        return "".join([(str(9 - int(a)) if a.isdigit() else a) for a in x])
+
+    return [repl(x) for x in param]
+
+
+def get_pieces_count(state):
+    count = 0
+    for s in state:
+        if s.isalpha():
+            count += 1
+    return count
+
+
+def is_kill_move(state_prev, state_next):
+    return get_pieces_count(state_prev) - get_pieces_count(state_next)
+
+
 
 class GameBoard(object):
     BOARD_POS_NAME = np.array(create_position_labels()).reshape(9,10).transpose()
 
 # 小写表示黑方，大写表示红方
 # [
-#     "rheakaehr",
+#     "rnbakabnr",
 #     "         ",
 #     " c     c ",
 #     "p p p p p",
@@ -53,7 +112,7 @@ class GameBoard(object):
 #     "P P P P P",
 #     " C     C ",
 #     "         ",
-#     "RHEAKAEHR"
+#     "RNBAKABNR"
 # ]
 
     def __init__(self):
