@@ -4,14 +4,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import *
-
+from gameboardv2 import *
 
 class Player:
 
     def __init__(self):
-        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, FILTER_SIZE, RESIDUAL_BLOCK_NUM).to(DEVICE)
-        self.value_net = ValueNet(FILTER_SIZE, ACTION_POSITION_NUM).to(DEVICE)
-        self.policy_net = PolicyNet(FILTER_SIZE, ACTION_POSITION_NUM, ACTION_DIM).to(DEVICE)
+        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, FILTER_NUM, RESIDUAL_BLOCK_NUM).to(DEVICE)
+        self.value_net = ValueNet(FILTER_NUM, BOARD_POSITION_NUM).to(DEVICE)
+        self.policy_net = PolicyNet(FILTER_NUM, BOARD_POSITION_NUM, ACTION_DIM).to(DEVICE)
         self.passed = False
     
     def predict(self, state):
