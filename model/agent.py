@@ -3,8 +3,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from config import *
-from gameboardv2 import *
+from model.config import *
+from model.gameboard import *
 
 class Player:
 
