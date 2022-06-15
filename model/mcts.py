@@ -14,7 +14,7 @@ def dirichlet_noise(probas):
 
 class Node:
 
-    def __init__(self, state=INIT_BOARD_STATE, action=None, parent=None, proba=None, current_player=PLAYER_RED):
+    def __init__(self, state=INIT_BOARD_STATE, action=None, parent=None, proba=None, player=PLAYER_RED):
         self.state = state
         self.action = action  # 导致该state的action
         self.P = proba   # 访问节点的概率，由policy net输出
@@ -23,7 +23,7 @@ class Node:
         self.Q = 0       # 平均价值 w/n
         self.childrens = []
         self.parent = parent
-        self.current_player = current_player
+        self.player = player
 
     def get_uq_score(self):
         U = C_PUCT * self.P * np.sqrt(self.parent.N) / (1 + self.N)
@@ -38,17 +38,17 @@ class Node:
     def expand(self, legal_actions, all_action_probas):
         nodes = []
         node_player = PLAYER_RED
-        if self.current_player == PLAYER_RED:
+        if self.player == PLAYER_RED:
             node_player = PLAYER_BLACK
 
         for action in legal_actions:
             prob = all_action_probas[ACTIONS_2_INDEX[action]]
             state_new = GameBoard.takeActionOnBoard(action, self.state)
-            node = Node(state=state_new, action=action, parent=self, proba=prob, current_player=node_player)
+            node = Node(state=state_new, action=action, parent=self, proba=prob, player=node_player)
             nodes.append(node)
         self.childrens = nodes
 
-    def backup(self, value):
+    def backupToRoot(self, value):
         node = self
         v = value
         while node != None:
@@ -57,6 +57,12 @@ class Node:
             node.Q = node.W / node.N if node.N > 0 else 0
             node = self.parent
             v = -v
+
+    def backup(self, value):
+        self.N += 1
+        self.W += value
+        self.Q = self.W / self.N if self.N > 0 else 0
+
 
 
 class SearchThread(threading.Thread):
@@ -82,14 +88,41 @@ class SearchThread(threading.Thread):
         while not current_node.is_lead() and not done:
             current_node = current_node.select()
 
-            # 加上Virtual loss
+            # 加上virtual loss
             self.lock.acquire()
             current_node.N += VIRTUAL_LOSS
+            current_node.W -= VIRTUAL_LOSS
             self.lock.release()
 
             state, _, done = game.step(current_node.action)  # hoho_todo： game的定义
 
-        if not done:
+        if done:
+            value = 0.0
+            if game.winner == PLAYER_RED:
+                if current_node.player == PLAYER_BLACK:
+                    value = 1.0
+                elif current_node.player == PLAYER_RED:
+                    value = -1.0
+            elif game.winner == PLAYER_BLACK:
+                if current_node.player == PLAYER_RED:
+                    value = 1.0
+                elif current_node.player == PLAYER_BLACK:
+                    value = -1.0
+            
+            self.lock.acquire()
+            node_tmp = current_node
+            v = value
+            while node_tmp != None:
+                # backup之前把之前加的virtual loss撤销掉
+                node_tmp.N -= VIRTUAL_LOSS
+                node_tmp.W += VIRTUAL_LOSS
+                node_tmp.backup(v)
+                node_tmp = node_tmp.parent
+                v = -v
+            self.lock.acquire()
+            
+            # TODO
+        else:
             self.condition_search.acquire()
             self.eval_queue[self.thread_id] = state   # hoho_todo: 按paper，这里可考虑增加一个dihedral transformation
             self.condition_search.notify()
@@ -110,6 +143,7 @@ class SearchThread(threading.Thread):
             
             legal_actions = GameBoard.get_legal_actions()
 
+            # TODO
 
 
 

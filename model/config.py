@@ -17,3 +17,4 @@ NOISE_ALPHA = 0.03    # ALPHA for Dirichlet noise
 VIRTUAL_LOSS = 3
 MCTS_THREAD_NUM = 4  # 线程数
 MCTS_SIMULATION_NUM = 800  # 模拟次数
+RESTRICT_ROUND_NUM = 100   # 限制多少步还没分出胜负，则平手

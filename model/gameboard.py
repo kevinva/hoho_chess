@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+from model.config import RESTRICT_ROUND_NUM
+
 
 BOARD_WIDTH = 9
 BOARD_HEIGHT = 10
@@ -625,6 +627,17 @@ class GameBoard:
                 actions.append(BOARD_POSITION_ARRAY[K_y][K_x] + BOARD_POSITION_ARRAY[k_y][k_x])
 
         return actions
+
+
+
+class CChessGame:
+
+    def __init__(self):
+        self.state = INIT_BOARD_STATE
+        self.restrict_count = RESTRICT_ROUND_NUM
+
+    def step(self, action):
+        pass
 
 
 
