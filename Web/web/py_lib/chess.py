@@ -71,7 +71,7 @@ class ChessMan:
 class King(ChessMan):
 	def __init__(self, board, player, x, y):
 		super(King, self).__init__(board, player, 'King', x, y)
-		self.allowed_moves=((-1,0),(1,0),(0,-1),(0,1))
+		self.allowed_moves=((-1,0),(1,0),(0,-1),(0,1))  # 允许走的步长坐标
 		self.pos_range=(3,0,5,2)
 	def can_move_to(self, x, y):
 		if super(King, self).can_move_to(x, y):
@@ -164,6 +164,8 @@ class ChessBoard:
 		self._elt = None
 		self._init_board()
 
+		# print('hoho: ChessBoard created!')
+
 	def rotate_board(self):
 		board_map = [((i,j),chess) for (i,j),chess in self.board_map.items()]
 		self.board_map.clear()
@@ -249,6 +251,8 @@ class Controller:
 		elt.bind('mousedown', self.onmousedown)
 		elt.bind('mousemove', self.onmousemove)
 		self.restart()
+
+		print('hoho: chess Controller called!')
 
 	def restart(self):
 		self.dragging_chess = None
@@ -348,6 +352,7 @@ class Controller:
 
 
 def run_app():
+	print('hoho: chess run_app()!')
 	chess_board = ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
 	Controller(chess_board)

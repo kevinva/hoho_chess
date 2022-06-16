@@ -6,6 +6,12 @@ from . import ajax
 import heapq
 
 class Controller(chess.Controller):
+	
+	def __init__(self, board):
+		super(Controller, self).__init__(board)
+
+		print('hoho: auto_chess Controller called!')
+
 	def onmouseup(self, ev):
 		if self.dragging_chess is None: return
 		x, y = ev.x.data(), ev.y.data()
@@ -117,6 +123,7 @@ def _reverse_boardkey(board_key):
 	return tuple(reversed)
 
 def _board_from_key(board_key):
+	# print(f'hoho: board_key={board_key}')
 	board = chess.ChessBoard()
 	board.board_map = {}
 	types = {'Rock':chess.Rock, 'Knight':chess.Knight, 'Bishop':chess.Bishop, 
@@ -182,6 +189,7 @@ class BoardNode:
 	def expand(self):
 		assert self.best_child is None
 		move_to_board = _get_next_moves(self.board)
+		# print(f'hoho: node expand! {len(move_to_board)}')
 		for movekey, boardkey in move_to_board.items():
 			boardkey = _reverse_boardkey(boardkey)
 			if self.same_as_ancester(boardkey): continue
@@ -228,14 +236,20 @@ class BoardExplorer:
 		self.heap = None
 		self.time_limit = time_limit
 	def run(self, board):
+		print(f'hoho: Explorer run: board: {board}')
+
 		board_node = BoardNode(board)
 		self.board_cache = {}
 		self.heap = [board_node]
 		start_time = time.time()
 		explored = 0
 		while True:
-			if (time.time()-start_time) > self.time_limit: break
-			if len(board_explorer.heap)==0: break
+			if (time.time()-start_time) > self.time_limit: 
+				print(f'hoho: time_limit!')
+				break
+			if len(board_explorer.heap)==0: 
+				print(f'explorer heap empty!')
+				break
 			node = heapq.heappop(board_explorer.heap)
 			score0 = node.score
 			if score0 in (-BoardNode.win_score, BoardNode.win_score):
@@ -265,7 +279,6 @@ def _dump_tree(node):
 			fp.write(')')
 		dump_node(node)
 
-
 board_explorer = BoardExplorer(5)
 
 def auto_move(board):
@@ -275,6 +288,9 @@ def auto_move(board):
 	# print('board_node.score', board_node.score)
 	# print('board_node.best_child.move_key', board_node.best_child.move_key)
 	# print('board_node.best_child.score', board_node.best_child.score)
+
+	print(f'hoho: board_node: {board_node.board_key}')
+	print(f'hoho: board_node\'s best_child: {board_node.best_child.board_key}')
 	return board_node.best_child.move_key[2:]
 	
 def auto_move_remote(board):
@@ -302,4 +318,5 @@ def run_app():
 	chess_board = chess.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
 	Controller(chess_board)
+	print('auto_chess run_app()!')
 

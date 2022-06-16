@@ -19,6 +19,7 @@ def ajax_(request_, response_, route_args_):
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
 	board_key = json.loads(params_['data'])
+	print(f'hoho: ajax_! board_key={board_key}')
 	board = auto_chess._board_from_key(board_key)
 	move = auto_chess.auto_move(board)
 	if move is None:
