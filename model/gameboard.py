@@ -1,15 +1,16 @@
+from multiprocessing.pool import INIT
 import numpy as np
 import torch
 
-from model.config import RESTRICT_ROUND_NUM
+from config import RESTRICT_ROUND_NUM
 
 
 BOARD_WIDTH = 9
 BOARD_HEIGHT = 10
 BOARD_POSITION_NUM = BOARD_WIDTH * BOARD_HEIGHT
 # K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
-INDEX_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9
-PIECES_2_INDEX = {INDEX_2_PIECES[i]: i for i in range(len(INDEX_2_PIECES))}
+INDEXS_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9
+PIECES_2_INDEX = {INDEXS_2_PIECES[i]: i for i in range(len(INDEXS_2_PIECES))}
 X_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 X_LABELS_2_INDEX = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8}
 Y_LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -643,4 +644,7 @@ class CChessGame:
 
 if __name__ == '__main__':
     plane = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
-    print(plane)
+    plane2 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
+    plane3 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
+    input = torch.stack([plane, plane2, plane3], dim=0)
+    print(input.data.numpy().shape)

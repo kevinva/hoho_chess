@@ -3,8 +3,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.config import *
-from model.gameboard import *
+from config import *
+from gameboard import *
 
 class Player:
 
@@ -16,9 +16,9 @@ class Player:
     
     def predict(self, state):
         board_features = self.plane_extractor(state)
-        win_score = self.value_net(board_features)
+        win_value = self.value_net(board_features)
         prob = self.policy_net(board_features)
-        return prob, win_score
+        return prob, win_value
 
     def printModel(self):
         print('extractor: ', self.plane_extractor)

@@ -2,8 +2,8 @@ import numpy as np
 import threading
 from copy import deepcopy
 from collections import OrderedDict
-from model.config import *
-from model.gameboard import *
+from config import *
+from gameboard import *
 
 
 def dirichlet_noise(probas):
@@ -119,10 +119,9 @@ class SearchThread(threading.Thread):
                 node_tmp.backup(v)
                 node_tmp = node_tmp.parent
                 v = -v
-            self.lock.acquire()
-            
-            # TODO
-        else:
+            self.lock.release()
+
+        else:  # 找到叶节点但游戏还没结束
             self.condition_search.acquire()
             self.eval_queue[self.thread_id] = state   # hoho_todo: 按paper，这里可考虑增加一个dihedral transformation
             self.condition_search.notify()
@@ -135,45 +134,111 @@ class SearchThread(threading.Thread):
 
             result = self.result_queue.pop(self.thread_id)
             probas = np.array(result[0])
-            v = float(result[1])
+            value = float(result[1])
             self.condition_eval.release()
 
             if not current_node.parent:
                 probas = dirichlet_noise(probas)
             
-            legal_actions = GameBoard.get_legal_actions()
+            legal_actions = GameBoard.get_legal_actions(current_node.state, current_node.player)
+            self.lock.acquire()
 
-            # TODO
+            # 叶节点expand
+            current_node.expand(legal_actions, probas)
 
+            # backup
+            node_tmp = current_node
+            v = value
+            while node_tmp != None:
+                node_tmp.N -= VIRTUAL_LOSS
+                node_tmp.W += VIRTUAL_LOSS
+                node_tmp.backup(v)
+                node_tmp = node_tmp.parent
+                v = -v
+
+            self.lock.release()
 
 
 class EvaluateThread(threading.Thread):
 
-    def __init__(self, player, eval_queue, result_queue, condition_search, condition_eval):
+    def __init__(self, agent, eval_queue, result_queue, condition_search, condition_eval):
         super(EvaluateThread, self).__init__()
 
+        self.eval_queue = eval_queue
+        self.result_queue = result_queue
+        self.agent = agent
+        self.condition_search = condition_search
+        self.condition_eval = condition_eval
 
+    def run(self):
+        for simulation in range(MCTS_SIMULATION_NUM // MCTS_THREAD_NUM):
+            self.condition_search.acquire()
+            while len(self.eval_queue) < MCTS_THREAD_NUM:   # 需等同一批搜索线程都入队列，才开始下一步
+                self.condition_search.wait()
+            self.condition_search.release()
+
+            self.condition_eval.acquire()
+            while len(self.result_queue) < MCTS_THREAD_NUM:
+                thread_ids = list(self.eval_queue.keys())
+                planes = list()
+                for key in thread_ids:
+                    plane = GameBoard.convert_board_to_tensor(self.eval_queue[key])
+                    planes.append(plane)
+                
+                batch_states = torch.stack(planes, dim=0).to(DEVICE)
+                batch_probas, batch_values = self.agent.predict(batch_states)
+
+                for idx, key in enumerate(thread_ids):
+                    self.result_queue[key] = (batch_probas[idx].to(torch.device('cpu')).numpy(), batch_values)
+                    del self.eval_queue[key]
+                self.condition_eval.notifyAll()
+            self.condition_eval.release()
 
 class MCTS:
 
     def __init__(self):
         self.root = Node()
     
-    def take_simulation(self, player, current_game):
+    def take_simulation(self, agent, game):
         condition_eval = threading.Condition()
         condition_search = threading.Condition()
         lock = threading.Lock()
 
         eval_queue = OrderedDict()
         result_queue = {}
-        evaluator = EvaluateThread()
+        evaluator = EvaluateThread(agent, eval_queue, result_queue, condition_search, condition_eval)
+        evaluator.start()
 
+        search_threads = []
+        for simulation in range(MCTS_SIMULATION_NUM // MCTS_THREAD_NUM):
+            for idx in range(MCTS_THREAD_NUM):
+                searcher = SearchThread(self.root, agent, eval_queue, result_queue, idx, lock, condition_search, condition_eval)
+                searcher.start()
+                search_threads.append(searcher)
+            for thread in search_threads:
+                thread.join()
+        evaluator.join()
     
-    
+        # 模拟走子之后，生成走子策略
+        action_scores = np.zeros((ACTION_DIM,))
+        for node in self.root.childrens:
+            action_scores[ACTIONS_2_INDEX[node.action]] = node.N
+        total = np.sum(action_scores)
+        pi = action_scores / total
+        final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
+        # 替换新的根节点
+        final_idx = -1
+        for idx in range(len(self.root.childrens)):
+            if self.root.childrens[idx].action == INDEXS_2_ACTION[final_action_idx]:
+                final_idx = idx
+                break
+        self.root = self.root.childrens[final_idx]
+
+        return pi, final_action_idx
 
 
 
 if __name__ == '__main__':
     myl = [11, 23, 3, 55, 23, 7, 20, 29]
-    print(max(myl, key=lambda num: 1.0 / num))
+    print(np.random.choice(len(myl)))
