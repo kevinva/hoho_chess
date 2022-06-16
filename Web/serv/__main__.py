@@ -12,6 +12,7 @@ def __dir__(request_, response_, route_args_):
 		return response_.write_response_not_found_()
 
 def home(request_, response_, route_args_):
+	print('hoho: home!')
 	content = '<script>location.href="web/index.html"</script>'
 	return response_.write_response_OK_(content_type_='text/html', content_=content, charset_='UTF-8')
 
@@ -37,4 +38,5 @@ def start_server_(port_, max_threads_):
 	http_.add_route_('/', home, 'GET')
 	http_.start_()
 
+print('hoho: start server!')
 start_server_(8000, 100)

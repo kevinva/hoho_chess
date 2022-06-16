@@ -10,7 +10,7 @@ class Controller(chess.Controller):
 	def __init__(self, board):
 		super(Controller, self).__init__(board)
 
-		print('hoho: auto_chess Controller called!')
+		javascript.alert('hoho: auto_chess Controller created!')
 
 	def onmouseup(self, ev):
 		if self.dragging_chess is None: return
@@ -235,6 +235,8 @@ class BoardExplorer:
 		self.board_cache = None
 		self.heap = None
 		self.time_limit = time_limit
+		print('hoho：BoardExplorer created!')
+
 	def run(self, board):
 		print(f'hoho: Explorer run: board: {board}')
 
@@ -315,8 +317,9 @@ def auto_move_remote(board):
 
 
 def run_app():
+	javascript.alert('hoho: auto_chess run_app()!')
+	# print('hoho: auto_chess run_app()!') # 打印不到
 	chess_board = chess.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
 	Controller(chess_board)
-	print('auto_chess run_app()!')
 

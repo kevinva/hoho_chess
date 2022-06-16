@@ -5,8 +5,9 @@
 # import chess
 # chess.run_app()
 
+
 import auto_chess
-print('hoho: main.py')
+javascript.alert('hoho: main.py')
 auto_chess.run_app()
 
 # import flutter
