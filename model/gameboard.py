@@ -64,6 +64,18 @@ def get_all_actions():
 
     return actions
 
+def flip_action(action):
+    return "".join([(str(BOARD_HEIGHT - 1 - int(a)) if a.isdigit() else a) for a in action])
+
+def flip_action_probas(probas):
+    result_probas = np.zeros(probas.shape)
+    for idx, p in enumerate(probas):
+        action = INDEXS_2_ACTION[idx]
+        action_flipped = flip_action(action)
+        final_idx = ACTIONS_2_INDEX[action_flipped]
+        result_probas[final_idx] = p
+    return result_probas
+
 INDEXS_2_ACTION = get_all_actions()
 ACTIONS_2_INDEX = {action: idx for idx, action in enumerate(INDEXS_2_ACTION)}
 BOARD_POSITION_ARRAY = np.array(get_position_labels()).reshape(BOARD_WIDTH, BOARD_HEIGHT).transpose()
@@ -189,6 +201,7 @@ class GameBoard:
             return "".join([swapcase(a) for a in aa])
 
         return "/".join([swapall(row) for row in reversed(rows)])
+
 
     # 将棋盘（以字符串输入）转为向量，以便输入神经网络
     @staticmethod

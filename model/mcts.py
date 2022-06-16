@@ -43,7 +43,7 @@ class Node:
 
         for action in legal_actions:
             prob = all_action_probas[ACTIONS_2_INDEX[action]]
-            state_new = GameBoard.takeActionOnBoard(action, self.state)
+            state_new = GameBoard.do_action_on_board(action, self.state)
             node = Node(state=state_new, action=action, parent=self, proba=prob, player=node_player)
             nodes.append(node)
         self.childrens = nodes
@@ -123,6 +123,11 @@ class SearchThread(threading.Thread):
 
         else:  # 找到叶节点但游戏还没结束
             self.condition_search.acquire()
+
+            # 如果当前节点是黑方待下棋，则将棋盘翻转，让黑方以红方的视角走子（self play）
+            if current_node.player == PLAYER_BLACK:
+                print('flip the board!')
+                state = GameBoard.flip_board(state)
             self.eval_queue[self.thread_id] = state   # hoho_todo: 按paper，这里可考虑增加一个dihedral transformation
             self.condition_search.notify()
             self.condition_search.release()
@@ -134,6 +139,11 @@ class SearchThread(threading.Thread):
 
             result = self.result_queue.pop(self.thread_id)
             probas = np.array(result[0])
+            
+            # 因为之前对黑方进行棋盘翻转，所以网络输出的是红方视角的走子方式，要对该走子方式再翻转过来才是黑方真正的走子方式
+            if current_node.player == PLAYER_BLACK:
+                print('should flip the action probability')
+                probas = flip_action_probas(probas)
             value = float(result[1])
             self.condition_eval.release()
 
@@ -141,8 +151,8 @@ class SearchThread(threading.Thread):
                 probas = dirichlet_noise(probas)
             
             legal_actions = GameBoard.get_legal_actions(current_node.state, current_node.player)
+            
             self.lock.acquire()
-
             # 叶节点expand
             current_node.expand(legal_actions, probas)
 
@@ -155,7 +165,6 @@ class SearchThread(threading.Thread):
                 node_tmp.backup(v)
                 node_tmp = node_tmp.parent
                 v = -v
-
             self.lock.release()
 
 
@@ -193,6 +202,7 @@ class EvaluateThread(threading.Thread):
                     del self.eval_queue[key]
                 self.condition_eval.notifyAll()
             self.condition_eval.release()
+
 
 class MCTS:
 
