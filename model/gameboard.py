@@ -17,7 +17,7 @@ Y_LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  # 棋盘纵向的
 INIT_BOARD_STATE = 'RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr'  # 棋盘初始状态
 PLAYER_RED = 'r'
 PLAYER_BLACK = 'b'
-
+IN_PLANES_NUM = len(INDEXS_2_PIECES)
 
 
 def get_position_labels():
@@ -214,14 +214,14 @@ class GameBoard:
         """将棋盘（以字符串输入）转为向量，以便输入神经网络"""
 
         board_list = GameBoard.board_str_to_list1(board_str)
-        pieces_plane = torch.zeros((14, 10, 9), dtype=torch.float32)
+        board_tensor = torch.zeros((14, 10, 9), dtype=torch.float32)
         for row, line in enumerate(board_list):
             positions = list(line)
             for col, pos in enumerate(positions):
                 if pos.isalpha():
                     piece_idx = PIECES_2_INDEX[pos]
-                    pieces_plane[piece_idx][row][col] = 1
-        return pieces_plane
+                    board_tensor[piece_idx][row][col] = 1
+        return board_tensor
 
 
     @staticmethod

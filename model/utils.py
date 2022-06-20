@@ -1,6 +1,7 @@
 import numpy as np
 import random
-from config import*
+from config import *
+from gameboard import IN_PLANES_NUM, BOARD_HEIGHT, BOARD_WIDTH
 
 def sample_rotation(state, num=8):
     """ Apply a certain number of random transformation to the input state """
@@ -13,10 +14,10 @@ def sample_rotation(state, num=8):
     random.shuffle(dh_group)
 
     states = []
-    boards = (HISTORY_NUM + 1) * 2 ## Number of planes to rotate
+    boards = IN_PLANES_NUM ## Number of planes to rotate
 
     for idx in range(num):
-        new_state = np.zeros((boards + 1, GOBAN_SIZE, GOBAN_SIZE,))
+        new_state = np.zeros((boards, BOARD_HEIGHT, BOARD_WIDTH,))
         new_state[:boards] = state[:boards]
 
         ## Apply the transformations in the tuple defining how to get
