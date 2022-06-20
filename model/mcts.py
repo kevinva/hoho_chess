@@ -43,7 +43,7 @@ class Node:
 
         for action in legal_actions:
             prob = all_action_probas[ACTIONS_2_INDEX[action]]
-            state_new = GameBoard.do_action_on_board(action, self.state)
+            state_new = do_action_on_board(action, self.state)
             node = Node(state=state_new, action=action, parent=self, proba=prob, player=node_player)
             nodes.append(node)
         self.childrens = nodes
@@ -94,7 +94,7 @@ class SearchThread(threading.Thread):
             current_node.W -= VIRTUAL_LOSS
             self.lock.release()
 
-            state, _, done = game.step(current_node.action)  # hoho_todo： game的定义
+            state, _, done = game.step(current_node.action)  # hoho_todo: game的定义
 
         if done:
             value = 0.0
@@ -127,7 +127,7 @@ class SearchThread(threading.Thread):
             # 如果当前节点是黑方待下棋，则将棋盘翻转，让黑方以红方的视角走子（self play）
             if current_node.player == PLAYER_BLACK:
                 print('flip the board!')
-                state = GameBoard.flip_board(state)
+                state = flip_board(state)
             self.eval_queue[self.thread_id] = state   # hoho_todo: 按paper，这里可考虑增加一个dihedral transformation
             self.condition_search.notify()
             self.condition_search.release()
@@ -150,7 +150,7 @@ class SearchThread(threading.Thread):
             if not current_node.parent:
                 probas = dirichlet_noise(probas)
             
-            legal_actions = GameBoard.get_legal_actions(current_node.state, current_node.player)
+            legal_actions = get_legal_actions(current_node.state, current_node.player)
             
             self.lock.acquire()
             # 叶节点expand
@@ -191,7 +191,7 @@ class EvaluateThread(threading.Thread):
                 thread_ids = list(self.eval_queue.keys())
                 planes = list()
                 for key in thread_ids:
-                    plane = GameBoard.convert_board_to_tensor(self.eval_queue[key])
+                    plane = convert_board_to_tensor(self.eval_queue[key])
                     planes.append(plane)
                 
                 batch_states = torch.stack(planes, dim=0).to(DEVICE)

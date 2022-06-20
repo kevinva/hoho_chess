@@ -85,8 +85,6 @@ BOARD_POSITION_ARRAY = np.array(get_position_labels()).reshape(BOARD_WIDTH, BOAR
 ACTION_DIM = len(INDEXS_2_ACTION)
 
 
-class GameBoard:
-
 # 棋盘的数组表示：小写表示黑方，大写表示红方
 # [
 #     "rnbakabnr",
@@ -106,552 +104,544 @@ class GameBoard:
 # “/”表示换行，数字表示棋子之间或棋子与边界之间的空格数量
 # 这里会先打印红方（大写），所以由上往下行序号由0到9，由左到右边列序号为a到i，符合通用规则
 
-    @staticmethod
-    def print_borad(board_str, action=None):
-        if action != None:  # action应该是类似: i1c4这样的表示
-            src = action[0:2]
-            src_x = int(X_LABELS_2_INDEX[src[0]])
-            src_y = int(src[1])
-
-        board = board_str
-        board = board.replace("1", " ")
-        board = board.replace("2", "  ")
-        board = board.replace("3", "   ")
-        board = board.replace("4", "    ")
-        board = board.replace("5", "     ")
-        board = board.replace("6", "      ")
-        board = board.replace("7", "       ")
-        board = board.replace("8", "        ")
-        board = board.replace("9", "         ")
-        board = board.split('/')
-
-        for i, line in enumerate(board):
-            if action != None:
-                if i == src_y:
-                    s = list(line)
-                    s[src_x] = 'x'   # 标记一下落子开始点
-                    line = ''.join(s)
-            print(line)
-
-
-    # 将空格转为相当数量的数字1，并返回棋盘数组
-    @staticmethod
-    def board_str_to_list1(board_str):
-        board = board_str
-        board = board.replace("2", "11")
-        board = board.replace("3", "111")
-        board = board.replace("4", "1111")
-        board = board.replace("5", "11111")
-        board = board.replace("6", "111111")
-        board = board.replace("7", "1111111")
-        board = board.replace("8", "11111111")
-        board = board.replace("9", "111111111")
-        return board.split("/")
-    
-
-    @staticmethod
-    def board_list1_to_str(board_list):
-        """将空格数字1转换为数量，并返回棋盘字符串"""
-
-        board = "/".join(board_list)
-        board = board.replace("111111111", "9")
-        board = board.replace("11111111", "8")
-        board = board.replace("1111111", "7")
-        board = board.replace("111111", "6")
-        board = board.replace("11111", "5")
-        board = board.replace("1111", "4")
-        board = board.replace("111", "3")
-        board = board.replace("11", "2")
-        return board
-
-
-    @staticmethod
-    def do_action_on_board(board_str, action):
-        """走子，更改state表示（字符串形式）"""
-
+def print_borad(board_str, action=None):
+    if action != None:  # action应该是类似: i1c4这样的表示
         src = action[0:2]
-        dst = action[2:4]
         src_x = int(X_LABELS_2_INDEX[src[0]])
         src_y = int(src[1])
-        dst_x = int(X_LABELS_2_INDEX[dst[0]])
-        dst_y = int(dst[1])
 
-        board_positions = GameBoard.board_str_to_list1(board_str)
-        board_lines = []
-        for line in board_positions:
-            board_lines.append(list(line))
+    board = board_str
+    board = board.replace("1", " ")
+    board = board.replace("2", "  ")
+    board = board.replace("3", "   ")
+    board = board.replace("4", "    ")
+    board = board.replace("5", "     ")
+    board = board.replace("6", "      ")
+    board = board.replace("7", "       ")
+    board = board.replace("8", "        ")
+    board = board.replace("9", "         ")
+    board = board.split('/')
 
-        board_lines[dst_y][dst_x] = board_lines[src_y][src_x]  # 将src的子走到dst位置
-        board_lines[src_y][src_x] = '1'    # 走子后，src位置赋值为空白
-
-        board_positions[dst_y] = ''.join(board_lines[dst_y])
-        board_positions[src_y] = ''.join(board_lines[src_y])
-
-        board = GameBoard.board_list1_to_str(board_lines)
-
-        return board
-
-
-    @staticmethod
-    def flip_board(board_str):
-        """翻转棋盘，一般用在使黑方以红方的视角走子"""
-
-        rows = board_str.split('/')
-
-        def swapcase(a):
-            if a.isalpha():
-                return a.lower() if a.isupper() else a.upper()
-            return a
-
-        def swapall(aa):
-            return "".join([swapcase(a) for a in aa])
-
-        return "/".join([swapall(row) for row in reversed(rows)])
+    for i, line in enumerate(board):
+        if action != None:
+            if i == src_y:
+                s = list(line)
+                s[src_x] = 'x'   # 标记一下落子开始点
+                line = ''.join(s)
+        print(line)
 
 
-    @staticmethod
-    def convert_board_to_tensor(board_str):
-        """将棋盘（以字符串输入）转为向量，以便输入神经网络"""
+def board_str_to_list1(board_str):
+    """将空格转为相当数量的数字1，并返回棋盘数组"""
 
-        board_list = GameBoard.board_str_to_list1(board_str)
-        board_tensor = torch.zeros((14, 10, 9), dtype=torch.float32)
-        for row, line in enumerate(board_list):
-            positions = list(line)
-            for col, pos in enumerate(positions):
-                if pos.isalpha():
-                    piece_idx = PIECES_2_INDEX[pos]
-                    board_tensor[piece_idx][row][col] = 1
-        return board_tensor
+    board = board_str
+    board = board.replace("2", "11")
+    board = board.replace("3", "111")
+    board = board.replace("4", "1111")
+    board = board.replace("5", "11111")
+    board = board.replace("6", "111111")
+    board = board.replace("7", "1111111")
+    board = board.replace("8", "11111111")
+    board = board.replace("9", "111111111")
+    return board.split("/")
+    
+
+def board_list1_to_str(board_list):
+    """将空格数字1转换为数量，并返回棋盘字符串"""
+
+    board = "/".join(board_list)
+    board = board.replace("111111111", "9")
+    board = board.replace("11111111", "8")
+    board = board.replace("1111111", "7")
+    board = board.replace("111111", "6")
+    board = board.replace("11111", "5")
+    board = board.replace("1111", "4")
+    board = board.replace("111", "3")
+    board = board.replace("11", "2")
+    return board
 
 
-    @staticmethod
-    def check_bounds(toY, toX):
-        if toY < 0 or toX < 0:
-            return False
+def do_action_on_board(board_str, action):
+    """走子，更改state表示（字符串形式）"""
 
-        if toY >= BOARD_HEIGHT or toX >= BOARD_WIDTH:
-            return False
+    src = action[0:2]
+    dst = action[2:4]
+    src_x = int(X_LABELS_2_INDEX[src[0]])
+    src_y = int(src[1])
+    dst_x = int(X_LABELS_2_INDEX[dst[0]])
+    dst_y = int(dst[1])
 
+    board_positions = board_str_to_list1(board_str)
+    board_lines = []
+    for line in board_positions:
+        board_lines.append(list(line))
+
+    board_lines[dst_y][dst_x] = board_lines[src_y][src_x]  # 将src的子走到dst位置
+    board_lines[src_y][src_x] = '1'    # 走子后，src位置赋值为空白
+
+    board_positions[dst_y] = ''.join(board_lines[dst_y])
+    board_positions[src_y] = ''.join(board_lines[src_y])
+
+    board = board_list1_to_str(board_lines)
+
+    return board
+
+
+def flip_board(board_str):
+    """翻转棋盘，一般用在使黑方以红方的视角走子"""
+
+    rows = board_str.split('/')
+
+    def swapcase(a):
+        if a.isalpha():
+            return a.lower() if a.isupper() else a.upper()
+        return a
+
+    def swapall(aa):
+        return "".join([swapcase(a) for a in aa])
+
+    return "/".join([swapall(row) for row in reversed(rows)])
+
+
+def convert_board_to_tensor(board_str):
+    """将棋盘（以字符串输入）转为向量，以便输入神经网络"""
+
+    board_list = board_str_to_list1(board_str)
+    board_tensor = torch.zeros((14, 10, 9), dtype=torch.float32)
+    for row, line in enumerate(board_list):
+        positions = list(line)
+        for col, pos in enumerate(positions):
+            if pos.isalpha():
+                piece_idx = PIECES_2_INDEX[pos]
+                board_tensor[piece_idx][row][col] = 1
+    return board_tensor
+
+
+def check_bounds(toY, toX):
+    if toY < 0 or toX < 0:
+        return False
+
+    if toY >= BOARD_HEIGHT or toX >= BOARD_WIDTH:
+        return False
+
+    return True
+
+
+def can_moveto_for_player(piece, player):
+    """player能否走到棋子piece的位置上（即吃掉棋子piece）"""
+
+    if piece.isalpha():
+        if player == PLAYER_RED:
+            if piece.islower():
+                return True
+            else:
+                return False
+        elif player == PLAYER_BLACK:
+            if piece.isupper():
+                return True
+            else:
+                return False
+
+    else:
         return True
 
 
-    @staticmethod
-    def can_moveto_for_player(piece, player):
-        """player能否走到棋子piece的位置上（即吃掉棋子piece）"""
+def get_legal_actions(board_str, current_player):
+    """返回当前棋盘状态下所有合法走子"""
 
-        if piece.isalpha():
-            if player == PLAYER_RED:
-                if piece.islower():
-                    return True
-                else:
-                    return False
-            elif player == PLAYER_BLACK:
-                if piece.isupper():
-                    return True
-                else:
-                    return False
+    actions = []
+    k_x = None  # 黑方将军（将）走子
+    k_y = None
 
-        else:
-            return True
+    K_x = None  # 红方将军（帅）走子
+    K_y = None
 
+    king_face2face = False
 
-    @staticmethod
-    def get_legal_actions(board_str, current_player):
-        """返回当前棋盘状态下所有合法走子"""
+    board_positions = np.array(board_str_to_list1(board_str))
+    for y in range(board_positions.shape[0]):
+        for x in range(len(board_positions[y])):
+            if board_positions[y][x].isalpha():
+                if board_positions[y][x] == 'r' and current_player == PLAYER_BLACK: # 黑方车走子
+                    toY = y
+                    for toX in range(x - 1, -1, -1):  # 往左走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():   
+                            if board_positions[toY][toX].isupper():  
+                                actions.append(m)
+                            break
 
-        actions = []
-        k_x = None  # 黑方将军（将）走子
-        k_y = None
+                        actions.append(m)
 
-        K_x = None  # 红方将军（帅）走子
-        K_y = None
+                    for toX in range(x + 1, BOARD_WIDTH): # 往右走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():
+                            if board_positions[toY][toX].isupper():
+                                actions.append(m)
+                            break
 
-        king_face2face = False
+                        actions.append(m)
 
-        board_positions = np.array(GameBoard.board_str_to_list1(board_str))
-        for y in range(board_positions.shape[0]):
-            for x in range(len(board_positions[y])):
-                if board_positions[y][x].isalpha():
-                    if board_positions[y][x] == 'r' and current_player == PLAYER_BLACK: # 黑方车走子
-                        toY = y
-                        for toX in range(x - 1, -1, -1):  # 往左走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():   
-                                if board_positions[toY][toX].isupper():  
-                                    actions.append(m)
-                                break
+                    toX = x
+                    for toY in range(y - 1, -1, -1): # 往上走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():
+                            if board_positions[toY][toX].isupper():
+                                actions.append(m)
+                            break
 
-                            actions.append(m)
+                        actions.append(m)
 
-                        for toX in range(x + 1, BOARD_WIDTH): # 往右走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():
-                                if board_positions[toY][toX].isupper():
-                                    actions.append(m)
-                                break
+                    for toY in range(y + 1, BOARD_HEIGHT): # 往下走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():
+                            if board_positions[toY][toX].isupper():
+                                actions.append(m)
+                            break
 
-                            actions.append(m)
+                        actions.append(m)
 
-                        toX = x
-                        for toY in range(y - 1, -1, -1): # 往上走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():
-                                if board_positions[toY][toX].isupper():
-                                    actions.append(m)
-                                break
+                elif board_positions[y][x] == 'R' and current_player == PLAYER_RED:  # 红方车走子
+                    toY = y
+                    for toX in range(x - 1, -1, -1):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():   
+                            if board_positions[toY][toX].islower():   # 红方车吃掉对方的子
+                                actions.append(m)
+                            break
 
-                            actions.append(m)
+                        actions.append(m)
 
-                        for toY in range(y + 1, BOARD_HEIGHT): # 往下走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():
-                                if board_positions[toY][toX].isupper():
-                                    actions.append(m)
-                                break
+                    for toX in range(x + 1, BOARD_WIDTH):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():
+                            if board_positions[toY][toX].islower():
+                                actions.append(m)
+                            break
 
-                            actions.append(m)
+                        actions.append(m)
 
-                    elif board_positions[y][x] == 'R' and current_player == PLAYER_RED:  # 红方车走子
-                        toY = y
-                        for toX in range(x - 1, -1, -1):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():   
-                                if board_positions[toY][toX].islower():   # 红方车吃掉对方的子
-                                    actions.append(m)
-                                break
+                    toX = x
+                    for toY in range(y - 1, -1, -1):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():
+                            if board_positions[toY][toX].islower():
+                                actions.append(m)
+                            break
 
-                            actions.append(m)
+                        actions.append(m)
 
-                        for toX in range(x + 1, BOARD_WIDTH):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():
-                                if board_positions[toY][toX].islower():
-                                    actions.append(m)
-                                break
+                    for toY in range(y + 1, BOARD_HEIGHT):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if board_positions[toY][toX].isalpha():
+                            if board_positions[toY][toX].islower():
+                                actions.append(m)
+                            break
 
-                            actions.append(m)
+                        actions.append(m)
 
-                        toX = x
-                        for toY in range(y - 1, -1, -1):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():
-                                if board_positions[toY][toX].islower():
-                                    actions.append(m)
-                                break
-
-                            actions.append(m)
-
-                        for toY in range(y + 1, BOARD_HEIGHT):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if board_positions[toY][toX].isalpha():
-                                if board_positions[toY][toX].islower():
-                                    actions.append(m)
-                                break
-
-                            actions.append(m)
-
-                    elif (board_positions[y][x] == 'n' or board_positions[y][x] == 'h') and current_player == PLAYER_BLACK:  # 黑方马走子
-                        for i in range(-1, 3, 2):
-                            for j in range(-1, 3, 2):  
-                                toY = y + 2 * i   # 向纵方向走“日字”
-                                toX = x + 1 * j
-                                # GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK)判断目标点是否为对方棋子
-                                # board_positions[toY - i][x].isalpha() == False 判断马将要落子方向上是否有棋子挡住不能走
-                                if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and board_positions[toY - i][x].isalpha() == False:
-                                    actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                                
-                                toY = y + 1 * i   # 向横方向走“日字”
-                                toX = x + 2 * j
-                                if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and board_positions[y][toX - j].isalpha() == False:
-                                    actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif (board_positions[y][x] == 'N' or board_positions[y][x] == 'H') and current_player == PLAYER_RED:  # 红方马走子
-                        for i in range(-1, 3, 2):
-                            for j in range(-1, 3, 2):
-                                toY = y + 2 * i
-                                toX = x + 1 * j
-                                if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and board_positions[toY - i][x].isalpha() == False:
-                                    actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                                
-                                toY = y + 1 * i
-                                toX = x + 2 * j
-                                if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and board_positions[y][toX - j].isalpha() == False:
-                                    actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif (board_positions[y][x] == 'b' or board_positions[y][x] == 'e') and current_player == PLAYER_BLACK:  # 黑方象走子
-                        for i in range(-2, 3, 4):
-                            toY = y + i
-                            toX = x + i
-                            # toY >= 5，限定黑方象只能在5~9行走（黑方在棋盘下方，从0行开始计算）
-                            # board_positions[y + i // 2][x + i // 2].isalpha() == False，象前进方向上是否有子挡住不能走
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
-                               toY >= 5 and \
-                               board_positions[y + i // 2][x + i // 2].isalpha() == False:
+                elif (board_positions[y][x] == 'n' or board_positions[y][x] == 'h') and current_player == PLAYER_BLACK:  # 黑方马走子
+                    for i in range(-1, 3, 2):
+                        for j in range(-1, 3, 2):  
+                            toY = y + 2 * i   # 向纵方向走“日字”
+                            toX = x + 1 * j
+                            # can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK)判断目标点是否为对方棋子
+                            # board_positions[toY - i][x].isalpha() == False 判断马将要落子方向上是否有棋子挡住不能走
+                            if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and board_positions[toY - i][x].isalpha() == False:
                                 actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
                             
-                            toY = y + i
-                            toX = x - i
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
-                               toY >= 5 and \
-                               board_positions[y + i // 2][x - i // 2].isalpha() == False:
+                            toY = y + 1 * i   # 向横方向走“日字”
+                            toX = x + 2 * j
+                            if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and board_positions[y][toX - j].isalpha() == False:
                                 actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif (board_positions[y][x] == 'B' or board_positions[y][x] == 'E') and current_player == PLAYER_RED:  # 红方象走子
-                        for i in range(-2, 3, 4):
-                            toY = y + i
-                            toX = x + i
-
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
-                               toY <= 4 and \
-                               board_positions[y + i // 2][x + i // 2].isalpha() == False:
+                elif (board_positions[y][x] == 'N' or board_positions[y][x] == 'H') and current_player == PLAYER_RED:  # 红方马走子
+                    for i in range(-1, 3, 2):
+                        for j in range(-1, 3, 2):
+                            toY = y + 2 * i
+                            toX = x + 1 * j
+                            if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and board_positions[toY - i][x].isalpha() == False:
                                 actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                            toY = y + i
-                            toX = x - i
-
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
-                               toY <= 4 and \
-                               board_positions[y + i // 2][x - i // 2].isalpha() == False:
+                            
+                            toY = y + 1 * i
+                            toX = x + 2 * j
+                            if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and board_positions[y][toX - j].isalpha() == False:
                                 actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif board_positions[y][x] == 'a' and current_player == PLAYER_BLACK:  # 黑方士走子
-                        for i in range(-1, 3, 2):
-                            toY = y + i
-                            toX = x + i
-                            # toY >= 7 and toX >= 3 and toX <= 5， 限定黑方士在棋盘可移动坐标范围
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
-                               toY >= 7 and \
-                               toX >= 3 and \
-                               toX <= 5:
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                elif (board_positions[y][x] == 'b' or board_positions[y][x] == 'e') and current_player == PLAYER_BLACK:  # 黑方象走子
+                    for i in range(-2, 3, 4):
+                        toY = y + i
+                        toX = x + i
+                        # toY >= 5，限定黑方象只能在5~9行走（黑方在棋盘下方，从0行开始计算）
+                        # board_positions[y + i // 2][x + i // 2].isalpha() == False，象前进方向上是否有子挡住不能走
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
+                            toY >= 5 and \
+                            board_positions[y + i // 2][x + i // 2].isalpha() == False:
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                        
+                        toY = y + i
+                        toX = x - i
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
+                            toY >= 5 and \
+                            board_positions[y + i // 2][x - i // 2].isalpha() == False:
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                elif (board_positions[y][x] == 'B' or board_positions[y][x] == 'E') and current_player == PLAYER_RED:  # 红方象走子
+                    for i in range(-2, 3, 4):
+                        toY = y + i
+                        toX = x + i
 
-                            toY = y + i
-                            toX = x - i
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
+                            toY <= 4 and \
+                            board_positions[y + i // 2][x + i // 2].isalpha() == False:
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                        toY = y + i
+                        toX = x - i
 
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
-                               toY >= 7 and \
-                               toX >= 3 and \
-                               toX <= 5:
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif board_positions[y][x] == 'A' and current_player == PLAYER_RED:  # 红方士走子
-                        for i in range(-1, 3, 2):
-                            toY = y + i
-                            toX = x + i
-
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
-                               toY <= 2 and \
-                               toX >= 3 and \
-                               toX <= 5:
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-
-                            toY = y + i
-                            toX = x - i
-
-                            if GameBoard.check_bounds(toY, toX) and \
-                               GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
-                               toY <= 2 and \
-                               toX >= 3 and \
-                               toX <= 5:
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif board_positions[y][x] == 'k': 
-                        k_x = x
-                        k_y = y
-
-                        if current_player == PLAYER_BLACK:  # 黑方将走子
-                            for i in range(2):
-                                for sign in range(-1, 2, 2):
-                                    j = 1 - i
-                                    toY = y + i * sign  # i为0表示横向移
-                                    toX = x + j * sign  # j为0表示纵向移
-
-                                    if GameBoard.check_bounds(toY, toX) and \
-                                       GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
-                                       toY >= 7 and \
-                                       toX >= 3 and \
-                                       toX <= 5:
-                                        actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif board_positions[y][x] == 'K':
-                        K_x = x
-                        K_y = y
-
-                        if current_player == PLAYER_RED:  # 红方帅走子
-                            for i in range(2):
-                                for sign in range(-1, 2, 2):
-                                    j = 1 - i
-                                    toY = y + i * sign
-                                    toX = x + j * sign
-
-                                    if GameBoard.check_bounds(toY, toX) and \
-                                       GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
-                                       toY <= 2 and \
-                                       toX >= 3 and \
-                                       toX <= 5:
-                                        actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
-                    elif board_positions[y][x] == 'c' and current_player == PLAYER_BLACK:  # 黑方炮走子
-                        toY = y
-                        hits = False
-                        for toX in range(x - 1, -1, -1):  # 往左方向走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha(): # 若目标点有子
-                                    hits = True
-                                else:
-                                    actions.append(m)  
-                            else:   # 循环的上一次扫描时发现有子挡在前进方向上
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].isupper():  # 若目标点是对方的子，可以吃掉
-                                        actions.append(m)
-                                    break
-
-                        hits = False
-                        for toX in range(x + 1, BOARD_WIDTH): # 往右方向走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha():
-                                    hits = True
-                                else:
-                                    actions.append(m)
-                            else:
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].isupper():
-                                        actions.append(m)
-                                    break
-
-                        toX = x
-                        hits = False
-                        for toY in range(y - 1, -1, -1):  # 往上方向走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha():
-                                    hits = True
-                                else:
-                                    actions.append(m)
-                            else:
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].isupper():
-                                        actions.append(m)
-                                    break
-
-                        hits = False
-                        for toY in range(y + 1, BOARD_HEIGHT):  # 往下方向走
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha():
-                                    hits = True
-                                else:
-                                    actions.append(m)
-                            else:
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].isupper():
-                                        actions.append(m)
-                                    break
-                    elif board_positions[y][x] == 'C' and current_player == PLAYER_RED:  # 红方炮走子
-                        toY = y
-                        hits = False
-                        for toX in range(x - 1, -1, -1):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha():
-                                    hits = True
-                                else:
-                                    actions.append(m)
-                            else:
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].islower():
-                                        actions.append(m)
-                                    break
-
-                        hits = False
-                        for toX in range(x + 1, BOARD_WIDTH):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha():
-                                    hits = True
-                                else:
-                                    actions.append(m)
-                            else:
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].islower():
-                                        actions.append(m)
-                                    break
-
-                        toX = x
-                        hits = False
-                        for toY in range(y - 1, -1, -1):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha():
-                                    hits = True
-                                else:
-                                    actions.append(m)
-                            else:
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].islower():
-                                        actions.append(m)
-                                    break
-
-                        hits = False
-                        for toY in range(y + 1, BOARD_HEIGHT):
-                            m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
-                            if hits == False:
-                                if board_positions[toY][toX].isalpha():
-                                    hits = True
-                                else:
-                                    actions.append(m)
-                            else:
-                                if board_positions[toY][toX].isalpha():
-                                    if board_positions[toY][toX].islower():
-                                        actions.append(m)
-                                    break
-                    elif board_positions[y][x] == 'p' and current_player == PLAYER_BLACK:  # 黑方卒走子
-                        toY = y - 1
-                        toX = x
-
-                        if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK):
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
+                            toY <= 4 and \
+                            board_positions[y + i // 2][x - i // 2].isalpha() == False:
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                elif board_positions[y][x] == 'a' and current_player == PLAYER_BLACK:  # 黑方士走子
+                    for i in range(-1, 3, 2):
+                        toY = y + i
+                        toX = x + i
+                        # toY >= 7 and toX >= 3 and toX <= 5， 限定黑方士在棋盘可移动坐标范围
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
+                            toY >= 7 and \
+                            toX >= 3 and \
+                            toX <= 5:
                             actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
 
-                        if y < 5: # 已经过河
-                            toY = y
-                            toX = x + 1 # 可以往右横走
-                            if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK):
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                        toY = y + i
+                        toX = x - i
 
-                            toX = x - 1 # 可以往左横走
-                            if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK):
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
+                            toY >= 7 and \
+                            toX >= 3 and \
+                            toX <= 5:
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                elif board_positions[y][x] == 'A' and current_player == PLAYER_RED:  # 红方士走子
+                    for i in range(-1, 3, 2):
+                        toY = y + i
+                        toX = x + i
 
-                    elif board_positions[y][x] == 'P' and current_player == PLAYER_RED:  # 红方兵走子
-                        toY = y + 1
-                        toX = x
-
-                        if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED):
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
+                            toY <= 2 and \
+                            toX >= 3 and \
+                            toX <= 5:
                             actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
 
-                        if y > 4:
-                            toY = y
-                            toX = x + 1
-                            if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED):
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                        toY = y + i
+                        toX = x - i
 
-                            toX = x - 1
-                            if GameBoard.check_bounds(toY, toX) and GameBoard.can_moveto_for_player(board_positions[toY][toX], PLAYER_RED):
-                                actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                        if check_bounds(toY, toX) and \
+                            can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
+                            toY <= 2 and \
+                            toX >= 3 and \
+                            toX <= 5:
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                elif board_positions[y][x] == 'k': 
+                    k_x = x
+                    k_y = y
 
-        if K_x != None and k_x != None and K_x == k_x: # 当黑方将和红方帅面对面
-            king_face2face = True
-            for i in range(K_y + 1, k_y, 1):  # K_y 是红方的，序号肯定比k_y小
-                if board_positions[i][K_x].isalpha():  # 判断黑方将和红方帅之间有没其他子阻挡
-                    king_face2face = False
+                    if current_player == PLAYER_BLACK:  # 黑方将走子
+                        for i in range(2):
+                            for sign in range(-1, 2, 2):
+                                j = 1 - i
+                                toY = y + i * sign  # i为0表示横向移
+                                toX = x + j * sign  # j为0表示纵向移
 
-        if king_face2face == True:
-            if current_player == PLAYER_BLACK:  # 直杀对方将（帅）
-                actions.append(BOARD_POSITION_ARRAY[k_y][k_x] + BOARD_POSITION_ARRAY[K_y][K_x])
-            elif current_player == PLAYER_RED:
-                actions.append(BOARD_POSITION_ARRAY[K_y][K_x] + BOARD_POSITION_ARRAY[k_y][k_x])
+                                if check_bounds(toY, toX) and \
+                                    can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK) and \
+                                    toY >= 7 and \
+                                    toX >= 3 and \
+                                    toX <= 5:
+                                    actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                elif board_positions[y][x] == 'K':
+                    K_x = x
+                    K_y = y
 
-        return actions
+                    if current_player == PLAYER_RED:  # 红方帅走子
+                        for i in range(2):
+                            for sign in range(-1, 2, 2):
+                                j = 1 - i
+                                toY = y + i * sign
+                                toX = x + j * sign
+
+                                if check_bounds(toY, toX) and \
+                                    can_moveto_for_player(board_positions[toY][toX], PLAYER_RED) and \
+                                    toY <= 2 and \
+                                    toX >= 3 and \
+                                    toX <= 5:
+                                    actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+                elif board_positions[y][x] == 'c' and current_player == PLAYER_BLACK:  # 黑方炮走子
+                    toY = y
+                    hits = False
+                    for toX in range(x - 1, -1, -1):  # 往左方向走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha(): # 若目标点有子
+                                hits = True
+                            else:
+                                actions.append(m)  
+                        else:   # 循环的上一次扫描时发现有子挡在前进方向上
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].isupper():  # 若目标点是对方的子，可以吃掉
+                                    actions.append(m)
+                                break
+
+                    hits = False
+                    for toX in range(x + 1, BOARD_WIDTH): # 往右方向走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha():
+                                hits = True
+                            else:
+                                actions.append(m)
+                        else:
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].isupper():
+                                    actions.append(m)
+                                break
+
+                    toX = x
+                    hits = False
+                    for toY in range(y - 1, -1, -1):  # 往上方向走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha():
+                                hits = True
+                            else:
+                                actions.append(m)
+                        else:
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].isupper():
+                                    actions.append(m)
+                                break
+
+                    hits = False
+                    for toY in range(y + 1, BOARD_HEIGHT):  # 往下方向走
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha():
+                                hits = True
+                            else:
+                                actions.append(m)
+                        else:
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].isupper():
+                                    actions.append(m)
+                                break
+                elif board_positions[y][x] == 'C' and current_player == PLAYER_RED:  # 红方炮走子
+                    toY = y
+                    hits = False
+                    for toX in range(x - 1, -1, -1):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha():
+                                hits = True
+                            else:
+                                actions.append(m)
+                        else:
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].islower():
+                                    actions.append(m)
+                                break
+
+                    hits = False
+                    for toX in range(x + 1, BOARD_WIDTH):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha():
+                                hits = True
+                            else:
+                                actions.append(m)
+                        else:
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].islower():
+                                    actions.append(m)
+                                break
+
+                    toX = x
+                    hits = False
+                    for toY in range(y - 1, -1, -1):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha():
+                                hits = True
+                            else:
+                                actions.append(m)
+                        else:
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].islower():
+                                    actions.append(m)
+                                break
+
+                    hits = False
+                    for toY in range(y + 1, BOARD_HEIGHT):
+                        m = BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX]
+                        if hits == False:
+                            if board_positions[toY][toX].isalpha():
+                                hits = True
+                            else:
+                                actions.append(m)
+                        else:
+                            if board_positions[toY][toX].isalpha():
+                                if board_positions[toY][toX].islower():
+                                    actions.append(m)
+                                break
+                elif board_positions[y][x] == 'p' and current_player == PLAYER_BLACK:  # 黑方卒走子
+                    toY = y - 1
+                    toX = x
+
+                    if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK):
+                        actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+
+                    if y < 5: # 已经过河
+                        toY = y
+                        toX = x + 1 # 可以往右横走
+                        if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK):
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+
+                        toX = x - 1 # 可以往左横走
+                        if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_BLACK):
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+
+                elif board_positions[y][x] == 'P' and current_player == PLAYER_RED:  # 红方兵走子
+                    toY = y + 1
+                    toX = x
+
+                    if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_RED):
+                        actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+
+                    if y > 4:
+                        toY = y
+                        toX = x + 1
+                        if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_RED):
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+
+                        toX = x - 1
+                        if check_bounds(toY, toX) and can_moveto_for_player(board_positions[toY][toX], PLAYER_RED):
+                            actions.append(BOARD_POSITION_ARRAY[y][x] + BOARD_POSITION_ARRAY[toY][toX])
+
+    if K_x != None and k_x != None and K_x == k_x: # 当黑方将和红方帅面对面
+        king_face2face = True
+        for i in range(K_y + 1, k_y, 1):  # K_y 是红方的，序号肯定比k_y小
+            if board_positions[i][K_x].isalpha():  # 判断黑方将和红方帅之间有没其他子阻挡
+                king_face2face = False
+
+    if king_face2face == True:
+        if current_player == PLAYER_BLACK:  # 直杀对方将（帅）
+            actions.append(BOARD_POSITION_ARRAY[k_y][k_x] + BOARD_POSITION_ARRAY[K_y][K_x])
+        elif current_player == PLAYER_RED:
+            actions.append(BOARD_POSITION_ARRAY[K_y][K_x] + BOARD_POSITION_ARRAY[k_y][k_x])
+
+    return actions
 
 
 
@@ -664,12 +654,16 @@ class CChessGame:
     def step(self, action):
         pass
 
+    def reset(self):
+        self.state = INIT_BOARD_STATE
+        self.restrict_count = RESTRICT_ROUND_NUM
+
 
 
 if __name__ == '__main__':
-    # plane = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
-    # plane2 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
-    # plane3 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
+    # plane = convert_board_to_tensor(INIT_BOARD_STATE)
+    # plane2 = convert_board_to_tensor(INIT_BOARD_STATE)
+    # plane3 = convert_board_to_tensor(INIT_BOARD_STATE)
     # input = torch.stack([plane, plane2, plane3], dim=0)
     # print(input.data.numpy().shape)
 
