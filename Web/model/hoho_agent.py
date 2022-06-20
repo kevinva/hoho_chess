@@ -1,11 +1,9 @@
-# import os
-import torch
-# import numpy as np    # hoho_todo: 这样写也语法错误？
-# import torch.nn as nn  # hoho_todo: 在服务器上跑这样写会语法错误？
-# import torch.nn.functional as F
-# from .hoho_config import *
-# from .hoho_utils import *
-from . import hoho_config
+import os
+import torch 
+import torch.nn as nn
+import torch.nn.functional as F
+from model.hoho_config import *
+from model.hoho_utils import *
 
 class Player:
 
@@ -48,7 +46,7 @@ class Player:
             return checkpoint  # hoho: 确定就在循环内return?
 
 
-class ResidualBlock(torch.nn.Module):
+class ResidualBlock(nn.Module):
     """
     残差块
     """
@@ -56,25 +54,25 @@ class ResidualBlock(torch.nn.Module):
     def __init__(self, inchannels, outchannels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
 
-        self.conv1 = torch.nn.Conv2d(inchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn1 = torch.nn.BatchNorm2d(outchannels)
-        self.conv2 = torch.nn.Conv2d(outchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = torch.nn.BatchNorm2d(outchannels)
+        self.conv1 = nn.Conv2d(inchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(outchannels)
+        self.conv2 = nn.Conv2d(outchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(outchannels)
 
     def forward(self, x):
         residual = x
 
         out = self.conv1(x)
-        out = torch.nn.functional.relu(self.bn1(out))
+        out = F.relu(self.bn1(out))
         out = self.conv2(out)
         out = self.bn2(out)
         out = out + residual
-        out = torch.nn.functional.relu(out)
+        out = F.relu(out)
 
         return out
 
 
-class PlaneExtractor(torch.nn.Module):
+class PlaneExtractor(nn.Module):
     """
     棋盘state特征提取，
     """
@@ -83,21 +81,21 @@ class PlaneExtractor(torch.nn.Module):
         super(PlaneExtractor, self).__init__()
         
         self.residual_num = residual_num
-        self.conv1 = torch.nn.Conv2d(inchannels, outchannels, stride=1, kernel_size=3, padding=1, bias=False)
-        self.bn1 = torch.nn.BatchNorm2d(outchannels)
+        self.conv1 = nn.Conv2d(inchannels, outchannels, stride=1, kernel_size=3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(outchannels)
 
         for block in range(self.residual_num):
             setattr(self, 'res{}'.format(block), ResidualBlock(outchannels, outchannels))
     
     def forward(self, x):
-        x = torch.nn.functional.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn1(self.conv1(x)))
         for block in range(self.residual_num):
             x = getattr(self, 'res{}'.format(block))(x)
 
         return x
 
 
-class PolicyNet(torch.nn.Module):
+class PolicyNet(nn.Module):
     """
     输出动作概率分布
     """
@@ -106,20 +104,20 @@ class PolicyNet(torch.nn.Module):
         super(PolicyNet, self).__init__()
 
         self.position_dim = position_dim
-        self.conv = torch.nn.Conv2d(inplanes, 2, kernel_size=1) 
-        self.bn = torch.nn.BatchNorm2d(2)
-        self.softmax = torch.nn.Softmax(dim=1)
-        self.fc = torch.nn.Linear(position_dim * 2, action_dim)   # action_dim为动作数，包括pass这个动作
+        self.conv = nn.Conv2d(inplanes, 2, kernel_size=1) 
+        self.bn = nn.BatchNorm2d(2)
+        self.softmax = nn.Softmax(dim=1)
+        self.fc = nn.Linear(position_dim * 2, action_dim)   # action_dim为动作数，包括pass这个动作
 
     def forward(self, x):
-        x = torch.nn.functional.relu(self.bn(self.conv(x)))
+        x = F.relu(self.bn(self.conv(x)))
         x = x.view(-1, self.position_dim * 2)
         x = self.fc(x)
         action_probs = self.softmax(x)
         return action_probs
 
 
-class ValueNet(torch.nn.Module):
+class ValueNet(nn.Module):
     """
     输出胜负价值[-1, 1]
     """
@@ -128,15 +126,15 @@ class ValueNet(torch.nn.Module):
         super(ValueNet, self).__init__()
 
         self.position_dim = position_dim
-        self.conv = torch.nn.Conv2d(inplanes, 1, kernel_size=1)
-        self.bn = torch.nn.BatchNorm2d(1)
-        self.fc1 = torch.nn.Linear(position_dim, 256)
-        self.fc2 = torch.nn.Linear(256, 1)
+        self.conv = nn.Conv2d(inplanes, 1, kernel_size=1)
+        self.bn = nn.BatchNorm2d(1)
+        self.fc1 = nn.Linear(position_dim, 256)
+        self.fc2 = nn.Linear(256, 1)
 
     def forward(self, x):
-        x = torch.nn.functional.relu(self.bn(self.conv(x)))
+        x = F.relu(self.bn(self.conv(x)))
         x = x.view(-1, self.position_dim)
-        x = torch.nn.functional.relu(self.fc1(x))
+        x = F.relu(self.fc1(x))
         win_score = torch.tanh(self.fc2(x))
         return win_score
 

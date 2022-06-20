@@ -2,8 +2,8 @@ import numpy as np
 import threading
 from copy import deepcopy
 from collections import OrderedDict
-from hoho_config import *
-from hoho_utils import *
+from model.hoho_config import *
+from model.hoho_utils import *
 
 
 def dirichlet_noise(probas):

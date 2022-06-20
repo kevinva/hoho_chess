@@ -5,7 +5,6 @@ from . import spinner
 from . import ajax
 import heapq
 
-from . import hoho_agent
 
 class Controller(chess.Controller):
 	
@@ -335,9 +334,10 @@ def auto_move_remote(board):
 			javascript.alert(data['error'])
 			done = True
 			return
-		if data==[]:
+		# if data==[]:
+		if data is None:
 			return
-		res = data
+		res = data['black']
 		done = True
 	print(f'hoho: send = {board_key}')
 	ajax.send(board_key, callback)

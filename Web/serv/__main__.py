@@ -1,12 +1,12 @@
 
 import json, os
 from web.py_lib import auto_chess
+import model.hoho_agent
+import model.hoho_mcts
 
-# import sys 
-# print(f'1. sys path: {sys.path}')
-# root_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'model')
-# sys.path.append(root_path)
-# print(f'2. sys path: {sys.path}')
+import sys 
+print(f'1. sys path: {sys.path}')
+
 
 def __dir__(request_, response_, route_args_):
 	folder = route_args_['dir']
@@ -28,9 +28,18 @@ def ajax_(request_, response_, route_args_):
 	print(f'hoho: ajax_! board_key={board_key}')
 	board = auto_chess._board_from_key(board_key)
 	move = auto_chess.auto_move(board)
+	print(f'hoho: get move: {type(move)}')
 	if move is None:
 		move = []
-	json_ = json.dumps(move)
+	# json_ = json.dumps(move)
+	# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
+	json_ = None
+	if isinstance(move, tuple):
+		json_data = {'black': list(move), 'red': [1, 2, 1, 9]}
+		json_ = json.dumps(json_data)
+	else:
+		json_ = json.dumps(move)
+	print(f'json: {json_}')
 	return response_.write_response_JSON_OK_(json_)
 
 def start_server_(port_, max_threads_):
