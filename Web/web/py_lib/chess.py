@@ -164,9 +164,6 @@ class ChessBoard:
 		self._elt = None
 		self._init_board()
 
-		# javascript.alert('hoho: ChessBoard created!')
-		# print('hoho: ChessBoard created!')
-
 	def rotate_board(self):
 		board_map = [((i,j),chess) for (i,j),chess in self.board_map.items()]
 		self.board_map.clear()
@@ -253,8 +250,6 @@ class Controller:
 		elt.bind('mousemove', self.onmousemove)
 		self.restart()
 
-		# javascript.alert('hoho: chess Controller created!')
-
 	def restart(self):
 		self.dragging_chess = None
 		self.player = 'Red'
@@ -264,6 +259,7 @@ class Controller:
 	def onmousedown(self, ev):
 		x, y = ev.x.data(), ev.y.data()
 		i, j = self.chess_board.plate.pixel_to_nearest_pos(x, y)
+		print(f'hoho: mousedown=({i}, {j})')
 		px, py = self.chess_board.plate.pos_to_pixel(i, j)
 		if _distance(x, y, px, py) > self.chess_board.setting.chess_size:
 			return
@@ -322,6 +318,7 @@ class Controller:
 			img.style.top = f'{y-size}px'
 			time.sleep(1/animation_frames)
 		assert x==px, (x,px)
+		print(f'hoho: move_chess_img: x={x}, y={y}')
 		setattr(img.style, 'z-index', '0')
 		self.player = player
 		self.dragging_chess = dragging_chess
@@ -353,7 +350,6 @@ class Controller:
 
 
 def run_app():
-	# javascript.alert('hoho: chess run_app()!')
 	chess_board = ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
 	Controller(chess_board)

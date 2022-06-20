@@ -2,6 +2,12 @@
 import json, os
 from web.py_lib import auto_chess
 
+# import sys 
+# print(f'1. sys path: {sys.path}')
+# root_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'model')
+# sys.path.append(root_path)
+# print(f'2. sys path: {sys.path}')
+
 def __dir__(request_, response_, route_args_):
 	folder = route_args_['dir']
 	try:
@@ -37,5 +43,6 @@ def start_server_(port_, max_threads_):
 	http_.add_route_('/', home, 'GET')
 	http_.start_()
 
-# print('hoho: start server!')
+# hoho_step 1
+print('hoho: start server!')
 start_server_(8000, 100)

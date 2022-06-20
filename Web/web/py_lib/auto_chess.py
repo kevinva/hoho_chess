@@ -5,18 +5,22 @@ from . import spinner
 from . import ajax
 import heapq
 
+from . import hoho_agent
+
 class Controller(chess.Controller):
 	
-	def __init__(self, board):
+	def __init__(self, board, hoho_agent):
 		super(Controller, self).__init__(board)
 
-		# javascript.alert('hoho: auto_chess Controller created!')
+		self.hoho_agent = hoho_agent
+		self.hoho_red_turn()
 
 	def onmouseup(self, ev):
 		if self.dragging_chess is None: return
 		x, y = ev.x.data(), ev.y.data()
 		i2, j2 = self.chess_board.plate.pixel_to_nearest_pos(x, y)
 		px, py = self.chess_board.plate.pos_to_pixel(i2, j2)
+		print(f'hoho: mouseup=({i2}, {j2}), x={x}, y={y}')
 		near = chess._distance(x, y, px, py) < self.chess_board.setting.chess_size
 		succ = False
 		if near:
@@ -36,6 +40,7 @@ class Controller(chess.Controller):
 		spinner.show()
 		self.chess_board.rotate_board()
 		move = auto_move_remote(self.chess_board)
+		print(f'black move: {move}')
 		self.chess_board.rotate_board()
 		spinner.hide()
 		if move is None:
@@ -43,6 +48,7 @@ class Controller(chess.Controller):
 			self.restart()
 			return
 		i1,j1,i2,j2 = move
+
 		i1,j1,i2,j2 = 8-i1,9-j1,8-i2,9-j2
 		chess = self.chess_board.board_map[(i1,j1)]
 		succ, eaten = self._move_chess_to(chess, i2, j2)
@@ -54,6 +60,29 @@ class Controller(chess.Controller):
 			self.restart()
 			return
 		self.player = 'Red'
+
+
+	def hoho_red_turn(self):
+		time.sleep(3)
+		move = self.hoho_agent.test_move()
+		if move is None:
+			javascript.alert("黑方胜出!")
+			self.restart()
+			return
+
+		i1,j1,i2,j2 = move
+		chess = self.chess_board.board_map[(i1,j1)]
+		succ, eaten = self._move_chess_to(chess, i2, j2)
+		assert succ
+		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
+		self._move_chess_img(chess, px, py)
+		if (eaten is not None) and (eaten.type=='King'):
+			javascript.alert("红方胜出!")
+			self.restart()
+			return
+		self.player = 'Black'
+
+		self.blacks_turn()
 
 
 def _chess_moves(chess):
@@ -123,7 +152,6 @@ def _reverse_boardkey(board_key):
 	return tuple(reversed)
 
 def _board_from_key(board_key):
-	# print(f'hoho: board_key={board_key}')
 	board = chess.ChessBoard()
 	board.board_map = {}
 	types = {'Rock':chess.Rock, 'Knight':chess.Knight, 'Bishop':chess.Bishop, 
@@ -189,7 +217,6 @@ class BoardNode:
 	def expand(self):
 		assert self.best_child is None
 		move_to_board = _get_next_moves(self.board)
-		# print(f'hoho: node expand! {len(move_to_board)}')
 		for movekey, boardkey in move_to_board.items():
 			boardkey = _reverse_boardkey(boardkey)
 			if self.same_as_ancester(boardkey): continue
@@ -238,7 +265,7 @@ class BoardExplorer:
 		# print('hoho: BoardExplorer created!')
 
 	def run(self, board):
-		print(f'hoho: Explorer run: board: {board}')
+		print(f'hoho: explorer run: board: {board}')
 
 		board_node = BoardNode(board)
 		self.board_cache = {}
@@ -292,6 +319,7 @@ def auto_move(board):
 	# print('board_node.best_child.score', board_node.best_child.score)
 
 	print(f'hoho: board_node: {board_node.board_key}')
+	print(f'hoho: move: {board_node.best_child.move_key}')
 	print(f'hoho: board_node\'s best_child: {board_node.best_child.board_key}')
 	return board_node.best_child.move_key[2:]
 	
@@ -300,6 +328,7 @@ def auto_move_remote(board):
 	done = False
 	res = None
 	def callback(data):
+		print(f'hoho: receive = {data}')
 		nonlocal res
 		nonlocal done
 		if 'error' in data:
@@ -310,16 +339,25 @@ def auto_move_remote(board):
 			return
 		res = data
 		done = True
+	print(f'hoho: send = {board_key}')
 	ajax.send(board_key, callback)
 	while not done:
 		time.sleep(.1)
 	return res
 
 
+class HohoPlayer:
+
+	def test_move(self):
+		return (7, 2, 7, 6)
+
+
 def run_app():
-	# javascript.alert('hoho: auto_chess run_app()!')
+	# hoho_step 3
 	# print('hoho: auto_chess run_app()!') # 用javascript打印
+	hohoPlayer = HohoPlayer()
 	chess_board = chess.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
-	Controller(chess_board)
+	controller = Controller(chess_board, hohoPlayer)
+
 

@@ -1,10 +1,11 @@
-import os
-import numpy as np
+# import os
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from config import *
-from gameboard import *
+# import numpy as np    # hoho_todo: 这样写也语法错误？
+# import torch.nn as nn  # hoho_todo: 在服务器上跑这样写会语法错误？
+# import torch.nn.functional as F
+# from .hoho_config import *
+# from .hoho_utils import *
+from . import hoho_config
 
 class Player:
 
@@ -47,7 +48,7 @@ class Player:
             return checkpoint  # hoho: 确定就在循环内return?
 
 
-class ResidualBlock(nn.Module):
+class ResidualBlock(torch.nn.Module):
     """
     残差块
     """
@@ -55,25 +56,25 @@ class ResidualBlock(nn.Module):
     def __init__(self, inchannels, outchannels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
 
-        self.conv1 = nn.Conv2d(inchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(outchannels)
-        self.conv2 = nn.Conv2d(outchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(outchannels)
+        self.conv1 = torch.nn.Conv2d(inchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = torch.nn.BatchNorm2d(outchannels)
+        self.conv2 = torch.nn.Conv2d(outchannels, outchannels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = torch.nn.BatchNorm2d(outchannels)
 
     def forward(self, x):
         residual = x
 
         out = self.conv1(x)
-        out = F.relu(self.bn1(out))
+        out = torch.nn.functional.relu(self.bn1(out))
         out = self.conv2(out)
         out = self.bn2(out)
-        out += residual
-        out = F.relu(out)
+        out = out + residual
+        out = torch.nn.functional.relu(out)
 
         return out
 
 
-class PlaneExtractor(nn.Module):
+class PlaneExtractor(torch.nn.Module):
     """
     棋盘state特征提取，
     """
@@ -82,21 +83,21 @@ class PlaneExtractor(nn.Module):
         super(PlaneExtractor, self).__init__()
         
         self.residual_num = residual_num
-        self.conv1 = nn.Conv2d(inchannels, outchannels, stride=1, kernel_size=3, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(outchannels)
+        self.conv1 = torch.nn.Conv2d(inchannels, outchannels, stride=1, kernel_size=3, padding=1, bias=False)
+        self.bn1 = torch.nn.BatchNorm2d(outchannels)
 
         for block in range(self.residual_num):
             setattr(self, 'res{}'.format(block), ResidualBlock(outchannels, outchannels))
     
     def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))
+        x = torch.nn.functional.relu(self.bn1(self.conv1(x)))
         for block in range(self.residual_num):
             x = getattr(self, 'res{}'.format(block))(x)
 
         return x
 
 
-class PolicyNet(nn.Module):
+class PolicyNet(torch.nn.Module):
     """
     输出动作概率分布
     """
@@ -105,20 +106,20 @@ class PolicyNet(nn.Module):
         super(PolicyNet, self).__init__()
 
         self.position_dim = position_dim
-        self.conv = nn.Conv2d(inplanes, 2, kernel_size=1) 
-        self.bn = nn.BatchNorm2d(2)
-        self.softmax = nn.Softmax(dim=1)
-        self.fc = nn.Linear(position_dim * 2, action_dim)   # action_dim为动作数，包括pass这个动作
+        self.conv = torch.nn.Conv2d(inplanes, 2, kernel_size=1) 
+        self.bn = torch.nn.BatchNorm2d(2)
+        self.softmax = torch.nn.Softmax(dim=1)
+        self.fc = torch.nn.Linear(position_dim * 2, action_dim)   # action_dim为动作数，包括pass这个动作
 
     def forward(self, x):
-        x = F.relu(self.bn(self.conv(x)))
+        x = torch.nn.functional.relu(self.bn(self.conv(x)))
         x = x.view(-1, self.position_dim * 2)
         x = self.fc(x)
         action_probs = self.softmax(x)
         return action_probs
 
 
-class ValueNet(nn.Module):
+class ValueNet(torch.nn.Module):
     """
     输出胜负价值[-1, 1]
     """
@@ -127,43 +128,43 @@ class ValueNet(nn.Module):
         super(ValueNet, self).__init__()
 
         self.position_dim = position_dim
-        self.conv = nn.Conv2d(inplanes, 1, kernel_size=1)
-        self.bn = nn.BatchNorm2d(1)
-        self.fc1 = nn.Linear(position_dim, 256)
-        self.fc2 = nn.Linear(256, 1)
+        self.conv = torch.nn.Conv2d(inplanes, 1, kernel_size=1)
+        self.bn = torch.nn.BatchNorm2d(1)
+        self.fc1 = torch.nn.Linear(position_dim, 256)
+        self.fc2 = torch.nn.Linear(256, 1)
 
     def forward(self, x):
-        x = F.relu(self.bn(self.conv(x)))
+        x = torch.nn.functional.relu(self.bn(self.conv(x)))
         x = x.view(-1, self.position_dim)
-        x = F.relu(self.fc1(x))
+        x = torch.nn.functional.relu(self.fc1(x))
         win_score = torch.tanh(self.fc2(x))
         return win_score
 
-if __name__ == '__main__':
-    # in_channel = 1
-    # out_channel = 1
-    # action_dim = 11
+# if __name__ == '__main__':
+#     # in_channel = 1
+#     # out_channel = 1
+#     # action_dim = 11
 
-    # input = torch.ones((1, in_channel, 5, 10)).float()
+#     # input = torch.ones((1, in_channel, 5, 10)).float()
 
-    # extractor = PlaneExtractor(in_channel, out_channel)
-    # extractor_output = extractor(input)
-    # print(f'input: {input}')
-    # print(f'extractor output: {extractor_output}')
+#     # extractor = PlaneExtractor(in_channel, out_channel)
+#     # extractor_output = extractor(input)
+#     # print(f'input: {input}')
+#     # print(f'extractor output: {extractor_output}')
 
-    # policy_net = PolicyNet(out_channel, action_dim)
-    # policy_output = policy_net(extractor_output)
-    # print(f'policy_net output: {policy_output}')
+#     # policy_net = PolicyNet(out_channel, action_dim)
+#     # policy_output = policy_net(extractor_output)
+#     # print(f'policy_net output: {policy_output}')
 
-    # value_in_dim = extractor_output.size()[2] * extractor_output.size()[3]
-    # value_net = ValueNet(out_channel, value_in_dim)
-    # value_output = value_net(extractor_output)
-    # print(f'value_new output: {value_output}')
+#     # value_in_dim = extractor_output.size()[2] * extractor_output.size()[3]
+#     # value_net = ValueNet(out_channel, value_in_dim)
+#     # value_output = value_net(extractor_output)
+#     # print(f'value_new output: {value_output}')
 
-    # print(f"{os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'saved_models', '12312412')}")
+#     # print(f"{os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'saved_models', '12312412')}")
 
-    state = torch.FloatTensor(torch.ones((BATCH_SIZE, IN_PLANES_NUM, BOARD_WIDTH, BOARD_HEIGHT))).to(DEVICE)
-    player = Player()
-    prob, score = player.predict(state)
-    print(f'prob: {prob.size()}')
-    print(f'score: {score.size()}')
+#     state = torch.FloatTensor(torch.ones((BATCH_SIZE, IN_PLANES_NUM, BOARD_WIDTH, BOARD_HEIGHT))).to(DEVICE)
+#     player = Player()
+#     prob, score = player.predict(state)
+#     print(f'prob: {prob.size()}')
+#     print(f'score: {score.size()}')

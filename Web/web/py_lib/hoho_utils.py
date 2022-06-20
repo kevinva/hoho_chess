@@ -1,8 +1,7 @@
-from multiprocessing.pool import INIT
+import random
+from unittest import result
 import numpy as np
 import torch
-
-from config import RESTRICT_ROUND_NUM
 
 
 BOARD_WIDTH = 9
@@ -11,6 +10,11 @@ BOARD_POSITION_NUM = BOARD_WIDTH * BOARD_HEIGHT
 # K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
 INDEXS_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9
 PIECES_2_INDEX = {INDEXS_2_PIECES[i]: i for i in range(len(INDEXS_2_PIECES))}
+PIECES_FORMAL = {'K': 'King', 'k': 'King', 'A': 'Guard', 'a': 'Guard',
+                 'R': 'Rock', 'r': 'Rock', 'B': 'Bishop', 'b': 'Bishop',
+                 'N': 'Knight', 'n': 'Knight', 'P': 'Pawn', 'p': 'pawn',
+                 'C': 'Cannon', 'c': 'Cannon'}
+
 X_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']  # 棋盘横向序号
 X_LABELS_2_INDEX = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8}
 Y_LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  # 棋盘纵向的序号
@@ -644,20 +648,76 @@ def get_legal_actions(board_str, current_player):
     return actions
 
 
+def sample_rotation(state, num=8):
+    """ Apply a certain number of random transformation to the input state """
 
-class CChessGame:
+    ## Create the dihedral group of a square with all the operations needed
+    ## in order to get the specific transformation and randomize their order
+    dh_group = [(None, None), ((np.rot90, 1), None), ((np.rot90, 2), None),
+                ((np.rot90, 3), None), (np.fliplr, None), (np.flipud, None),
+                (np.flipud,  (np.rot90, 1)), (np.fliplr, (np.rot90, 1))]
+    random.shuffle(dh_group)
 
-    def __init__(self):
-        self.reset()
+    states = []
+    boards = IN_PLANES_NUM ## Number of planes to rotate
 
-    def step(self, action):
-        pass
+    for idx in range(num):
+        new_state = np.zeros((boards, BOARD_HEIGHT, BOARD_WIDTH,))
+        new_state[:boards] = state[:boards]
 
-    def reset(self):
-        self.state = INIT_BOARD_STATE
-        self.restrict_count = RESTRICT_ROUND_NUM
-        self.winner = None
+        ## Apply the transformations in the tuple defining how to get
+        ## the desired dihedral rotation / transformation
+        for grp in dh_group[idx]:
+            for i in range(boards):
+                if isinstance(grp, tuple):
+                    new_state[i] = grp[0](new_state[i], k=grp[1])
+                elif grp is not None:
+                    new_state[i] = grp(new_state[i])
 
+        new_state[boards] = state[boards]
+        states.append(new_state)
+    
+    if len(states) == 1:
+        return np.array(states[0])
+    return np.array(states)
+
+
+def translate_webgame_action(action):
+    """转换游戏环境的动作到我方的动作格式"""
+
+    _, _, srcx, srcy, dstx, dsty = action
+    src_alpha = X_LABELS[BOARD_WIDTH - 1 - srcx]
+    src_number = BOARD_HEIGHT - 1 - srcy
+    dst_alpha = X_LABELS[BOARD_WIDTH - 1 - dstx]
+    dst_number = BOARD_HEIGHT - 1 - dsty
+    return src_alpha + str(src_number) + dst_alpha + str(dst_number)
+
+
+def convert_board_to_webgame(board_str):
+    """转换我方的棋盘格式到环境格式"""
+
+    board_list = board_str_to_list1(board_str)
+    result_list = []
+    for row, line in enumerate(board_list):
+        positions = list(line)
+        for col, po in enumerate(positions):
+            if po.isalpha():
+                result_po = list()
+                if po.isupper():  # 注意：这里需要将红方”旋转“到黑方的位置，黑方”旋转“到红方的位置
+                    result_po.append('Black')
+                else:
+                    result_po.append('Red')
+                name = PIECES_FORMAL[po]
+                x = BOARD_WIDTH - 1 - col
+                y = BOARD_HEIGHT - 1 - row
+                result_po.append(name)
+                result_po.append(x)
+                result_po.append(y)
+
+                result_list.append(result_po)
+
+    return result_list
+                    
 
 
 if __name__ == '__main__':
@@ -667,4 +727,6 @@ if __name__ == '__main__':
     # input = torch.stack([plane, plane2, plane3], dim=0)
     # print(input.data.numpy().shape)
 
-    print(np.array(get_position_labels()).reshape(BOARD_WIDTH, BOARD_HEIGHT))
+    # print(np.array(get_position_labels()).reshape(BOARD_WIDTH, BOARD_HEIGHT))
+    test_board_state = 'RNBAKABNR/9/1C7/P1P1P1P1P/9/9/p1p1p1pCp/1c5c1/9/rnbakabnr'
+    print(convert_board_to_webgame(test_board_state))
