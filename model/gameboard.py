@@ -11,16 +11,18 @@ BOARD_POSITION_NUM = BOARD_WIDTH * BOARD_HEIGHT
 # K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
 INDEXS_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9
 PIECES_2_INDEX = {INDEXS_2_PIECES[i]: i for i in range(len(INDEXS_2_PIECES))}
-X_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+X_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']  # 棋盘横向序号
 X_LABELS_2_INDEX = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8}
-Y_LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-INIT_BOARD_STATE = 'RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr'
+Y_LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  # 棋盘纵向的序号
+INIT_BOARD_STATE = 'RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr'  # 棋盘初始状态
 PLAYER_RED = 'r'
 PLAYER_BLACK = 'b'
 
 
-# 棋盘每个点的标签
+
 def get_position_labels():
+    """返回棋盘每个点的标签"""
+
     labels_array = []
 
     for x in range(len(X_LABELS)):
@@ -30,8 +32,9 @@ def get_position_labels():
     return labels_array
 
 
-# 所有走子动作，一共有2086个走法
 def get_all_actions():
+    """返回所有走子动作，一共有2086个走法"""
+
     actions = []
 
     # 士的走法
@@ -146,9 +149,10 @@ class GameBoard:
         return board.split("/")
     
 
-    # 将空格数字1转换为数量，并返回棋盘字符串
     @staticmethod
     def board_list1_to_str(board_list):
+        """将空格数字1转换为数量，并返回棋盘字符串"""
+
         board = "/".join(board_list)
         board = board.replace("111111111", "9")
         board = board.replace("11111111", "8")
@@ -161,9 +165,10 @@ class GameBoard:
         return board
 
 
-    # 走子，更改state表示（字符串形式）
     @staticmethod
     def do_action_on_board(board_str, action):
+        """走子，更改state表示（字符串形式）"""
+
         src = action[0:2]
         dst = action[2:4]
         src_x = int(X_LABELS_2_INDEX[src[0]])
@@ -187,9 +192,10 @@ class GameBoard:
         return board
 
 
-    # 翻转棋盘，一般用在使黑方以红方的视角走子
     @staticmethod
     def flip_board(board_str):
+        """翻转棋盘，一般用在使黑方以红方的视角走子"""
+
         rows = board_str.split('/')
 
         def swapcase(a):
@@ -203,9 +209,10 @@ class GameBoard:
         return "/".join([swapall(row) for row in reversed(rows)])
 
 
-    # 将棋盘（以字符串输入）转为向量，以便输入神经网络
     @staticmethod
     def convert_board_to_tensor(board_str):
+        """将棋盘（以字符串输入）转为向量，以便输入神经网络"""
+
         board_list = GameBoard.board_str_to_list1(board_str)
         pieces_plane = torch.zeros((14, 10, 9), dtype=torch.float32)
         for row, line in enumerate(board_list):
@@ -227,9 +234,11 @@ class GameBoard:
 
         return True
 
-    # player能否走到棋子位置piece上（即吃掉棋子piece）
+
     @staticmethod
     def can_moveto_for_player(piece, player):
+        """player能否走到棋子piece的位置上（即吃掉棋子piece）"""
+
         if piece.isalpha():
             if player == PLAYER_RED:
                 if piece.islower():
@@ -245,9 +254,11 @@ class GameBoard:
         else:
             return True
 
-    # 返回当前棋盘状态下所有合法走子
+
     @staticmethod
     def get_legal_actions(board_str, current_player):
+        """返回当前棋盘状态下所有合法走子"""
+
         actions = []
         k_x = None  # 黑方将军（将）走子
         k_y = None
@@ -656,8 +667,10 @@ class CChessGame:
 
 
 if __name__ == '__main__':
-    plane = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
-    plane2 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
-    plane3 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
-    input = torch.stack([plane, plane2, plane3], dim=0)
-    print(input.data.numpy().shape)
+    # plane = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
+    # plane2 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
+    # plane3 = GameBoard.convert_board_to_tensor(INIT_BOARD_STATE)
+    # input = torch.stack([plane, plane2, plane3], dim=0)
+    # print(input.data.numpy().shape)
+
+    print(np.array(get_position_labels()).reshape(BOARD_WIDTH, BOARD_HEIGHT))

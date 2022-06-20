@@ -17,13 +17,13 @@ class Node:
     def __init__(self, state=INIT_BOARD_STATE, action=None, parent=None, proba=None, player=PLAYER_RED):
         self.state = state
         self.action = action  # 导致该state的action
+        self.childrens = []
+        self.parent = parent
+        self.player = player # 当前的玩家
         self.P = proba   # 访问节点的概率，由policy net输出
         self.N = 0       # 节点访问次数
         self.W = 0       # 总行为价值，由value net输出累加, 
         self.Q = 0       # 平均价值 w/n
-        self.childrens = []
-        self.parent = parent
-        self.player = player
 
     def get_uq_score(self):
         U = C_PUCT * self.P * np.sqrt(self.parent.N) / (1 + self.N)
@@ -38,7 +38,7 @@ class Node:
     def expand(self, legal_actions, all_action_probas):
         nodes = []
         node_player = PLAYER_RED
-        if self.player == PLAYER_RED:
+        if self.player == PLAYER_RED:  # 当前节点玩家与其子节点玩家互异
             node_player = PLAYER_BLACK
 
         for action in legal_actions:
@@ -56,7 +56,7 @@ class Node:
             node.W = node.W + v
             node.Q = node.W / node.N if node.N > 0 else 0
             node = self.parent
-            v = -v
+            v = -v   # 本节点与父节点为不同玩家，所以其价值增长互反
 
     def backup(self, value):
         self.N += 1
@@ -222,7 +222,7 @@ class MCTS:
         search_threads = []
         for simulation in range(MCTS_SIMULATION_NUM // MCTS_THREAD_NUM):
             for idx in range(MCTS_THREAD_NUM):
-                searcher = SearchThread(self.root, agent, eval_queue, result_queue, idx, lock, condition_search, condition_eval)
+                searcher = SearchThread(self.root, game, eval_queue, result_queue, idx, lock, condition_search, condition_eval)
                 searcher.start()
                 search_threads.append(searcher)
             for thread in search_threads:
@@ -237,13 +237,13 @@ class MCTS:
         pi = action_scores / total
         final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
-        # 替换新的根节点
-        final_idx = -1
+        # 替换为新的根节点
+        found_idx = -1
         for idx in range(len(self.root.childrens)):
             if self.root.childrens[idx].action == INDEXS_2_ACTION[final_action_idx]:
-                final_idx = idx
+                found_idx = idx
                 break
-        self.root = self.root.childrens[final_idx]
+        self.root = self.root.childrens[found_idx]
 
         return pi, final_action_idx
 
