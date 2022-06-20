@@ -29,8 +29,6 @@
 
     }
     function start() {
-      alert('hoho: Web start!')
-      
       fetch('main.py').then(res => {
         if (res.status != 200) {
           console.error(res.statusText)

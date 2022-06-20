@@ -648,8 +648,7 @@ def get_legal_actions(board_str, current_player):
 class CChessGame:
 
     def __init__(self):
-        self.state = INIT_BOARD_STATE
-        self.restrict_count = RESTRICT_ROUND_NUM
+        self.reset()
 
     def step(self, action):
         pass
@@ -657,6 +656,7 @@ class CChessGame:
     def reset(self):
         self.state = INIT_BOARD_STATE
         self.restrict_count = RESTRICT_ROUND_NUM
+        self.winner = None
 
 
 

@@ -7,7 +7,7 @@
 
 
 import auto_chess
-javascript.alert('hoho: main.py')
+# javascript.alert('hoho: main.py')
 
 auto_chess.run_app()
 

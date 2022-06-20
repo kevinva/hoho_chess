@@ -14,8 +14,8 @@ def dirichlet_noise(probas):
 
 class Node:
 
-    def __init__(self, state=INIT_BOARD_STATE, action=None, parent=None, proba=None, player=PLAYER_RED):
-        self.state = state
+    def __init__(self, to_state=INIT_BOARD_STATE, action=None, parent=None, proba=None, player=PLAYER_RED):
+        self.to_state = to_state
         self.action = action  # 导致该state的action
         self.childrens = []
         self.parent = parent
@@ -43,8 +43,8 @@ class Node:
 
         for action in legal_actions:
             prob = all_action_probas[ACTIONS_2_INDEX[action]]
-            state_new = do_action_on_board(action, self.state)
-            node = Node(state=state_new, action=action, parent=self, proba=prob, player=node_player)
+            to_state_new = do_action_on_board(action, self.state)
+            node = Node(to_state=to_state_new, action=action, parent=self, proba=prob, player=node_player)
             nodes.append(node)
         self.childrens = nodes
 
@@ -158,7 +158,7 @@ class SearchThread(threading.Thread):
 
             # backup
             node_tmp = current_node
-            v = value
+            v = -value  # 注意这里要变成相反数，因为神经网络输出的是当前状态的价值，即当前玩家在当前棋局下的胜负价值，而当前节点的W值是上一轮玩家进行动作后的价值，自然是相反了
             while node_tmp != None:
                 node_tmp.N -= VIRTUAL_LOSS
                 node_tmp.W += VIRTUAL_LOSS
@@ -198,7 +198,7 @@ class EvaluateThread(threading.Thread):
                 batch_probas, batch_values = self.agent.predict(batch_states)
 
                 for idx, key in enumerate(thread_ids):
-                    self.result_queue[key] = (batch_probas[idx].to(torch.device('cpu')).numpy(), batch_values)
+                    self.result_queue[key] = (batch_probas[idx].to(torch.device('cpu')).numpy(), batch_values[idx])
                     del self.eval_queue[key]
                 self.condition_eval.notifyAll()
             self.condition_eval.release()
