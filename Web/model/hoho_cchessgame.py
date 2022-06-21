@@ -7,7 +7,19 @@ class CChessGame:
         self.reset()
 
     def step(self, action):
-        pass
+        state_new = do_action_on_board(self.state, action)
+        value = 0
+        done = False
+        if 'K' not in state_new:
+            value = -1
+            done = True
+            self.winner = PLAYER_BLACK
+        elif 'k' not in state_new:
+            value = 1
+            done = True
+            self.winner = PLAYER_RED
+            
+        return state_new, value, done
 
     def reset(self):
         self.state = INIT_BOARD_STATE

@@ -9,9 +9,12 @@ BOARD_POSITION_NUM = BOARD_WIDTH * BOARD_HEIGHT
 # K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
 INDEXS_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9
 PIECES_2_INDEX = {INDEXS_2_PIECES[i]: i for i in range(len(INDEXS_2_PIECES))}
-PIECES_FORMAL = {'K': 'King', 'k': 'King', 'A': 'Guard', 'a': 'Guard',
-                 'R': 'Rock', 'r': 'Rock', 'B': 'Bishop', 'b': 'Bishop',
-                 'N': 'Knight', 'n': 'Knight', 'P': 'Pawn', 'p': 'pawn',
+PIECES_FORMAL = {'K': 'King', 'k': 'King', 
+                 'A': 'Guard', 'a': 'Guard',
+                 'R': 'Rock', 'r': 'Rock', 
+                 'B': 'Bishop', 'b': 'Bishop',
+                 'N': 'Knight', 'n': 'Knight', 
+                 'P': 'Pawn', 'p': 'pawn',
                  'C': 'Cannon', 'c': 'Cannon'}
 
 X_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']  # 棋盘横向序号
@@ -250,7 +253,7 @@ def can_moveto_for_player(piece, player):
 
 
 def get_legal_actions(board_str, current_player):
-    """返回当前棋盘状态下所有合法走子"""
+    """返回当前棋盘状态下指定玩家的所有合法走子"""
 
     actions = []
     k_x = None  # 黑方将军（将）走子
@@ -681,16 +684,27 @@ def sample_rotation(state, num=8):
     return np.array(states)
 
 
-def translate_webgame_action(action):
-    """转换游戏环境的动作到我方的动作格式"""
+def convert_webgame_move_to_action(move):
+    """转换游戏环境的动作到我模型的动作格式"""
 
-    _, _, srcx, srcy, dstx, dsty = action
+    srcx, srcy, dstx, dsty = move
     src_alpha = X_LABELS[BOARD_WIDTH - 1 - srcx]
     src_number = BOARD_HEIGHT - 1 - srcy
     dst_alpha = X_LABELS[BOARD_WIDTH - 1 - dstx]
     dst_number = BOARD_HEIGHT - 1 - dsty
-    return src_alpha + str(src_number) + dst_alpha + str(dst_number)
+    action = src_alpha + str(src_number) + dst_alpha + str(dst_number)
+    return action
 
+def convert_action_to_webgame_move(action):
+    """将我模型的动作格式转换为游戏的动作格式"""
+    srcx_alpha, srcy_number, dstx_alpha, dsty_number = list(action)
+    srcx = X_LABELS_2_INDEX[srcx_alpha]
+    srcy = int(srcy_number)
+    dstx = X_LABELS_2_INDEX[dstx_alpha]
+    dsty = int(dsty_number)
+    move = (srcx, srcy, dstx, dsty)
+    return move
+    
 
 def convert_board_to_webgame(board_str):
     """转换我方的棋盘格式到环境格式"""

@@ -81,7 +81,7 @@ class SearchThread(threading.Thread):
 
     def run(self):
         game = deepcopy(self.game)
-        state = game.state   # hoho_todo: game的定义
+        state = game.state
         current_node = self.root_node
         done = False
 
@@ -95,7 +95,8 @@ class SearchThread(threading.Thread):
             current_node.W -= VIRTUAL_LOSS
             self.lock.release()
 
-            state, _, done = game.step(current_node.action)  # hoho_todo: game的定义
+            next_state, _, done = game.step(current_node.action)
+            state = next_state
 
         if done:
             value = 0.0

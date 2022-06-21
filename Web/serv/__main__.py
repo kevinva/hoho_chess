@@ -33,7 +33,7 @@ def ajax_(request_, response_, route_args_):
 		print(f'hoho: ajax_! board_key={board_key}')
 		board = auto_chess._board_from_key(board_key)
 		move = auto_chess.auto_move(board)
-		print(f'hoho: get move: {type(move)}')
+		print(f'hoho: get move: {move}')
 		if move is None:
 			move = []
 		# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
@@ -43,8 +43,8 @@ def ajax_(request_, response_, route_args_):
 			json_ = json.dumps(json_data)
 		else:
 			json_ = json.dumps(move)
-	print(f'json: {json_}')
 	return response_.write_response_JSON_OK_(json_)
+
 
 def start_server_(port_, max_threads_):
 	from .lib.http_ import Http_
