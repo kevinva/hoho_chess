@@ -8,11 +8,9 @@ import heapq
 
 class Controller(chess.Controller):
 	
-	def __init__(self, board, hoho_agent):
+	def __init__(self, board):
 		super(Controller, self).__init__(board)
-
-		self.hoho_agent = hoho_agent
-		self.hoho_red_turn()
+		self.hoho_startup()
 
 	def onmouseup(self, ev):
 		if self.dragging_chess is None: return
@@ -61,28 +59,48 @@ class Controller(chess.Controller):
 		self.player = 'Red'
 
 
-	def hoho_red_turn(self):
-		time.sleep(3)
-		move = self.hoho_agent.test_move()
+	def hoho_startup(self):
+		time.sleep(1)
+
+		done = False
+		res = None
+		def callback(data):
+			nonlocal res
+			nonlocal done
+			if 'error' in data:
+				javascript.alert(data['error'])
+				done = True
+				return
+				
+			if data is None:
+				return
+
+			res = data
+			done = True
+
+		ajax.send('Action!', callback)
+		while not done:
+			time.sleep(.1)
+
+		move = res
 		if move is None:
-			javascript.alert("黑方胜出!")
+			javascript.alert('黑方胜出！')
 			self.restart()
 			return
-
-		i1,j1,i2,j2 = move
-		chess = self.chess_board.board_map[(i1,j1)]
+		
+		i1, j1, i2, j2 = move
+		chess = self.chess_board.board_map[(i1, j1)]
 		succ, eaten = self._move_chess_to(chess, i2, j2)
 		assert succ
 		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
 		self._move_chess_img(chess, px, py)
-		if (eaten is not None) and (eaten.type=='King'):
-			javascript.alert("红方胜出!")
+		if (eaten is not None) and (eaten.type == 'King'):
+			javascript.alert('红方胜出！')
 			self.restart()
 			return
 		self.player = 'Black'
-
 		self.blacks_turn()
-
+		
 
 def _chess_moves(chess):
 	moves = []
@@ -334,9 +352,10 @@ def auto_move_remote(board):
 			javascript.alert(data['error'])
 			done = True
 			return
-		# if data==[]:
+	
 		if data is None:
 			return
+
 		res = data['black']
 		done = True
 	print(f'hoho: send = {board_key}')
@@ -346,18 +365,11 @@ def auto_move_remote(board):
 	return res
 
 
-class HohoPlayer:
-
-	def test_move(self):
-		return (7, 2, 7, 6)
-
-
 def run_app():
 	# hoho_step 3
 	# print('hoho: auto_chess run_app()!') # 用javascript打印
-	hohoPlayer = HohoPlayer()
 	chess_board = chess.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
-	controller = Controller(chess_board, hohoPlayer)
+	controller = Controller(chess_board)
 
 

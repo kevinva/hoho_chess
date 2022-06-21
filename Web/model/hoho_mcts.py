@@ -86,6 +86,7 @@ class SearchThread(threading.Thread):
         done = False
 
         while not current_node.is_lead() and not done:
+            # 一直select到叶节点
             current_node = current_node.select()
 
             # 加上virtual loss
@@ -156,7 +157,7 @@ class SearchThread(threading.Thread):
             # 叶节点expand
             current_node.expand(legal_actions, probas)
 
-            # backup
+            # 从叶节点backup
             node_tmp = current_node
             v = -value  # 注意这里要变成相反数，因为神经网络输出的是当前状态的价值，即当前玩家在当前棋局下的胜负价值，而当前节点的W值是上一轮玩家进行动作后的价值，自然是相反了
             while node_tmp != None:

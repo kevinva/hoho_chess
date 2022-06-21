@@ -4,8 +4,8 @@ from web.py_lib import auto_chess
 import model.hoho_agent
 import model.hoho_mcts
 
-import sys 
-print(f'1. sys path: {sys.path}')
+# import sys 
+# print(f'1. sys path: {sys.path}')
 
 
 def __dir__(request_, response_, route_args_):
@@ -24,21 +24,28 @@ def home(request_, response_, route_args_):
 def ajax_(request_, response_, route_args_):
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
-	board_key = json.loads(params_['data'])
-	print(f'hoho: ajax_! board_key={board_key}')
-	board = auto_chess._board_from_key(board_key)
-	move = auto_chess.auto_move(board)
-	print(f'hoho: get move: {type(move)}')
-	if move is None:
-		move = []
-	# json_ = json.dumps(move)
-	# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
+	data = json.loads(params_['data'])
+
 	json_ = None
-	if isinstance(move, tuple):
-		json_data = {'black': list(move), 'red': [1, 2, 1, 9]}
-		json_ = json.dumps(json_data)
-	else:
+	if data == 'Action!': # 开始！
+		# hoho_todo:
+		move = (7, 2, 7, 6)
 		json_ = json.dumps(move)
+	else:
+		board_key = data
+		print(f'hoho: ajax_! board_key={board_key}')
+		board = auto_chess._board_from_key(board_key)
+		move = auto_chess.auto_move(board)
+		print(f'hoho: get move: {type(move)}')
+		if move is None:
+			move = []
+		# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
+		
+		if isinstance(move, tuple):
+			json_data = {'black': list(move), 'red': [1, 2, 1, 9]}
+			json_ = json.dumps(json_data)
+		else:
+			json_ = json.dumps(move)
 	print(f'json: {json_}')
 	return response_.write_response_JSON_OK_(json_)
 
