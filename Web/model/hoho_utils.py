@@ -2,13 +2,20 @@ import random
 import numpy as np
 import torch
 
-
+# 棋盘宽
 BOARD_WIDTH = 9
+
+# 棋盘长
 BOARD_HEIGHT = 10
+
+# 棋盘格子数量
 BOARD_POSITION_NUM = BOARD_WIDTH * BOARD_HEIGHT
-# K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
+
+# 棋子总览！ K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
 INDEXS_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9
 PIECES_2_INDEX = {INDEXS_2_PIECES[i]: i for i in range(len(INDEXS_2_PIECES))}
+
+# webgame棋子映射
 PIECES_FORMAL = {'K': 'King', 'k': 'King', 
                  'A': 'Guard', 'a': 'Guard',
                  'R': 'Rock', 'r': 'Rock', 
@@ -17,12 +24,21 @@ PIECES_FORMAL = {'K': 'King', 'k': 'King',
                  'P': 'Pawn', 'p': 'pawn',
                  'C': 'Cannon', 'c': 'Cannon'}
 
-X_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']  # 棋盘横向序号
+# 棋盘横向序号
+X_LABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']  
 X_LABELS_2_INDEX = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8}
-Y_LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  # 棋盘纵向的序号
+
+# 棋盘纵向的序号
+Y_LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']  
 INIT_BOARD_STATE = 'RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr'  # 棋盘初始状态
+
+# 红色玩家
 PLAYER_RED = 'r'
+
+# 黑色玩家
 PLAYER_BLACK = 'b'
+
+# 棋盘数量（输入神经网络用）
 IN_PLANES_NUM = len(INDEXS_2_PIECES)
 
 
@@ -85,9 +101,14 @@ def flip_action_probas(probas):
         result_probas[final_idx] = p
     return result_probas
 
+# 所有走子序列
 INDEXS_2_ACTION = get_all_actions()
 ACTIONS_2_INDEX = {action: idx for idx, action in enumerate(INDEXS_2_ACTION)}
+
+# 棋盘格子标签
 BOARD_POSITION_ARRAY = np.array(get_position_labels()).reshape(BOARD_WIDTH, BOARD_HEIGHT).transpose()
+
+# 动作维数，见hoho_agent.py
 ACTION_DIM = len(INDEXS_2_ACTION)
 
 
