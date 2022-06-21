@@ -18,7 +18,7 @@ class CChessGame:
             value = 1
             done = True
             self.winner = PLAYER_RED
-            
+
         return state_new, value, done
 
     def reset(self):
@@ -28,3 +28,8 @@ class CChessGame:
         self.current_player = PLAYER_RED
 
 
+
+
+if __name__ == '__main__':
+    s = 'ERIOC<VGK1234q24ds'
+    print(('k' in s))
