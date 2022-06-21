@@ -1,4 +1,10 @@
 import os
+import sys
+root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(root_dir)
+# print(f'{sys.path}')
+
+
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -138,7 +144,7 @@ class ValueNet(nn.Module):
         win_score = torch.tanh(self.fc2(x))
         return win_score
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 #     # in_channel = 1
 #     # out_channel = 1
 #     # action_dim = 11
@@ -166,3 +172,6 @@ class ValueNet(nn.Module):
 #     prob, score = player.predict(state)
 #     print(f'prob: {prob.size()}')
 #     print(f'score: {score.size()}')
+
+    myDict = {'red': 1}
+    print(myDict.get('black'))

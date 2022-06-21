@@ -4,9 +4,6 @@ from web.py_lib import auto_chess
 import model.hoho_agent
 import model.hoho_mcts
 
-# import sys 
-# print(f'1. sys path: {sys.path}')
-
 
 def __dir__(request_, response_, route_args_):
 	folder = route_args_['dir']
@@ -42,7 +39,7 @@ def ajax_(request_, response_, route_args_):
 		# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
 		
 		if isinstance(move, tuple):
-			json_data = {'black': list(move), 'red': [1, 2, 1, 9]}
+			json_data = {'Black': list(move), 'Red': [1, 0, 2, 2]}
 			json_ = json.dumps(json_data)
 		else:
 			json_ = json.dumps(move)

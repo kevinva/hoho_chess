@@ -36,15 +36,16 @@ class Controller(chess.Controller):
 	def blacks_turn(self):
 		spinner.show()
 		self.chess_board.rotate_board()
-		move = auto_move_remote(self.chess_board)
-		print(f'black move: {move}')
+		move_dict = auto_move_remote(self.chess_board)
+		move_black = move_dict.get('Black')
+		print(f'Black move: {move_black}')
 		self.chess_board.rotate_board()
 		spinner.hide()
-		if move is None:
+		if move_black is None:
 			javascript.alert("红方胜出!")
 			self.restart()
 			return
-		i1,j1,i2,j2 = move
+		i1,j1,i2,j2 = move_black
 
 		i1,j1,i2,j2 = 8-i1,9-j1,8-i2,9-j2
 		chess = self.chess_board.board_map[(i1,j1)]
@@ -56,7 +57,32 @@ class Controller(chess.Controller):
 			javascript.alert("黑方胜出!")
 			self.restart()
 			return
+
 		self.player = 'Red'
+		move_red = move_dict.get('Red')
+		self.hoho_red_turn(move_red)
+
+
+	def hoho_red_turn(self, move):
+		if move is None:
+			javascript.alert("黑方胜出!")
+			self.restart()
+			return
+
+		time.sleep(0.2)
+
+		i1, j1, i2, j2 = move
+		chess = self.chess_board.board_map[(i1, j1)]
+		succ, eaten = self._move_chess_to(chess, i2, j2)
+		assert succ
+		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
+		self._move_chess_img(chess, px, py)
+		if (eaten is not None) and (eaten.type == 'King'):
+			javascript.alert('红方胜出！')
+			self.restart()
+			return
+		self.player = 'Black'
+		self.blacks_turn()
 
 
 	def hoho_startup(self):
@@ -83,23 +109,7 @@ class Controller(chess.Controller):
 			time.sleep(.1)
 
 		move = res
-		if move is None:
-			javascript.alert('黑方胜出！')
-			self.restart()
-			return
-		
-		i1, j1, i2, j2 = move
-		chess = self.chess_board.board_map[(i1, j1)]
-		succ, eaten = self._move_chess_to(chess, i2, j2)
-		assert succ
-		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
-		self._move_chess_img(chess, px, py)
-		if (eaten is not None) and (eaten.type == 'King'):
-			javascript.alert('红方胜出！')
-			self.restart()
-			return
-		self.player = 'Black'
-		self.blacks_turn()
+		self.hoho_red_turn(move)
 		
 
 def _chess_moves(chess):
@@ -356,7 +366,7 @@ def auto_move_remote(board):
 		if data is None:
 			return
 
-		res = data['black']
+		res = data
 		done = True
 	print(f'hoho: send = {board_key}')
 	ajax.send(board_key, callback)
