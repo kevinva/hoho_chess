@@ -8,7 +8,7 @@ RESIDUAL_BLOCK_NUM = 19 # 39
 # 特征提取输出通道数，见hoho_agent.py
 FILTER_NUM = 128  # 256
 
-# batch_size
+# training batch_size
 BATCH_SIZE = 16 # 64
 
 # 计算节点UCT的常数
@@ -34,3 +34,6 @@ RESTRICT_ROUND_NUM = 100
 
 # Self play次数
 SELF_PLAY_NUM = 5000 #25000
+
+# 计算策略时的temperature系数
+POLICY_TEMPERATURE = 1e-3

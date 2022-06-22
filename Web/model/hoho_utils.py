@@ -112,18 +112,18 @@ BOARD_POSITION_ARRAY = np.array(get_position_labels()).reshape(BOARD_WIDTH, BOAR
 ACTION_DIM = len(INDEXS_2_ACTION)
 
 
-# 棋盘的数组表示：小写表示黑方，大写表示红方
+# 棋盘的数组表示：大写表示红方，小写表示黑方
 # [
-#     "rnbakabnr",
+#     "RNBAKABNR",
 #     "         ",
-#     " c     c ",
-#     "p p p p p",
-#     "         ",
-#     "         ",
-#     "P P P P P",
 #     " C     C ",
+#     "P P P P P",
 #     "         ",
-#     "RNBAKABNR"
+#     "         ",
+#     "p p p p p",
+#     " c     c ",
+#     "         ",
+#     "rnbakabnr"
 # ]
 
 # 棋盘的字符串表示：
@@ -705,9 +705,8 @@ def sample_rotation(state, num=8):
     return np.array(states)
 
 
-def convert_webgame_move_to_action(move):
-    """转换游戏环境的动作到我模型的动作格式"""
-
+def convert_webgame_opponent_move_to_action(move):
+    """将游戏环境的对方动作转换为模型的动作格式"""
     srcx, srcy, dstx, dsty = move
     src_alpha = X_LABELS[BOARD_WIDTH - 1 - srcx]
     src_number = BOARD_HEIGHT - 1 - srcy
@@ -716,8 +715,8 @@ def convert_webgame_move_to_action(move):
     action = src_alpha + str(src_number) + dst_alpha + str(dst_number)
     return action
 
-def convert_action_to_webgame_move(action):
-    """将我模型的动作格式转换为游戏的动作格式"""
+def convert_my_action_to_webgame_move(action):
+    """将模型的我方动作格式转换为游戏的动作格式"""
     srcx_alpha, srcy_number, dstx_alpha, dsty_number = list(action)
     srcx = X_LABELS_2_INDEX[srcx_alpha]
     srcy = int(srcy_number)

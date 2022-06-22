@@ -38,7 +38,7 @@ class Controller(chess.Controller):
 		self.chess_board.rotate_board()
 		move_dict = auto_move_remote(self.chess_board)
 		move_black = move_dict.get('Black')
-		print(f'Black move: {move_black}')
+		print(f'hoho: Black move: {move_black}')
 		self.chess_board.rotate_board()
 		spinner.hide()
 		if move_black is None:

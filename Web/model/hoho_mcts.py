@@ -35,15 +35,16 @@ class Node:
     def select(self):
         return max(self.childrens, key=lambda node: node.get_uq_score())
 
-    def expand(self, legal_actions, all_action_probas):
+    def expand(self, all_action_probas):
         nodes = []
         node_player = PLAYER_RED
         if self.player == PLAYER_RED:  # 当前节点玩家与其子节点玩家互异
             node_player = PLAYER_BLACK
 
+        legal_actions = get_legal_actions(self.to_state, self.player)
         for action in legal_actions:
             prob = all_action_probas[ACTIONS_2_INDEX[action]]
-            to_state_new = do_action_on_board(action, self.state)
+            to_state_new = do_action_on_board(action, self.to_state)
             node = Node(to_state=to_state_new, action=action, parent=self, proba=prob, player=node_player)
             nodes.append(node)
         self.childrens = nodes
@@ -126,9 +127,8 @@ class SearchThread(threading.Thread):
 
         else:  # 找到叶节点但游戏还没结束
             self.condition_search.acquire()
-
-            # 如果当前节点是黑方待下棋，则将棋盘翻转，让黑方以红方的视角走子（self play）
             if current_node.player == PLAYER_BLACK:
+                # 如果当前节点是黑方待下棋，则将棋盘翻转，让黑方以红方的视角走子（self play）
                 print('flip the board!')
                 state = flip_board(state)
             self.eval_queue[self.thread_id] = state   # hoho_todo: 按paper，这里可考虑增加一个dihedral transformation
@@ -153,11 +153,9 @@ class SearchThread(threading.Thread):
             if not current_node.parent:
                 probas = dirichlet_noise(probas)
             
-            legal_actions = get_legal_actions(current_node.state, current_node.player)
-            
             self.lock.acquire()
             # 叶节点expand
-            current_node.expand(legal_actions, probas)
+            current_node.expand(probas)
 
             # 从叶节点backup
             node_tmp = current_node
@@ -236,21 +234,29 @@ class MCTS:
         # 模拟走子之后，生成走子策略
         action_scores = np.zeros((ACTION_DIM,))
         for node in self.root.childrens:
-            action_scores[ACTIONS_2_INDEX[node.action]] = node.N
+            action_scores[ACTIONS_2_INDEX[node.action]] = np.power(node.N, 1 / POLICY_TEMPERATURE)
         total = np.sum(action_scores)
         pi = action_scores / total
         final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
         # 替换为新的根节点
+        final_action = INDEXS_2_ACTION[final_action_idx]
+        self.update_root_with_action(final_action)
+
+        return pi, final_action
+
+    def update_root_with_action(self, action):
+        """让action对应的子节点成为新的根节点"""
         found_idx = -1
         for idx in range(len(self.root.childrens)):
-            if self.root.childrens[idx].action == INDEXS_2_ACTION[final_action_idx]:
+            if self.root.childrens[idx].action == action:
                 found_idx = idx
                 break
-        self.root = self.root.childrens[found_idx]
 
-        return pi, final_action_idx
-
+        if found_idx > 0 and found_idx < len(self.root.childrens):
+            self.root = self.root.childrens[found_idx]
+        else:
+            print(f'update root error! found_idx={found_idx}')
 
 
 if __name__ == '__main__':

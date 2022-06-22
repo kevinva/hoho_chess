@@ -1,9 +1,16 @@
 
 import json, os
 from web.py_lib import auto_chess
-import model.hoho_agent
-import model.hoho_mcts
 
+from model.hoho_utils import *
+from model.hoho_agent import *
+from model.hoho_mcts import *
+from model.hoho_cchessgame import *
+
+hoho_simulator = MCTS()
+hoho_agent = Player()
+hoho_game = CChessGame()
+hoho_replay_buffer = ReplayBuffer()
 
 def __dir__(request_, response_, route_args_):
 	folder = route_args_['dir']
@@ -25,26 +32,48 @@ def ajax_(request_, response_, route_args_):
 
 	json_ = None
 	if data == 'Action!': # 开始！
-		# hoho_todo:
-		move = (7, 2, 7, 6)
+		state = hoho_game.state
+		pi, action = hoho_simulator.take_simulation(hoho_agent, hoho_game)
+		_, z, _ = hoho_game.step(action)
+		state_tensor = convert_board_to_tensor(state)
+		hoho_replay_buffer.add(state_tensor, pi, z)
+
+		move = convert_my_action_to_webgame_move(action)
+		print(f'hoho:[ajax_] get red move={move}')
+
 		json_ = json.dumps(move)
 	else:
 		board_key = data
-		print(f'hoho: ajax_! board_key={board_key}')
+		print(f'hoho: [ajax_] board_key={board_key}')
 		board = auto_chess._board_from_key(board_key)
-		move = auto_chess.auto_move(board)
-		print(f'hoho: get move: {move}')
-		if move is None:
-			move = []
+		black_move = auto_chess.auto_move(board)
+		print(f'hoho: [ajax_] get black move={black_move}')
+		if black_move is None:
+			black_move = []
 		else:
-			pass
-			# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
-		
-		if isinstance(move, tuple):
-			json_data = {'Black': list(move), 'Red': [1, 0, 2, 2]}
+			black_state = hoho_game.state
+			black_action = convert_webgame_opponent_move_to_action(black_move)
+			black_pi, _ = hoho_simulator.take_simulation(hoho_agent, hoho_game)  # 黑方用webgame自身的action
+			_, black_z, _ = hoho_game.step(black_action)
+			black_state_tensor = convert_board_to_tensor(flip_board(black_state))  # 这里是黑方走子，所以要翻转为红方
+			black_pi = flip_action_probas(black_pi)  # 同样策略要翻转为红方
+			hoho_replay_buffer.add(black_state_tensor, black_pi, black_z)
+
+			# 这里得到黑方的走子，就可以马上开始跑我方的模型
+			red_state = hoho_game.state
+			red_pi, red_action = hoho_simulator.take_simulation(hoho_agent, hoho_game)
+			_, red_z, _ = hoho_game.step(red_action)
+			red_state_tensor = convert_board_to_tensor(red_state)
+			hoho_replay_buffer.add(red_state_tensor, red_pi, red_z)
+
+			red_move = convert_my_action_to_webgame_move(red_action)
+			print(f'hoho: [ajax_] get red move={red_move}')
+		if isinstance(black_move, tuple):
+			json_data = {'Black': list(black_move), 'Red': list(red_move)}
 			json_ = json.dumps(json_data)
 		else:
-			json_ = json.dumps(move)
+			json_ = json.dumps(black_move)
+			
 	return response_.write_response_JSON_OK_(json_)
 
 
