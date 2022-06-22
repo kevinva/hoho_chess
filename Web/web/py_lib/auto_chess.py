@@ -335,7 +335,7 @@ def _dump_tree(node):
 			fp.write(')')
 		dump_node(node)
 
-board_explorer = BoardExplorer(5)
+board_explorer = BoardExplorer(3)
 
 def auto_move(board):
 	board_node = board_explorer.run(board)

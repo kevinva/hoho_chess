@@ -7,6 +7,7 @@ sys.path.append(root_dir)
 
 import torch 
 import torch.nn as nn
+import torch.optim as optim
 import torch.nn.functional as F
 from model.hoho_config import *
 from model.hoho_utils import *
@@ -14,21 +15,31 @@ from model.hoho_utils import *
 class Player:
 
     def __init__(self):
-        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, FILTER_NUM, RESIDUAL_BLOCK_NUM).to(DEVICE)
-        self.value_net = ValueNet(FILTER_NUM, BOARD_POSITION_NUM).to(DEVICE)
-        self.policy_net = PolicyNet(FILTER_NUM, BOARD_POSITION_NUM, ACTION_DIM).to(DEVICE)
-        self.passed = False
+        self.agentNet = AgentNet()
+        self.optimizer = optim.Adam(self.agentNet.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
     
     def predict(self, state):
-        board_features = self.plane_extractor(state)
-        win_value = self.value_net(board_features)
-        prob = self.policy_net(board_features)
-        return prob, win_value
+        prob, value = self.agentNet(state)
+        return prob, value
 
     def printModel(self):
         print('extractor: ', self.plane_extractor)
         print('value head: ', self.value_net)
         print('policy head: ', self.policy_net)
+
+    def update(self, states, pis, zs):
+        batch_states = states.to(DEVICE)
+        batch_pis = torch.tensor(pis, dtype=torch.float).to(DEVICE)
+        batch_zs = torch.tensor(pis, dtype=torch.float).to(DEVICE)
+        predict_probs, predict_values = self.agentNet(batch_states)
+        policy_error = torch.sum(-batch_pis * torch.log(1e-6 + predict_probs), dim=1)
+        value_error = (batch_zs - predict_values) ** 2
+        loss = (value_error + policy_error).mean()
+        
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        
 
     def save_models(self, state, current_time):
         for model in ['plane_extractor', 'policy_net', 'value_net']:  # 注意跟属性名对应
@@ -50,6 +61,21 @@ class Player:
             model = getattr(self, names[i])
             model.load_state_dict(checkpoint['model'])
             return checkpoint  # hoho: 确定就在循环内return?
+
+
+class AgentNet(nn.Module):
+
+    def __init__(self):
+        super(AgentNet, self).__init__()
+        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, FILTER_NUM, RESIDUAL_BLOCK_NUM).to(DEVICE)
+        self.value_net = ValueNet(FILTER_NUM, BOARD_POSITION_NUM).to(DEVICE)
+        self.policy_net = PolicyNet(FILTER_NUM, BOARD_POSITION_NUM, ACTION_DIM).to(DEVICE)
+
+    def forward(self, state):
+        board_features = self.plane_extractor(state)
+        win_value = self.value_net(board_features)
+        prob = self.policy_net(board_features)
+        return prob, win_value
 
 
 class ResidualBlock(nn.Module):
@@ -173,5 +199,14 @@ if __name__ == '__main__':
 #     print(f'prob: {prob.size()}')
 #     print(f'score: {score.size()}')
 
-    myDict = {'red': 1}
-    print(myDict.get('black'))
+    # myDict = {'red': 1}
+    # print(myDict.get('black'))
+
+    p1 = torch.tensor([[0.1, 0.6, 0.3], [0.6, 0.2, 0.2]])
+    p2 = torch.tensor([[0.8, 0.1, 0.1], [0.5, 0.29, 0.21]])
+    print(torch.sum(p1 * torch.log(p2), dim=1))
+
+
+    v1 = torch.tensor([1, 2], dtype=torch.float)
+    v2 = torch.tensor([2, 3])
+    print(((v1 - v2) ** 2).view(-1))

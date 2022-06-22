@@ -54,13 +54,14 @@ class ReplayBuffer:
         """从buffer中采样数据,数量为batch_size"""
 
         transitions = random.sample(self.buffer, batch_size)
-        states, pi, z = zip(*transitions)
-        return states, pi, z
+        states, pis, zs = zip(*transitions)
+        return states, pis, zs
 
     def size(self):  
         """当前buffer中数据的数量"""
 
         return len(self.buffer)
+
 
 
 if __name__ == '__main__':
