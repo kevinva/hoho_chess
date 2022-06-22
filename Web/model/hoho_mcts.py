@@ -114,10 +114,11 @@ class SearchThread(threading.Thread):
             self.lock.acquire()
             node_tmp = current_node
             v = value
-            while node_tmp != None:
-                # backup之前把之前加的virtual loss撤销掉
-                node_tmp.N -= VIRTUAL_LOSS
-                node_tmp.W += VIRTUAL_LOSS
+            while node_tmp is not None:
+                if node_tmp.parent is not None:
+                    # backup之前把之前加的virtual loss撤销掉
+                    node_tmp.N -= VIRTUAL_LOSS
+                    node_tmp.W += VIRTUAL_LOSS
                 node_tmp.backup(v)
                 node_tmp = node_tmp.parent
                 v = -v
@@ -161,9 +162,10 @@ class SearchThread(threading.Thread):
             # 从叶节点backup
             node_tmp = current_node
             v = -value  # 注意这里要变成相反数，因为神经网络输出的是当前状态的价值，即当前玩家在当前棋局下的胜负价值，而当前节点的W值是上一轮玩家进行动作后的价值，自然是相反了
-            while node_tmp != None:
-                node_tmp.N -= VIRTUAL_LOSS
-                node_tmp.W += VIRTUAL_LOSS
+            while node_tmp is not None:
+                if node_tmp.parent is not None:
+                    node_tmp.N -= VIRTUAL_LOSS
+                    node_tmp.W += VIRTUAL_LOSS
                 node_tmp.backup(v)
                 node_tmp = node_tmp.parent
                 v = -v

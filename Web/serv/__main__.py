@@ -36,7 +36,9 @@ def ajax_(request_, response_, route_args_):
 		print(f'hoho: get move: {move}')
 		if move is None:
 			move = []
-		# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
+		else:
+			pass
+			# hoho_todo: 这里得到黑方的走子，就可以开始跑我方的模型
 		
 		if isinstance(move, tuple):
 			json_data = {'Black': list(move), 'Red': [1, 0, 2, 2]}
