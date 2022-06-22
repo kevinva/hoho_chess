@@ -7,10 +7,6 @@ from model.hoho_agent import *
 from model.hoho_mcts import *
 from model.hoho_cchessgame import *
 
-hoho_simulator = MCTS()
-hoho_agent = Player()
-hoho_game = CChessGame()
-hoho_replay_buffer = ReplayBuffer()
 
 def __dir__(request_, response_, route_args_):
 	folder = route_args_['dir']
@@ -87,6 +83,13 @@ def start_server_(port_, max_threads_):
 	http_.add_route_('/', home, 'GET')
 	http_.start_()
 
-# hoho_step 1
-print('hoho: start server!')
-start_server_(8000, 100)
+
+if __name__ == '__main__':
+	hoho_simulator = MCTS()
+	hoho_agent = Player()
+	hoho_game = CChessGame()
+	hoho_replay_buffer = ReplayBuffer()
+
+	# hoho_step 1
+	print(f'hoho: start server! pid={os.getpid()}')
+	start_server_(8000, 100)

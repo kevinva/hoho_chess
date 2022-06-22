@@ -15,11 +15,13 @@ from model.hoho_utils import *
 class Player:
 
     def __init__(self):
-        self.agentNet = AgentNet()
-        self.optimizer = optim.Adam(self.agentNet.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
+        self.current_agentNet = AgentNet()
+        self.train_agentNet = AgentNet()
+        self.train_agentNet.load_state_dict(self.current_agentNet.state_dict())
+        self.optimizer = optim.Adam(self.current_agentNet.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
     
     def predict(self, state):
-        prob, value = self.agentNet(state)
+        prob, value = self.current_agentNet(state)
         return prob, value
 
     def printModel(self):
@@ -31,7 +33,7 @@ class Player:
         batch_states = states.to(DEVICE)
         batch_pis = torch.tensor(pis, dtype=torch.float).to(DEVICE)
         batch_zs = torch.tensor(pis, dtype=torch.float).to(DEVICE)
-        predict_probs, predict_values = self.agentNet(batch_states)
+        predict_probs, predict_values = self.train_agentNet(batch_states)
         policy_error = torch.sum(-batch_pis * torch.log(1e-6 + predict_probs), dim=1)
         value_error = (batch_zs - predict_values) ** 2
         loss = (value_error + policy_error).mean()
@@ -39,7 +41,10 @@ class Player:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        
+
+    def self_agent_battle(self):
+        pass
+
 
     def save_models(self, state, current_time):
         for model in ['plane_extractor', 'policy_net', 'value_net']:  # 注意跟属性名对应

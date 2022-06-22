@@ -1,7 +1,7 @@
 import collections
 import random
-from hoho_utils import *
-from hoho_config import *
+from model.hoho_utils import *
+from model.hoho_config import *
 
 
 
