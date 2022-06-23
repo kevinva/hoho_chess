@@ -34,9 +34,11 @@ class Controller(chess.Controller):
 			self.blacks_turn()
 
 	def blacks_turn(self):
+		self.round_count = self.round_count + 1
+
 		spinner.show()
 		self.chess_board.rotate_board()
-		move_dict = auto_move_remote(self.chess_board)
+		move_dict = auto_move_remote(self.chess_board, self.round_count)
 		move_black = move_dict.get('Black')
 		print(f'hoho: Black move: {move_black}')
 		self.chess_board.rotate_board()
@@ -104,7 +106,7 @@ class Controller(chess.Controller):
 			res = data
 			done = True
 
-		ajax.send('Action!', callback)
+		ajax.send(('Action!', self.round_count), callback)
 		while not done:
 			time.sleep(.1)
 
@@ -348,7 +350,7 @@ def auto_move(board):
 	# print(f'hoho: board_node\'s best_child: {board_node.best_child.board_key}')
 	return board_node.best_child.move_key[2:]
 	
-def auto_move_remote(board):
+def auto_move_remote(board, round_count):
 	board_key = _board_key(board)
 	done = False
 	res = None
@@ -367,7 +369,7 @@ def auto_move_remote(board):
 		res = data
 		done = True
 	print(f'hoho: send = {board_key}')
-	ajax.send(board_key, callback)
+	ajax.send((board_key, round_count), callback)
 	while not done:
 		time.sleep(.1)
 	return res

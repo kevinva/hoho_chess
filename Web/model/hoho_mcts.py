@@ -180,6 +180,8 @@ class SearchThread(threading.Thread):
             self.condition_search.notify()
             self.condition_search.release()
 
+            print(f'{SEARCH_THREAD_GAME_DONE}')
+
 
 class EvaluateThread(threading.Thread):
 
@@ -194,7 +196,7 @@ class EvaluateThread(threading.Thread):
 
     def run(self):
         for simulation in range(MCTS_SIMULATION_NUM // MCTS_THREAD_NUM):
-            print(f'evaluate thread: {simulation}')
+            # print(f'evaluate thread: {simulation}')
             self.condition_search.acquire()
             while len(self.eval_queue) < MCTS_THREAD_NUM:   # 需等同一批搜索线程都入队列，才开始下一步
                 self.condition_search.wait()
@@ -217,13 +219,14 @@ class EvaluateThread(threading.Thread):
                         del self.eval_queue[tid]
                         batch_result_count = batch_result_count - 1
                 
-                batch_states = torch.stack(planes, dim=0).to(DEVICE)
-                batch_probas, batch_values = self.agent.predict(batch_states)
+                if len(planes) > 0:
+                    batch_states = torch.stack(planes, dim=0).to(DEVICE)
+                    batch_probas, batch_values = self.agent.predict(batch_states)
 
-                for idx, tid in enumerate(eval_thread_ids):
-                    self.result_queue[tid] = (batch_probas[idx].to(torch.device('cpu')).detach().numpy(), batch_values[idx])
-                    del self.eval_queue[tid]
-                self.condition_eval.notifyAll()
+                    for idx, tid in enumerate(eval_thread_ids):
+                        self.result_queue[tid] = (batch_probas[idx].to(torch.device('cpu')).detach().numpy(), batch_values[idx])
+                        del self.eval_queue[tid]
+                    self.condition_eval.notifyAll()
             self.condition_eval.release()
 
 

@@ -255,6 +255,7 @@ class Controller:
 		self.player = 'Red'
 		self.chess_board._init_board()
 		self.chess_board._refresh_elt()
+		self.round_count = 0
 
 	def onmousedown(self, ev):
 		x, y = ev.x.data(), ev.y.data()

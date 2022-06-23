@@ -26,9 +26,11 @@ def ajax_(request_, response_, route_args_):
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
 	data = json.loads(params_['data'])
-
+	data_board = data[0]
+	round_count = data[1]
 	json_ = None
-	if data == 'Action!': # 开始！
+
+	if data_board == 'Action!': # 开始！
 		state = hoho_game.state
 		pi, action = hoho_simulator.take_simulation(hoho_agent, hoho_game)
 		_, z, _ = hoho_game.step(action)
@@ -43,7 +45,7 @@ def ajax_(request_, response_, route_args_):
 	else:
 		start_time = time.time()
 
-		board_key = data
+		board_key = data_board
 		# print(f'hoho: [ajax_] board_key={board_key}')
 		board = auto_chess._board_from_key(board_key)
 		black_move = auto_chess.auto_move(board)
@@ -60,7 +62,6 @@ def ajax_(request_, response_, route_args_):
 			black_state_tensor = convert_board_to_tensor(flip_board(black_state))  # 这里是黑方走子，所以要翻转为红方
 			black_pi = flip_action_probas(black_pi)  # 同样策略要翻转为红方
 			hoho_replay_buffer.add(black_state_tensor, black_pi, black_z)
-			print(f'hoho: black_state={black_state}, with action={black_action}')
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
@@ -68,6 +69,8 @@ def ajax_(request_, response_, route_args_):
 			next_state, red_z, _ = hoho_game.step(red_action)
 			red_state_tensor = convert_board_to_tensor(red_state)
 			hoho_replay_buffer.add(red_state_tensor, red_pi, red_z)
+
+			print(f'hoho: black_state={black_state}, with action={black_action}')
 			print(f'hoho: red_state={red_state}, with action={red_action}, then to state={next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
@@ -76,7 +79,7 @@ def ajax_(request_, response_, route_args_):
 		json_ = json.dumps(json_data)
 
 		print(f'hoho: replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'1 round done! elpased={time.time() - start_time}, pid={os.getpid()}')
+		print(f'{round_count} round done! elpased={time.time() - start_time}, pid={os.getpid()}')
 		print('====================================================================')
 		# json_ = json.dumps({'Black': list(black_move)})  # hoho_test
 
