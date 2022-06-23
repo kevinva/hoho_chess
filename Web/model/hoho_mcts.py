@@ -102,6 +102,7 @@ class SearchThread(threading.Thread):
         game = deepcopy(self.game)
         state = game.state
         current_node = self.root_node
+        done = False
         
         assert state == current_node.to_state, "game's state should be equal to node's state"
 
