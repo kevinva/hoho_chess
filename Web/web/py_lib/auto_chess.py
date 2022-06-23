@@ -50,7 +50,7 @@ class Controller(chess.Controller):
 		i1,j1,i2,j2 = 8-i1,9-j1,8-i2,9-j2
 		chess = self.chess_board.board_map[(i1,j1)]
 		succ, eaten = self._move_chess_to(chess, i2, j2)
-		assert succ
+		assert succ, 'black move is illegal!'
 		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
 		self._move_chess_img(chess, px, py)
 		if (eaten is not None) and (eaten.type=='King'):
@@ -74,7 +74,7 @@ class Controller(chess.Controller):
 		i1, j1, i2, j2 = move
 		chess = self.chess_board.board_map[(i1, j1)]
 		succ, eaten = self._move_chess_to(chess, i2, j2)
-		assert succ
+		assert succ, 'red move is illegal!'
 		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
 		self._move_chess_img(chess, px, py)
 		if (eaten is not None) and (eaten.type == 'King'):
@@ -292,8 +292,6 @@ class BoardExplorer:
 		# print('hoho: BoardExplorer created!')
 
 	def run(self, board):
-		print(f'hoho: explorer run: board: {board}')
-
 		board_node = BoardNode(board)
 		self.board_cache = {}
 		self.heap = [board_node]
@@ -335,7 +333,7 @@ def _dump_tree(node):
 			fp.write(')')
 		dump_node(node)
 
-board_explorer = BoardExplorer(3)
+board_explorer = BoardExplorer(5)
 
 def auto_move(board):
 	board_node = board_explorer.run(board)
@@ -345,9 +343,9 @@ def auto_move(board):
 	# print('board_node.best_child.move_key', board_node.best_child.move_key)
 	# print('board_node.best_child.score', board_node.best_child.score)
 
-	print(f'hoho: board_node: {board_node.board_key}')
-	print(f'hoho: move: {board_node.best_child.move_key}')
-	print(f'hoho: board_node\'s best_child: {board_node.best_child.board_key}')
+	# print(f'hoho: board_node: {board_node.board_key}')
+	# print(f'hoho: move: {board_node.best_child.move_key}')
+	# print(f'hoho: board_node\'s best_child: {board_node.best_child.board_key}')
 	return board_node.best_child.move_key[2:]
 	
 def auto_move_remote(board):

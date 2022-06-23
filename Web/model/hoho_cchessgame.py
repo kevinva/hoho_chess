@@ -47,7 +47,7 @@ class ReplayBuffer:
 
     def add(self, state, pi, z):  
         """将数据加入buffer"""
-
+        
         self.buffer.append((state, pi, z))
 
     def sample(self, batch_size):  

@@ -1,4 +1,5 @@
 import random
+import time
 import numpy as np
 import torch
 
@@ -193,6 +194,7 @@ def do_action_on_board(board_str, action):
 
     src = action[0:2]
     dst = action[2:4]
+
     src_x = int(X_LABELS_2_INDEX[src[0]])
     src_y = int(src[1])
     dst_x = int(X_LABELS_2_INDEX[dst[0]])
@@ -209,7 +211,7 @@ def do_action_on_board(board_str, action):
     board_positions[dst_y] = ''.join(board_lines[dst_y])
     board_positions[src_y] = ''.join(board_lines[src_y])
 
-    board = board_list1_to_str(board_lines)
+    board = board_list1_to_str(board_positions)
 
     return board
 
@@ -762,4 +764,12 @@ if __name__ == '__main__':
 
     # print(np.array(get_position_labels()).reshape(BOARD_WIDTH, BOARD_HEIGHT))
     test_board_state = 'RNBAKABNR/9/1C7/P1P1P1P1P/9/9/p1p1p1pCp/1c5c1/9/rnbakabnr'
-    print(convert_board_to_webgame(test_board_state))
+    # print(convert_board_to_webgame(test_board_state))
+
+    start_time = time.time()
+    board_str_to_list1(test_board_state)
+    print(f'1 time elapse: {time.time() - start_time}')
+
+    start_time = time.time()
+    board_str_to_list1(test_board_state)
+    print(f'2 time elapse: {time.time() - start_time}')
