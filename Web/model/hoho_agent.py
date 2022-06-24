@@ -171,13 +171,22 @@ class ValueNet(nn.Module):
 
 def self_battle(agent_current, agent_new):
 
-    def red_turn(last_black_action, mcts):
+    def red_turn(last_black_action, mcts, agent):
+        done = False
         if last_black_action is not None:
             mcts.take_simulation(agent, game, update_root=False)
             mcts.update_root_with_action(last_black_action)
         pi, action = mcts.take_simulation(agent, game, update_root=True)
         _, _, done = game.step(action)
+        return action, done
 
+    def black_turn(last_red_action, mcts, agent, expanded):
+        if last_red_action is not None and expanded:
+            mcts.take_simulation(agent, game, update_root=False)
+            mcts.update_root_with_action(last_red_action)
+        pi, action = mcts.take_simulation(agent, game, update_root=True)
+        _, _, done = game.step(action)
+        return action, done
 
 
     accepted = False
