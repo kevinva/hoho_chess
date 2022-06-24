@@ -1,7 +1,16 @@
 import collections
 import random
+import json
+import os
+
+import sys
+root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(root_dir)
+# print(f'{sys.path}')
+
 from model.hoho_utils import *
 from model.hoho_config import *
+
 
 
 
@@ -44,8 +53,10 @@ class CChessGame:
 
 class ReplayBuffer:
     ''' 经验回放池 '''
-    def __init__(self, capacity=10000):
+    def __init__(self, capacity=10000, data_list=None):
         self.buffer = collections.deque(maxlen=capacity)  # 队列,先进先出
+        if data_list is not None:
+            self.buffer.extend(data_list)
 
     def add(self, state, pi, z):  
         """将数据加入buffer"""
@@ -64,8 +75,45 @@ class ReplayBuffer:
 
         return len(self.buffer)
 
+    def save(self):
+        filedir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data')
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)
+        
+        filename = 'replay_buffer_{}.json'.format(int(time.time()))
+        filepath = os.path.join(filedir, filename)
+        
+        with open(filepath, 'w') as f:
+            jsonstr = json.dumps(list(self.buffer))
+            f.write(jsonstr)
+
+
+    @staticmethod
+    def load(filepath):
+        with open(filepath, 'r') as f:
+            jsonstr = f.read()
+            data_list = json.loads(jsonstr)
+            replay_buffer = ReplayBuffer(data_list=data_list)
+        return replay_buffer
+
 
 
 if __name__ == '__main__':
-    s = 'ERIOC<VGK1234q24ds'
-    print(('k' in s))
+    # s = 'ERIOC<VGK1234q24ds'
+    # print(('k' in s))
+
+    # q = collections.deque(maxlen=100)
+    # q.append(('23', [123, 23], 0))
+    # q.append(('24', [123, 23], 0))
+    # q.append(('256', [123, 23], 0))
+    # print(q)
+    # print(list(q))
+    # result = json.dumps(list(q))
+    # print(result)
+
+    # result_load = json.loads(result)
+    # print(result_load)
+
+    filepath = '../output/data/replay_buffer_1656040190.json'
+    rb = ReplayBuffer.load(filepath)
+    print(rb.buffer)

@@ -40,8 +40,7 @@ def ajax_(request_, response_, route_args_):
 		state = hoho_game.state
 		pi, action = hoho_simulator.take_simulation(hoho_agent, hoho_game)
 		_, z, _ = hoho_game.step(action)
-		state_tensor = convert_board_to_tensor(state)
-		hoho_replay_buffer.add(state_tensor, pi, z)
+		hoho_replay_buffer.add(state, pi.tolist(), z)
 
 		move = convert_my_action_to_webgame_move(action)
 		print(f'{LOG_TAG_SERV} [ajax_] get red move={move}')
@@ -64,16 +63,15 @@ def ajax_(request_, response_, route_args_):
 			black_pi, _ = hoho_simulator.take_simulation(hoho_agent, hoho_game, update_root=False)  # 黑方用webgame自身的action，所以不要自动更新根节点
 			hoho_simulator.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_next_state, black_z, _ = hoho_game.step(black_action)
-			black_state_tensor = convert_board_to_tensor(flip_board(black_state))  # 这里是黑方走子，所以要翻转为红方
+			black_real_state = flip_board(black_state)  # 这里是黑方走子，所以要翻转为红方
 			black_pi = flip_action_probas(black_pi)  # 同样策略要翻转为红方
-			hoho_replay_buffer.add(black_state_tensor, black_pi, black_z)
+			hoho_replay_buffer.add(black_real_state, black_pi.tolist(), black_z)
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
 			red_pi, red_action = hoho_simulator.take_simulation(hoho_agent, hoho_game)
 			red_next_state, red_z, _ = hoho_game.step(red_action)
-			red_state_tensor = convert_board_to_tensor(red_state)
-			hoho_replay_buffer.add(red_state_tensor, red_pi, red_z)
+			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
 
 			print(f'{LOG_TAG_SERV} black_state={black_state}, with action={black_action}, to state={black_next_state}')
 			print(f'{LOG_TAG_SERV} red_state={red_state}, with action={red_action}, to state={red_next_state}')
@@ -83,8 +81,12 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
+		if hoho_replay_buffer.size() >= 1000:
+			hoho_replay_buffer.save()
+			hoho_replay_buffer.clear()
+
 		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{LOG_TAG_SERV} {round_count} rounds / {match_count} matches || Elpased={(time.time() - start_time):.3f}s/round || pid={os.getpid()}')
+		print(f'{LOG_TAG_SERV} {round_count} rounds / {match_count} matches || Elapsed={(time.time() - start_time):.3f}s/round || pid={os.getpid()}')
 		print('========================================================')
 
 			

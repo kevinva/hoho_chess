@@ -26,11 +26,6 @@ class Player:
         prob, value = self.current_agentNet(state)
         return prob, value
 
-    def printModel(self):
-        print('extractor: ', self.plane_extractor)
-        print('value head: ', self.value_net)
-        print('policy head: ', self.policy_net)
-
     def update(self, states, pis, zs):
         batch_states = states.to(DEVICE)
         batch_pis = torch.tensor(pis, dtype=torch.float).to(DEVICE)
@@ -44,30 +39,25 @@ class Player:
         loss.backward()
         self.optimizer.step()
 
+    def printModel(self):
+        print(f'{LOG_TAG_AGENT} {self.current_agentNet}')
+
     def self_agent_battle(self):
         pass
 
 
-    def save_models(self, state, current_time):
-        for model in ['plane_extractor', 'policy_net', 'value_net']:  # 注意跟属性名对应
-            self._save_checkpoint(getattr(self, model), model, state, current_time)
-
-    def _save_checkpoint(self, model, filename, state, current_time):
-        dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'saved_models', current_time)
+    def save_models(self):
+        dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
-        filename = os.path.join(dir_path, '{}-{}.pth.tar'.format(filename, state['version']))
-        state['model'] = model.state_dict()
+        filename = os.path.join(dir_path, 'hoho_agent_{}.pth'.format(int(time.time())))
+        state = self.train_agentNet.state_dict()
         torch.save(state, filename)
 
-    def load_models(self, path, models):
-        names = ['plane_extractor', 'policy_net', 'value_net']
-        for i in range(0, len(models)):
-            checkpoint = torch.load(os.path.join(path, models[i]))
-            model = getattr(self, names[i])
-            model.load_state_dict(checkpoint['model'])
-            return checkpoint  # hoho: 确定就在循环内return?
+    def load_models(self, model_path):
+        checkpoint = torch.load(model_path)
+        self.train_agentNet.load_state_dict(checkpoint)
 
 
 class AgentNet(nn.Module):
