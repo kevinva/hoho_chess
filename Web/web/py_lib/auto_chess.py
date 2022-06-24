@@ -5,6 +5,8 @@ from . import spinner
 from . import ajax
 import heapq
 
+HOHO_RESTRICT_ROUND_NUM = 100  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
+
 
 class Controller(chess.Controller):
 	
@@ -44,9 +46,11 @@ class Controller(chess.Controller):
 		self.chess_board.rotate_board()
 		spinner.hide()
 		if move_black is None:
-			javascript.alert("红方胜出!")
+			# javascript.alert("红方胜出!")
 			self.restart()
+			self.hoho_startup()
 			return
+
 		i1,j1,i2,j2 = move_black
 
 		i1,j1,i2,j2 = 8-i1,9-j1,8-i2,9-j2
@@ -56,8 +60,9 @@ class Controller(chess.Controller):
 		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
 		self._move_chess_img(chess, px, py)
 		if (eaten is not None) and (eaten.type=='King'):
-			javascript.alert("黑方胜出!")
+			# javascript.alert("黑方胜出!")
 			self.restart()
+			self.hoho_startup()
 			return
 
 		self.player = 'Red'
@@ -66,9 +71,15 @@ class Controller(chess.Controller):
 
 
 	def hoho_red_turn(self, move):
-		if move is None:
-			javascript.alert("黑方胜出!")
+		if self.round_count >= HOHO_RESTRICT_ROUND_NUM:
 			self.restart()
+			self.hoho_startup()
+			return
+
+		if move is None:
+			# javascript.alert("黑方胜出!")
+			self.restart()
+			self.hoho_startup()
 			return
 
 		time.sleep(0.2)
@@ -80,9 +91,11 @@ class Controller(chess.Controller):
 		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
 		self._move_chess_img(chess, px, py)
 		if (eaten is not None) and (eaten.type == 'King'):
-			javascript.alert('红方胜出！')
+			# javascript.alert('红方胜出！')
 			self.restart()
+			self.hoho_startup()
 			return
+
 		self.player = 'Black'
 		self.blacks_turn()
 

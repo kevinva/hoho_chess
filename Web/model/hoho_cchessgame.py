@@ -13,6 +13,8 @@ class CChessGame:
         self.winner = winner
         self.current_player = current_player
 
+        print(f'{LOG_TAG_CCHESSGAME} CChessGame created!')
+
     def step(self, action):
         state_new = do_action_on_board(self.state, action)
         z = 0

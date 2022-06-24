@@ -31,6 +31,12 @@ def ajax_(request_, response_, route_args_):
 	json_ = None
 
 	if data_board == 'Action!': # 开始！
+		global hoho_game, hoho_simulator, match_count
+
+		hoho_game = CChessGame()
+		hoho_simulator = MCTS()
+		match_count += 1
+
 		state = hoho_game.state
 		pi, action = hoho_simulator.take_simulation(hoho_agent, hoho_game)
 		_, z, _ = hoho_game.step(action)
@@ -38,10 +44,9 @@ def ajax_(request_, response_, route_args_):
 		hoho_replay_buffer.add(state_tensor, pi, z)
 
 		move = convert_my_action_to_webgame_move(action)
-		print(f'hoho:[ajax_] get red move={move}')
+		print(f'{LOG_TAG_SERV} [ajax_] get red move={move}')
 
 		json_ = json.dumps(move)
-		# json_ = json.dumps((7, 2, 7, 6))  # hoho_test
 	else:
 		start_time = time.time()
 
@@ -49,16 +54,16 @@ def ajax_(request_, response_, route_args_):
 		# print(f'hoho: [ajax_] board_key={board_key}')
 		board = auto_chess._board_from_key(board_key)
 		black_move = auto_chess.auto_move(board)
-		print(f'hoho: [ajax_] get black move={black_move}')   # 注意这里黑方走法，是已经翻转了棋盘
+		print(f'{LOG_TAG_SERV} [ajax_] get black move={black_move}')   # 注意这里黑方走法，是已经翻转了棋盘
 		if black_move is None:
 			black_move = []
-			print(f'hoho: [Error] black_move is None! ')
+			print(f'{LOG_TAG_SERV} [Error] black_move is None! ')
 		else:
 			black_state = hoho_game.state
 			black_action = convert_webgame_opponent_move_to_action(black_move)
 			black_pi, _ = hoho_simulator.take_simulation(hoho_agent, hoho_game, update_root=False)  # 黑方用webgame自身的action，所以不要自动更新根节点
 			hoho_simulator.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
-			_, black_z, _ = hoho_game.step(black_action)
+			black_next_state, black_z, _ = hoho_game.step(black_action)
 			black_state_tensor = convert_board_to_tensor(flip_board(black_state))  # 这里是黑方走子，所以要翻转为红方
 			black_pi = flip_action_probas(black_pi)  # 同样策略要翻转为红方
 			hoho_replay_buffer.add(black_state_tensor, black_pi, black_z)
@@ -66,22 +71,21 @@ def ajax_(request_, response_, route_args_):
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
 			red_pi, red_action = hoho_simulator.take_simulation(hoho_agent, hoho_game)
-			next_state, red_z, _ = hoho_game.step(red_action)
+			red_next_state, red_z, _ = hoho_game.step(red_action)
 			red_state_tensor = convert_board_to_tensor(red_state)
 			hoho_replay_buffer.add(red_state_tensor, red_pi, red_z)
 
-			print(f'hoho: black_state={black_state}, with action={black_action}')
-			print(f'hoho: red_state={red_state}, with action={red_action}, then to state={next_state}')
+			print(f'{LOG_TAG_SERV} black_state={black_state}, with action={black_action}, to state={black_next_state}')
+			print(f'{LOG_TAG_SERV} red_state={red_state}, with action={red_action}, to state={red_next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
-			print(f'hoho: [ajax_] get red move={red_move}')
+			print(f'{LOG_TAG_SERV} [ajax_] get red move={red_move}')
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
-		print(f'hoho: replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{round_count} round done! elpased={time.time() - start_time}, pid={os.getpid()}')
-		print('====================================================================')
-		# json_ = json.dumps({'Black': list(black_move)})  # hoho_test
+		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
+		print(f'{LOG_TAG_SERV} {round_count} rounds / {match_count} matches || Elpased={(time.time() - start_time):.3f}s/round || pid={os.getpid()}')
+		print('========================================================')
 
 			
 	return response_.write_response_JSON_OK_(json_)
@@ -98,12 +102,14 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 
+
 if __name__ == '__main__':
-	hoho_simulator = MCTS()
+	match_count = 0
+	hoho_simulator = None
+	hoho_game = None
 	hoho_agent = Player()
-	hoho_game = CChessGame()
 	hoho_replay_buffer = ReplayBuffer()
 
 	# hoho_step 1
-	print(f'hoho: start server! pid={os.getpid()}')
+	print(f'{LOG_TAG_SERV} start server! pid={os.getpid()}')
 	start_server_(8000, 100)

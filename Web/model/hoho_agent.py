@@ -19,6 +19,8 @@ class Player:
         self.train_agentNet = AgentNet()
         self.train_agentNet.load_state_dict(self.current_agentNet.state_dict())
         self.optimizer = optim.Adam(self.current_agentNet.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
+
+        print(f'{LOG_TAG_AGENT} Player agent created!')
     
     def predict(self, state):
         prob, value = self.current_agentNet(state)

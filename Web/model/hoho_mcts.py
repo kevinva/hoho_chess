@@ -4,6 +4,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 # print(f'{sys.path}')
 
+import math
 import numpy as np
 import threading
 from copy import deepcopy
@@ -104,7 +105,7 @@ class SearchThread(threading.Thread):
         current_node = self.root_node
         done = False
         
-        assert state == current_node.to_state, "game's state should be equal to node's state"
+        assert state == current_node.to_state, "{} game's state should be equal to node's state".format(LOG_TAG_MCTS)
 
         while not current_node.is_leaf() and not done:
             # 一直select到叶节点
@@ -180,7 +181,7 @@ class SearchThread(threading.Thread):
             self.condition_search.notify()
             self.condition_search.release()
 
-            print(f'{SEARCH_THREAD_GAME_DONE}')
+            print(f'{LOG_TAG_MCTS} {SEARCH_THREAD_GAME_DONE}')
 
 
 class EvaluateThread(threading.Thread):
@@ -234,6 +235,8 @@ class MCTS:
 
     def __init__(self):
         self.root = Node()
+
+        print(f'{LOG_TAG_MCTS} MCTS created!')
     
     def take_simulation(self, agent, game, update_root=True):
         condition_eval = threading.Condition()
@@ -259,6 +262,9 @@ class MCTS:
         action_scores = np.zeros((ACTION_DIM,))
         for node in self.root.childrens:
             action_scores[ACTIONS_2_INDEX[node.action]] = np.power(node.N, 1 / POLICY_TEMPERATURE)
+            
+            if math.isinf(action_scores[ACTIONS_2_INDEX[node.action]]):
+                print(f'node.N = {node.N}')
         
         total = np.sum(action_scores)
         pi = action_scores / total
@@ -273,6 +279,7 @@ class MCTS:
 
     def update_root_with_action(self, action):
         """让action对应的子节点成为新的根节点"""
+
         found_idx = -1
         for idx in range(len(self.root.childrens)):
             if self.root.childrens[idx].action == action:
@@ -283,7 +290,7 @@ class MCTS:
             self.root = self.root.childrens[found_idx]
             self.root.parent = None
         else:
-            print(f'update tree root error! found_idx={found_idx}')
+            print(f'{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
 
 
 if __name__ == '__main__':

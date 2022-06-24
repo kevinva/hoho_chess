@@ -39,3 +39,9 @@ SELF_PLAY_NUM = 5000 # 25000
 
 # 计算策略时的temperature系数
 POLICY_TEMPERATURE = 1 #1e-3，设置数太小，小心计算inf
+
+
+LOG_TAG_AGENT = '[hoho_agent]'
+LOG_TAG_CCHESSGAME = '[hoho_cchessgame]'
+LOG_TAG_MCTS = '[hoho_mcts]'
+LOG_TAG_SERV = '[hoho_serv]'
