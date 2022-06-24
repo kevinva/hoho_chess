@@ -2,8 +2,8 @@ import os
 import sys
 from copy import deepcopy
 
-# root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-# sys.path.append(root_dir)
+root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(root_dir)
 # # print(f'{sys.path}')
 
 import torch 
@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 from model.hoho_config import *
 from model.hoho_utils import *
-from model.hoho_cchessgame import CChessGame
+from model.hoho_cchessgame import *
 from model.hoho_mcts import *
 
 class Player:
@@ -170,24 +170,26 @@ class ValueNet(nn.Module):
 
 
 def self_battle(agent_current, agent_new):
+    """新训练网络与当前网络自博弈"""
 
-    def red_turn(last_black_action, mcts, agent):
+    def red_turn(last_black_action, mcts, agent, game):
         done = False
         if last_black_action is not None:
-            mcts.take_simulation(agent, game, update_root=False)
+            if not mcts.is_current_root_expanded():
+                mcts.take_simulation(agent, game, update_root=False)
             mcts.update_root_with_action(last_black_action)
         pi, action = mcts.take_simulation(agent, game, update_root=True)
         _, _, done = game.step(action)
         return action, done
 
-    def black_turn(last_red_action, mcts, agent, expanded):
-        if last_red_action is not None and expanded:
-            mcts.take_simulation(agent, game, update_root=False)
+    def black_turn(last_red_action, mcts, agent, game, expanded):
+        if (last_red_action is not None) and expanded:
+            if not mcts.is_current_root_expanded():
+                mcts.take_simulation(agent, game, update_root=False)
             mcts.update_root_with_action(last_red_action)
         pi, action = mcts.take_simulation(agent, game, update_root=True)
         _, _, done = game.step(action)
         return action, done
-
 
     accepted = False
     win_count = 0
@@ -198,38 +200,35 @@ def self_battle(agent_current, agent_new):
         black_mcts = None
         last_red_action = None
         last_black_action = None
+        black_expanded = False
+        round_count = 0
         while not done:
-            ##### red turn
-            red_pi, red_action = red_mcts.take_simulation(agent_new, game, update_root=(last_black_action is None))
-            if last_black_action is None:
-
-                if black_mcts is not None:
-                    last_red_action = red_action
-
-                _, _, done = game.step(red_action)
-                if done:
-                    break
-            else:
-                red_mcts.update_root_with_action(last_black_action)
-                last_black_action = None
+            last_red_action, done = red_turn(last_black_action, red_mcts, agent_new)
+            if done:
+                break
 
             time.sleep(0.1)
 
-            ##### black turn
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
-            
-            black_pi, black_action = black_mcts.take_simulation(agent_current, game, update_root=(last_red_action is None))
-            if last_red_action is None:
-                _, _, done = game.step(black_action)
-                last_black_action = black_action
-                if done:
-                    break
-            else:
-                black_mcts.update_root_with_action(last_red_action)
-                last_red_action = None
-            
-        print(f'{LOG_TAG_AGENT} self battle count={count}')
+            last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded)
+            if done:
+                break
+
+            if not black_expanded:
+                black_expanded = True
+
+            round_count += 1
+            if round_count > RESTRICT_ROUND_NUM:   # 超过步数，提前结束
+                break
+       
+        if done:
+            if game.winner == PLAYER_RED:
+                win_count += 1
+
+        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] self battle count={count}, win_count={win_count}')
+    
+    accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 
     return accepted
 
@@ -247,7 +246,7 @@ def train(agent, replay_buffer):
         loss = agent_new.update(planes, batch_pis, batch_zs)
         losses.append(loss)
 
-        print(f'{LOG_TAG_AGENT} [train agent] epoch: {epoch} | elapsed: {time.time() - start_time:.3f}s | loss: {loss} | pid: {os.getpid()}')
+        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}][train agent] epoch: {epoch} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
 
 
     accepted = self_battle(agent_current, agent_new)
@@ -288,11 +287,15 @@ if __name__ == '__main__':
     # myDict = {'red': 1}
     # print(myDict.get('black'))
 
-    p1 = torch.tensor([[0.1, 0.6, 0.3], [0.6, 0.2, 0.2]])
-    p2 = torch.tensor([[0.8, 0.1, 0.1], [0.5, 0.29, 0.21]])
-    print(torch.sum(p1 * torch.log(p2), dim=1))
+    # p1 = torch.tensor([[0.1, 0.6, 0.3], [0.6, 0.2, 0.2]])
+    # p2 = torch.tensor([[0.8, 0.1, 0.1], [0.5, 0.29, 0.21]])
+    # print(torch.sum(p1 * torch.log(p2), dim=1))
 
 
-    v1 = torch.tensor([1, 2], dtype=torch.float)
-    v2 = torch.tensor([2, 3])
-    print(((v1 - v2) ** 2).view(-1))
+    # v1 = torch.tensor([1, 2], dtype=torch.float)
+    # v2 = torch.tensor([2, 3])
+    # print(((v1 - v2) ** 2).view(-1))
+
+    dirpath = '../output/data/'
+    rb = ReplayBuffer.load_from_dir(dirpath)
+    print(sum(list(rb.buffer)[100][1]))

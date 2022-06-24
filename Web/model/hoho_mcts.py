@@ -292,6 +292,8 @@ class MCTS:
         else:
             print(f'{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
 
+    def is_current_root_expanded(self):
+        return len(self.root.childrens) > 0
 
 if __name__ == '__main__':
     myl = [11, 23, 3, 55, 23, 7, 20, 29]

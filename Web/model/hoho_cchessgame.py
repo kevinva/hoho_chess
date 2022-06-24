@@ -87,16 +87,27 @@ class ReplayBuffer:
             jsonstr = json.dumps(list(self.buffer))
             f.write(jsonstr)
 
-
     @staticmethod
-    def load(filepath):
+    def load_from_file(filepath):
+        data_list = []
         with open(filepath, 'r') as f:
             jsonstr = f.read()
             data_list = json.loads(jsonstr)
-            replay_buffer = ReplayBuffer(data_list=data_list)
+        replay_buffer = ReplayBuffer(data_list=data_list)
         return replay_buffer
 
-
+    @staticmethod
+    def load_from_dir(dirpath):
+        all_data_list = list()
+        for filename in os.listdir(dirpath):
+            if filename.endswith('json') and filename.startswith('replay_buffer'):
+                filepath = os.path.join(dirpath, filename)
+                with open(filepath, 'r') as f:
+                    jsonstr = f.read()
+                    data_list = json.loads(jsonstr)
+                    all_data_list.extend(data_list)
+        replay_buffer = ReplayBuffer(data_list=all_data_list)
+        return replay_buffer
 
 if __name__ == '__main__':
     # s = 'ERIOC<VGK1234q24ds'
