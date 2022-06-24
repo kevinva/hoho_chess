@@ -233,8 +233,8 @@ class EvaluateThread(threading.Thread):
 
 class MCTS:
 
-    def __init__(self):
-        self.root = Node()
+    def __init__(self, start_player=PLAYER_RED, start_state=INIT_BOARD_STATE):
+        self.root = Node(to_state=start_state, player=start_player)
 
         print(f'{LOG_TAG_MCTS} MCTS created!')
     

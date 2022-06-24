@@ -12,8 +12,6 @@ from model.hoho_utils import *
 from model.hoho_config import *
 
 
-
-
 class CChessGame:
 
     def __init__(self, state=INIT_BOARD_STATE, restrict_count=RESTRICT_ROUND_NUM, winner=None, current_player=PLAYER_RED):
@@ -50,7 +48,6 @@ class CChessGame:
         self.current_player = PLAYER_RED
 
 
-
 class ReplayBuffer:
     ''' 经验回放池 '''
     def __init__(self, capacity=10000, data_list=None):
@@ -74,6 +71,9 @@ class ReplayBuffer:
         """当前buffer中数据的数量"""
 
         return len(self.buffer)
+
+    def clear(self):
+        self.buffer.clear()
 
     def save(self):
         filedir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data')

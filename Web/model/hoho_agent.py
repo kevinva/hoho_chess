@@ -1,36 +1,39 @@
 import os
 import sys
-root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(root_dir)
-# print(f'{sys.path}')
+from copy import deepcopy
 
+# root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+# sys.path.append(root_dir)
+# # print(f'{sys.path}')
 
 import torch 
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+
 from model.hoho_config import *
 from model.hoho_utils import *
+from model.hoho_cchessgame import CChessGame
+from model.hoho_mcts import *
 
 class Player:
 
     def __init__(self):
-        self.current_agentNet = AgentNet()
-        self.train_agentNet = AgentNet()
-        self.train_agentNet.load_state_dict(self.current_agentNet.state_dict())
-        self.optimizer = optim.Adam(self.current_agentNet.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
+        self.agent_net = AgentNet()
+        self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
+        # self.agent_net.share_memory()
 
         print(f'{LOG_TAG_AGENT} Player agent created!')
     
     def predict(self, state):
-        prob, value = self.current_agentNet(state)
+        prob, value = self.agent_net(state)
         return prob, value
 
     def update(self, states, pis, zs):
         batch_states = states.to(DEVICE)
         batch_pis = torch.tensor(pis, dtype=torch.float).to(DEVICE)
         batch_zs = torch.tensor(pis, dtype=torch.float).to(DEVICE)
-        predict_probs, predict_values = self.train_agentNet(batch_states)
+        predict_probs, predict_values = self.agent_net(batch_states)
         policy_error = torch.sum(-batch_pis * torch.log(1e-6 + predict_probs), dim=1)
         value_error = (batch_zs - predict_values) ** 2
         loss = (value_error + policy_error).mean()
@@ -39,12 +42,7 @@ class Player:
         loss.backward()
         self.optimizer.step()
 
-    def printModel(self):
-        print(f'{LOG_TAG_AGENT} {self.current_agentNet}')
-
-    def self_agent_battle(self):
-        pass
-
+        return loss.item()
 
     def save_models(self):
         dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
@@ -52,12 +50,15 @@ class Player:
             os.makedirs(dir_path)
         
         filename = os.path.join(dir_path, 'hoho_agent_{}.pth'.format(int(time.time())))
-        state = self.train_agentNet.state_dict()
+        state = self.agent_net.state_dict()
         torch.save(state, filename)
 
     def load_models(self, model_path):
         checkpoint = torch.load(model_path)
-        self.train_agentNet.load_state_dict(checkpoint)
+        self.agent_net.load_state_dict(checkpoint)
+
+    def printModel(self):
+        print(f'{LOG_TAG_AGENT} {self.agent_net}')
 
 
 class AgentNet(nn.Module):
@@ -166,6 +167,85 @@ class ValueNet(nn.Module):
         x = F.relu(self.fc1(x))
         win_score = torch.tanh(self.fc2(x))
         return win_score
+
+
+def self_battle(agent_current, agent_new):
+
+    def red_turn(last_black_action, mcts):
+        if last_black_action is not None:
+            mcts.take_simulation(agent, game, update_root=False)
+            mcts.update_root_with_action(last_black_action)
+        pi, action = mcts.take_simulation(agent, game, update_root=True)
+        _, _, done = game.step(action)
+
+
+
+    accepted = False
+    win_count = 0
+    for count in range(SELF_BATTLE_NUM):
+        done = False
+        game = CChessGame()
+        red_mcts = MCTS(start_player=PLAYER_RED)
+        black_mcts = None
+        last_red_action = None
+        last_black_action = None
+        while not done:
+            ##### red turn
+            red_pi, red_action = red_mcts.take_simulation(agent_new, game, update_root=(last_black_action is None))
+            if last_black_action is None:
+
+                if black_mcts is not None:
+                    last_red_action = red_action
+
+                _, _, done = game.step(red_action)
+                if done:
+                    break
+            else:
+                red_mcts.update_root_with_action(last_black_action)
+                last_black_action = None
+
+            time.sleep(0.1)
+
+            ##### black turn
+            if black_mcts is None:
+                black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
+            
+            black_pi, black_action = black_mcts.take_simulation(agent_current, game, update_root=(last_red_action is None))
+            if last_red_action is None:
+                _, _, done = game.step(black_action)
+                last_black_action = black_action
+                if done:
+                    break
+            else:
+                black_mcts.update_root_with_action(last_red_action)
+                last_red_action = None
+            
+        print(f'{LOG_TAG_AGENT} self battle count={count}')
+
+    return accepted
+
+
+def train(agent, replay_buffer):
+    agent_current = deepcopy(agent)
+    agent_new = deepcopy(agent)
+
+    start_time = time.time()
+    losses = []
+    for epoch in range(EPOCH_NUM):
+        batch_states, batch_pis, batch_zs = replay_buffer.sample(BATCH_SIZE)
+        planes = [convert_board_to_tensor(state) for state in batch_states]
+        planes = torch.stack(planes, dim=0)
+        loss = agent_new.update(planes, batch_pis, batch_zs)
+        losses.append(loss)
+
+        print(f'{LOG_TAG_AGENT} [train agent] epoch: {epoch} | elapsed: {time.time() - start_time:.3f}s | loss: {loss} | pid: {os.getpid()}')
+
+
+    accepted = self_battle(agent_current, agent_new)
+    if accepted:
+        agent_new.save_models()
+        # hoho_todo: 通知主进程更新模型
+
 
 if __name__ == '__main__':
 #     # in_channel = 1

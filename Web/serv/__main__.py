@@ -2,6 +2,8 @@
 import json, os
 import time
 from web.py_lib import auto_chess
+import torch
+import torch.multiprocessing as mp
 
 from model.hoho_utils import *
 from model.hoho_agent import *
@@ -34,7 +36,7 @@ def ajax_(request_, response_, route_args_):
 		global hoho_game, hoho_simulator, match_count
 
 		hoho_game = CChessGame()
-		hoho_simulator = MCTS()
+		hoho_simulator = MCTS(start_player=PLAYER_RED)
 		match_count += 1
 
 		state = hoho_game.state
@@ -81,12 +83,12 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
-		if hoho_replay_buffer.size() >= 1000:
+		if hoho_replay_buffer.size() >= 100:
 			hoho_replay_buffer.save()
 			hoho_replay_buffer.clear()
 
 		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{LOG_TAG_SERV} {round_count} rounds / {match_count} matches || Elapsed={(time.time() - start_time):.3f}s/round || pid={os.getpid()}')
+		print(f'{LOG_TAG_SERV} {round_count} rounds / {match_count} matches | Elapsed={(time.time() - start_time):.3f}s/round | pid={os.getpid()}')
 		print('========================================================')
 
 			
@@ -105,7 +107,16 @@ def start_server_(port_, max_threads_):
 
 
 
+def start_train_process(agent, replay_buffer):
+	train_proc = mp.Process(target=train, args=(agent, replay_buffer))
+	train_proc.start()
+	train_proc.join()
+
+
 if __name__ == '__main__':
+	torch.manual_seed(0)
+	mp.set_start_method('spawn')
+
 	match_count = 0
 	hoho_simulator = None
 	hoho_game = None
@@ -115,3 +126,6 @@ if __name__ == '__main__':
 	# hoho_step 1
 	print(f'{LOG_TAG_SERV} start server! pid={os.getpid()}')
 	start_server_(8000, 100)
+
+
+	
