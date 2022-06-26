@@ -70,9 +70,7 @@ def ajax_(request_, response_, route_args_):
 			black_next_state, black_z, _ = hoho_game.step(black_action)
 			if (black_pi is not None) and (black_action == black_action_expected):
 				print(f'{LOG_TAG_SERV} same action choose by model and webgame!')
-				black_real_state = flip_board(black_state)  # 这里是黑方走子，所以要翻转为红方
-				black_pi = flip_action_probas(black_pi)  # 同样策略也要翻转为红方
-				hoho_replay_buffer.add(black_real_state, black_pi.tolist(), black_z)
+				hoho_replay_buffer.add(black_state, black_pi.tolist(), black_z)
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
