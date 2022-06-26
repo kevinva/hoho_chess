@@ -61,13 +61,16 @@ def ajax_(request_, response_, route_args_):
 			print(f'{LOG_TAG_SERV} [Error] black_move is None! ')
 		else:
 			black_state = hoho_game.state
+			black_pi = None
 			black_action = convert_webgame_opponent_move_to_action(black_move)
-			black_pi, _ = hoho_mcts.take_simulation(hoho_agent, hoho_game, update_root=False)  # 黑方用webgame自身的action，所以不要自动更新根节点
+			if not hoho_mcts.is_current_root_expanded():
+				black_pi, _ = hoho_mcts.take_simulation(hoho_agent, hoho_game, update_root=False)  # 黑方用webgame自身的action，所以不要自动更新根节点
 			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_next_state, black_z, _ = hoho_game.step(black_action)
-			black_real_state = flip_board(black_state)  # 这里是黑方走子，所以要翻转为红方
-			black_pi = flip_action_probas(black_pi)  # 同样策略要翻转为红方
-			hoho_replay_buffer.add(black_real_state, black_pi.tolist(), black_z)
+			if black_pi is not None:
+				black_real_state = flip_board(black_state)  # 这里是黑方走子，所以要翻转为红方
+				black_pi = flip_action_probas(black_pi)  # 同样策略也要翻转为红方
+				hoho_replay_buffer.add(black_real_state, black_pi.tolist(), black_z)
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
@@ -83,7 +86,7 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
-		if hoho_replay_buffer.size() >= 100:
+		if hoho_replay_buffer.size() >= 1000:
 			hoho_replay_buffer.save()
 			hoho_replay_buffer.clear()
 
