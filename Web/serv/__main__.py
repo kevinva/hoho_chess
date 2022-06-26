@@ -69,6 +69,7 @@ def ajax_(request_, response_, route_args_):
 			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_next_state, black_z, _ = hoho_game.step(black_action)
 			if (black_pi is not None) and (black_action == black_action_expected):
+				print(f'{LOG_TAG_SERV} same action choose by model and webgame!')
 				black_real_state = flip_board(black_state)  # 这里是黑方走子，所以要翻转为红方
 				black_pi = flip_action_probas(black_pi)  # 同样策略也要翻转为红方
 				hoho_replay_buffer.add(black_real_state, black_pi.tolist(), black_z)
@@ -87,7 +88,7 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
-		if hoho_replay_buffer.size() >= 1000:
+		if hoho_replay_buffer.size() >= 100:
 			hoho_replay_buffer.save()
 			hoho_replay_buffer.clear()
 
