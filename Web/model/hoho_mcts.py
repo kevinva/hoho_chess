@@ -256,6 +256,10 @@ class MCTS:
                 search_threads.append(searcher)
             for thread in search_threads:
                 thread.join()
+
+            if DEBUG:
+                print(f'{LOG_TAG_MCTS} simulation: {simulation}')
+                
         evaluator.join()
     
         # 模拟走子之后，生成走子策略

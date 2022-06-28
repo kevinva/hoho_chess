@@ -4,9 +4,9 @@ import torch
 # multiprocess + CPU，loss有降
 # no multiprocess + GPU，loss有降
 # no multiprocess + 
-# 难道是因为GPU为单卡的原因？
-# DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
-DEVICE = torch.device('cpu')
+# 难道是因为GPU为单卡的原因？还是用多线程吧
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+# DEVICE = torch.device('cpu')
 
 # 残差网络层数，见hoho_agent.py
 RESIDUAL_BLOCK_NUM = 19 # 39
@@ -24,7 +24,7 @@ LEARNING_RATE = 5e-5
 L2_REGULARIZATION = 1e-4
 
 # 训练的epoch数
-EPOCH_NUM = 100
+EPOCH_NUM = 200
 
 # 计算节点UCB的常数
 C_PUCT = 0.2
@@ -54,7 +54,7 @@ SELF_BATTLE_NUM = 100 #400
 SELF_BATTLE_WIN_RATE = 0.55
 
 # 控制某些日志是否打印
-DEBUG = True
+DEBUG = False
 
 LOG_TAG_AGENT = '[hoho_agent]'
 LOG_TAG_CCHESSGAME = '[hoho_cchessgame]'

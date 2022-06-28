@@ -109,40 +109,44 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 
-def start_train_process(agent, replay_buffer):
-	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start train process')
+def start_train(agent, replay_buffer):
+	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start training!')
 
-	train_proc = mp.Process(target=train, args=(agent, replay_buffer))
-	train_proc.start()
-	train_proc.join()
+	# train_proc = mp.Process(target=train, args=(agent, replay_buffer))
+	# train_proc.start()
+	# train_proc.join()
+
+	train_thread = threading.Thread(target=train, args=(agent, replay_buffer), name='train_thread')
+	train_thread.start()
+	train_thread.join()
 
 
 if __name__ == '__main__':
 	torch.manual_seed(0)
 	mp.set_start_method('spawn')
 
-	match_count = 0
-	hoho_mcts = None
-	hoho_game = None
-	hoho_agent = Player()
-	hoho_replay_buffer = ReplayBuffer()
+	# match_count = 0
+	# hoho_mcts = None
+	# hoho_game = None
+	# hoho_agent = Player()
+	# hoho_replay_buffer = ReplayBuffer()
 
 	# hoho_step 1
-	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
-	start_server_(8000, 100)
+	# print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
+	# start_server_(8000, 100)
 
-	# root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-	# data_dir_path = os.path.join(root_dir_path, 'output', 'data')
-	# # rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
-	# rb = ReplayBuffer.load_from_dir(data_dir_path)
-	# print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
-	# agent = Player()
-	# model_dir_path = os.path.join(root_dir_path, 'output', 'models')
-	# model_files = os.listdir(model_dir_path)
-	# if len(model_files) > 0:
-	# 	model_path = os.path.join(model_dir_path, model_files[0])
-	# 	agent.load_model_from_path(model_path)
-	# start_train_process(agent, rb)
+	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
+	# rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
+	rb = ReplayBuffer.load_from_dir(data_dir_path)
+	print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
+	agent = Player()
+	model_dir_path = os.path.join(root_dir_path, 'output', 'models')
+	model_files = os.listdir(model_dir_path)
+	if len(model_files) > 0:
+		model_path = os.path.join(model_dir_path, model_files[0])
+		agent.load_model_from_path(model_path)
+	start_train(agent, rb)
 
 
 	
