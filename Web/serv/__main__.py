@@ -122,7 +122,6 @@ def start_train(agent, replay_buffer):
 
 
 if __name__ == '__main__':
-	torch.manual_seed(0)
 	mp.set_start_method('spawn')
 
 	match_count = 0
