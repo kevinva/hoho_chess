@@ -44,7 +44,7 @@ class Player:
 
         return loss.item()
 
-    def save_models(self):
+    def save_model(self):
         dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -53,9 +53,10 @@ class Player:
         state = self.agent_net.state_dict()
         torch.save(state, filename)
 
-    def load_models(self, model_path):
+    def load_model_from_path(self, model_path):
         checkpoint = torch.load(model_path)
         self.agent_net.load_state_dict(checkpoint)
+        self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
 
     def printModel(self):
         print(f'{LOG_TAG_AGENT} {self.agent_net}')
@@ -258,11 +259,11 @@ def train(agent, replay_buffer):
     dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
     model_files = os.listdir(dir_path)
     if len(model_files) == 0:
-        agent_new.save_models()
+        agent_new.save_model()
 
     accepted = self_battle(agent_current, agent_new)
     if accepted:
-        agent_new.save_models()
+        agent_new.save_model()
         # hoho_todo: 通知主进程更新模型
 
 

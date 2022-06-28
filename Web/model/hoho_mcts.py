@@ -181,7 +181,7 @@ class SearchThread(threading.Thread):
             self.condition_search.notify()
             self.condition_search.release()
 
-            print(f'{LOG_TAG_MCTS} {SEARCH_THREAD_GAME_DONE}')
+            # print(f'{LOG_TAG_MCTS} {SEARCH_THREAD_GAME_DONE}')
 
 
 class EvaluateThread(threading.Thread):

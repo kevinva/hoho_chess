@@ -131,12 +131,17 @@ if __name__ == '__main__':
 	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
 	start_server_(8000, 100)
 
-	# dirpath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-	# dirpath = os.path.join(dirpath, 'output', 'data')
+	# root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	# data_dir_path = os.path.join(root_dir_path, 'output', 'data')
 	# # rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
-	# rb = ReplayBuffer.load_from_dir(dirpath)
+	# rb = ReplayBuffer.load_from_dir(data_dir_path)
 	# print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
 	# agent = Player()
+	# model_dir_path = os.path.join(root_dir_path, 'output', 'models')
+	# model_files = os.listdir(model_dir_path)
+	# if len(model_files) > 0:
+	# 	model_path = os.path.join(model_dir_path, model_files[0])
+	# 	agent.load_model_from_path(model_path)
 	# start_train_process(agent, rb)
 
 
