@@ -110,6 +110,8 @@ def start_server_(port_, max_threads_):
 
 
 def start_train_process(agent, replay_buffer):
+	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start train process')
+
 	train_proc = mp.Process(target=train, args=(agent, replay_buffer))
 	train_proc.start()
 	train_proc.join()
@@ -128,6 +130,13 @@ if __name__ == '__main__':
 	# hoho_step 1
 	print(f'{LOG_TAG_SERV} start server! pid={os.getpid()}')
 	start_server_(8000, 100)
+
+	# dirpath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	# dirpath = os.path.join(dirpath, 'output', 'data')
+	# # rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
+	# rb = ReplayBuffer.load_from_dir(dirpath)
+	# agent = Player()
+	# start_train_process(agent, rb)
 
 
 	

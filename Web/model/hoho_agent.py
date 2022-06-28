@@ -19,7 +19,7 @@ from model.hoho_mcts import *
 class Player:
 
     def __init__(self):
-        self.agent_net = AgentNet()
+        self.agent_net = AgentNet().to(DEVICE)
         self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
         # self.agent_net.share_memory()
 
@@ -32,9 +32,9 @@ class Player:
     def update(self, states, pis, zs):
         batch_states = states.to(DEVICE)
         batch_pis = torch.tensor(pis, dtype=torch.float).to(DEVICE)
-        batch_zs = torch.tensor(pis, dtype=torch.float).to(DEVICE)
+        batch_zs = torch.tensor(zs, dtype=torch.float).view(-1, 1).to(DEVICE)
         predict_probs, predict_values = self.agent_net(batch_states)
-        policy_error = torch.sum(-batch_pis * torch.log(1e-6 + predict_probs), dim=1)
+        policy_error = torch.sum(-batch_pis * torch.log(predict_probs.clamp(min=1e-6)), dim=1)   # clamp(min=1e-6)防止log(0)
         value_error = (batch_zs - predict_values) ** 2
         loss = (value_error + policy_error).mean()
         
@@ -172,6 +172,8 @@ class ValueNet(nn.Module):
 def self_battle(agent_current, agent_new):
     """新训练网络与当前网络自博弈"""
 
+    print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] start self battle!!!')
+
     def red_turn(last_black_action, mcts, agent, game):
         done = False
         if last_black_action is not None:
@@ -203,7 +205,8 @@ def self_battle(agent_current, agent_new):
         black_expanded = False
         round_count = 0
         while not done:
-            last_red_action, done = red_turn(last_black_action, red_mcts, agent_new)
+            last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game)
+            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}], red turn: state={game.state}, action={last_red_action}')
             if done:
                 break
 
@@ -212,11 +215,14 @@ def self_battle(agent_current, agent_new):
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
             last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded)
+            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}], black turn: state={game.state}, action={last_black_action}')
             if done:
                 break
 
             if not black_expanded:
                 black_expanded = True
+
+            
 
             round_count += 1
             if round_count > RESTRICT_ROUND_NUM:   # 超过步数，提前结束
@@ -237,17 +243,17 @@ def train(agent, replay_buffer):
     agent_current = deepcopy(agent)
     agent_new = deepcopy(agent)
 
-    start_time = time.time()
     losses = []
     for epoch in range(EPOCH_NUM):
+        start_time = time.time()
+
         batch_states, batch_pis, batch_zs = replay_buffer.sample(BATCH_SIZE)
         planes = [convert_board_to_tensor(state) for state in batch_states]
         planes = torch.stack(planes, dim=0)
         loss = agent_new.update(planes, batch_pis, batch_zs)
         losses.append(loss)
 
-        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}][train agent] epoch: {epoch} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
-
+        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}][train agent] epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
 
     accepted = self_battle(agent_current, agent_new)
     if accepted:
@@ -296,6 +302,9 @@ if __name__ == '__main__':
     # v2 = torch.tensor([2, 3])
     # print(((v1 - v2) ** 2).view(-1))
 
-    dirpath = '../output/data/'
-    rb = ReplayBuffer.load_from_dir(dirpath)
-    print(sum(list(rb.buffer)[100][1]))
+    # dirpath = '../output/data/'
+    # rb = ReplayBuffer.load_from_dir(dirpath)
+    # print(sum(list(rb.buffer)[100][1]))
+
+    testt = torch.tensor([1, 2, 3, 4, 5, -1, 0.1, -2], dtype=torch.float)
+    print(testt.clamp(min=1e-3))

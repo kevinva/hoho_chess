@@ -276,7 +276,7 @@ def can_moveto_for_player(piece, player):
 
 
 def get_legal_actions(board_str, current_player):
-    """返回当前棋盘状态下指定玩家的所有合法走子"""
+    """返回当前棋盘状态下指定玩家的所有合法走子动作"""
 
     actions = []
     k_x = None  # 黑方将军（将）走子
