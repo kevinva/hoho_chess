@@ -263,11 +263,19 @@ class MCTS:
         for node in self.root.childrens:
             action_scores[ACTIONS_2_INDEX[node.action]] = np.power(node.N, 1 / POLICY_TEMPERATURE)
             
-            if math.isinf(action_scores[ACTIONS_2_INDEX[node.action]]):
-                print(f'node.N = {node.N}')
+            if DEBUG:
+                if math.isinf(action_scores[ACTIONS_2_INDEX[node.action]]):
+                    print(f'{LOG_TAG_MCTS} node.N = {node.N}')
         
         total = np.sum(action_scores)
         pi = action_scores / total
+        
+        if DEBUG:
+            for idx, p in enumerate(pi):
+                if math.isinf(p):
+                    print(f'{LOG_TAG_MCTS} maybe inf: idx={idx}, p={p}')
+
+
         final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
         # 替换为新的根节点
