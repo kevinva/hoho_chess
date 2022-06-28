@@ -48,7 +48,7 @@ POLICY_TEMPERATURE = 0.1 #1e-3，设置数太小，小心计算inf
 RESTRICT_ROUND_NUM = 80
 
 # 网络训练完成后自博弈的次数
-SELF_BATTLE_NUM = 200 #400
+SELF_BATTLE_NUM = 100 #400
 
 # 训练的网络与当前网络的自博弈，超过该阈值即替换当前网络
 SELF_BATTLE_WIN_RATE = 0.55

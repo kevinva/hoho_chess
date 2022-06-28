@@ -208,7 +208,7 @@ def self_battle(agent_current, agent_new):
         round_count = 0
         while not done:
             last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game)
-            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}], red turn: state={game.state}, action={last_red_action}')
+            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] round: {count} | action={last_red_action}, red turn: state={game.state}')
             if done:
                 break
 
@@ -217,7 +217,7 @@ def self_battle(agent_current, agent_new):
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
             last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded)
-            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}], black turn: state={game.state}, action={last_black_action}')
+            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] round: {count} | action={last_black_action}, black turn: state={game.state}')
             if done:
                 break
 

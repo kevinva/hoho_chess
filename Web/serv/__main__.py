@@ -128,7 +128,7 @@ if __name__ == '__main__':
 	hoho_replay_buffer = ReplayBuffer()
 
 	# hoho_step 1
-	print(f'{LOG_TAG_SERV} start server! pid={os.getpid()}')
+	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
 	start_server_(8000, 100)
 
 	# dirpath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
