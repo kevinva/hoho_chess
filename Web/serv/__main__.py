@@ -91,7 +91,7 @@ def ajax_(request_, response_, route_args_):
 			hoho_replay_buffer.clear()
 
 		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{LOG_TAG_SERV}[pid={os.getpid()}] {round_count} rounds / {match_count} matches | Elapsed={(time.time() - start_time):.3f}s/round')
+		print(f'{LOG_TAG_SERV}[pid={os.getpid()}] {round_count} rounds / {match_count} matches | elapsed={(time.time() - start_time):.3f}s/round')
 		print('========================================================')
 
 			

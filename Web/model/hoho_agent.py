@@ -195,7 +195,7 @@ def self_battle(agent_current, agent_new):
 
     accepted = False
     win_count = 0
-    for count in range(SELF_BATTLE_NUM):
+    for match_count in range(SELF_BATTLE_NUM):
         start_time = time.time()
 
         done = False
@@ -208,7 +208,7 @@ def self_battle(agent_current, agent_new):
         round_count = 0
         while not done:
             last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game)
-            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] round: {count} | action={last_red_action}, red turn: state={game.state}')
+            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] rounds: {round_count} / matches: {match_count} | action={last_red_action}, red turn: state={game.state}')
             if done:
                 break
 
@@ -217,14 +217,12 @@ def self_battle(agent_current, agent_new):
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
             last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded)
-            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] round: {count} | action={last_black_action}, black turn: state={game.state}')
+            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] rounds: {round_count} / matches: {match_count} | action={last_black_action}, black turn: state={game.state}')
             if done:
                 break
 
             if not black_expanded:
                 black_expanded = True
-
-            
 
             round_count += 1
             if round_count > RESTRICT_ROUND_NUM:   # 超过步数，提前结束
@@ -234,7 +232,7 @@ def self_battle(agent_current, agent_new):
             if game.winner == PLAYER_RED:
                 win_count += 1
 
-        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] win_count: {win_count} | self battle count: {count} | elapse: {time.time() - start_time:.3f}s')
+        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] win_count: {win_count} | self battle count: {match_count} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 
@@ -256,6 +254,11 @@ def train(agent, replay_buffer):
         losses.append(loss)
 
         print(f'{LOG_TAG_AGENT}[pid={os.getpid()}][train agent] epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
+
+    dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
+    model_files = os.listdir(dir_path)
+    if len(model_files) == 0:
+        agent_new.save_models()
 
     accepted = self_battle(agent_current, agent_new)
     if accepted:
