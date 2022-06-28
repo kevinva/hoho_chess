@@ -135,6 +135,7 @@ if __name__ == '__main__':
 	# dirpath = os.path.join(dirpath, 'output', 'data')
 	# # rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
 	# rb = ReplayBuffer.load_from_dir(dirpath)
+	# print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
 	# agent = Player()
 	# start_train_process(agent, rb)
 

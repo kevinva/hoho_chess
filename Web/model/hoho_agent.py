@@ -196,6 +196,8 @@ def self_battle(agent_current, agent_new):
     accepted = False
     win_count = 0
     for count in range(SELF_BATTLE_NUM):
+        start_time = time.time()
+
         done = False
         game = CChessGame()
         red_mcts = MCTS(start_player=PLAYER_RED)
@@ -232,7 +234,7 @@ def self_battle(agent_current, agent_new):
             if game.winner == PLAYER_RED:
                 win_count += 1
 
-        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] self battle count={count}, win_count={win_count}')
+        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] win_count: {win_count} | self battle count: {count} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 

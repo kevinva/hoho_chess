@@ -5,7 +5,7 @@ import torch
 # no multiprocess + GPU，loss有降
 # no multiprocess + 
 # 难道是因为GPU为单卡的原因？
-# DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')   # 
+# DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
 DEVICE = torch.device('cpu')
 
 # 残差网络层数，见hoho_agent.py
