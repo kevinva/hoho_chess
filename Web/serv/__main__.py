@@ -136,6 +136,8 @@ def try_update_agent():
 
 
 def try_train_agent():
+	global last_train_time
+	
 	if (time.time() - last_train_time) < 3600:
 		return
 
@@ -151,12 +153,12 @@ def try_train_agent():
 
 	train_thread = threading.Thread(target=train, args=(hoho_agent, rb), name='train_thread')
 	train_thread.start()
-	train_thread.join()
+	# train_thread.join()
 
 	# mp.set_start_method('spawn')
-	# train_proc = mp.Process(target=train, args=(agent, replay_buffer))
+	# train_proc = mp.Process(target=train, args=(hoho_agent, rb))
 	# train_proc.start()
-	# train_proc.join()
+	# # train_proc.join()
 
 
 if __name__ == '__main__':

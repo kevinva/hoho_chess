@@ -1,6 +1,8 @@
 import os
 import sys
+import random
 from copy import deepcopy
+
 
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
@@ -246,7 +248,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
             if done:
                 break
 
-            time.sleep(0.1)
+            time.sleep(random.randint(0, 3))
 
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
