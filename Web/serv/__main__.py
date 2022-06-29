@@ -82,7 +82,7 @@ def ajax_(request_, response_, route_args_):
 			print(f'{LOG_TAG_SERV} red_state={red_state}, with action={red_action}, to state={red_next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
-			print(f'{LOG_TAG_SERV} [ajax_] get red move={red_move}')
+			print(f'{LOG_TAG_SERV}[ajax_] get red move={red_move}')
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 

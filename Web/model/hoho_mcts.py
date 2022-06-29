@@ -257,29 +257,20 @@ class MCTS:
             for thread in search_threads:
                 thread.join()
 
-            if DEBUG:
-                print(f'{LOG_TAG_MCTS} simulation: {simulation}')
-                
+            # if DEBUG:
+            #     print(f'{LOG_TAG_MCTS} simulation: {simulation}')
+
         evaluator.join()
     
         # 模拟走子之后，生成走子策略
         action_scores = np.zeros((ACTION_DIM,))
         for node in self.root.childrens:
             action_scores[ACTIONS_2_INDEX[node.action]] = np.power(node.N, 1 / POLICY_TEMPERATURE)
-            
-            if DEBUG:
-                if math.isinf(action_scores[ACTIONS_2_INDEX[node.action]]):
-                    print(f'{LOG_TAG_MCTS} node.N = {node.N}')
         
         total = np.sum(action_scores)
+        if total == 0:
+            total += 1e-3
         pi = action_scores / total
-        
-        if DEBUG:
-            for idx, p in enumerate(pi):
-                if math.isinf(p):
-                    print(f'{LOG_TAG_MCTS} maybe inf: idx={idx}, p={p}')
-
-
         final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
         # 替换为新的根节点
