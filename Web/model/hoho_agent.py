@@ -201,11 +201,19 @@ def self_battle(agent_current, agent_new, use_mcts=True):
             planes = convert_board_to_tensor(game.state).unsqueeze(0).to(DEVICE)
             pis, _ = agent.predict(planes)
             pi = pis.to(torch.device('cpu')).detach().numpy()[0]
-            pi = pi / np.sum(pi)  # 神经网络输出的概率总和有时候不为1，会有点偏差（如0.9999..）,这里强制做一下归一化
-            action_idx = np.random.choice(ACTION_DIM, p=pi)
-            action = INDEXS_2_ACTION[action_idx]
-            _, _, done = game.step(action)
-        return action, done
+
+            all_legal_actions = get_legal_actions(game.state, PLAYER_RED)
+            probas = np.zeros((ACTION_DIM,))
+            for action in all_legal_actions:
+                action_idx = ACTIONS_2_INDEX[action]
+                probas[action_idx] = pi[action_idx]
+            probas = probas / np.sum(probas) 
+
+            action_idx = np.random.choice(ACTION_DIM, p=probas)
+            red_action = INDEXS_2_ACTION[action_idx]
+            _, _, done = game.step(red_action)
+
+        return red_action, done
 
     def black_turn(last_red_action, mcts, agent, game, expanded, use_mcts=True):
         done = False
@@ -220,14 +228,22 @@ def self_battle(agent_current, agent_new, use_mcts=True):
         else:
             state = flip_board(game.state)
             planes = convert_board_to_tensor(state).unsqueeze(0).to(DEVICE)
-            probas, _ = agent.predict(planes)
-            pi = probas.to(torch.device('cpu')).detach().numpy()[0]
+            pis, _ = agent.predict(planes)
+            pi = pis.to(torch.device('cpu')).detach().numpy()[0]
             pi = flip_action_probas(pi)
-            pi = pi / np.sum(pi)
-            action_idx = np.random.choice(ACTION_DIM, p=pi)
-            action = INDEXS_2_ACTION[action_idx]
-            _, _, done = game.step(action)
-        return action, done
+
+            all_legal_actions = get_legal_actions(game.state, PLAYER_BLACK)
+            probas = np.zeros((ACTION_DIM,))
+            for action in all_legal_actions:
+                action_idx = ACTIONS_2_INDEX[action]
+                probas[action_idx] = pi[action_idx]
+            probas = probas / np.sum(probas)
+            
+            action_idx = np.random.choice(ACTION_DIM, p=probas)
+            black_action = INDEXS_2_ACTION[action_idx]
+            _, _, done = game.step(black_action)
+            
+        return black_action, done
 
     accepted = False
     win_count = 0
