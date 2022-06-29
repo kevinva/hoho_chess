@@ -112,6 +112,7 @@ def start_server_(port_, max_threads_):
 def start_train(agent, replay_buffer):
 	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start training!')
 
+	# mp.set_start_method('spawn')
 	# train_proc = mp.Process(target=train, args=(agent, replay_buffer))
 	# train_proc.start()
 	# train_proc.join()
@@ -122,8 +123,6 @@ def start_train(agent, replay_buffer):
 
 
 if __name__ == '__main__':
-	mp.set_start_method('spawn')
-
 	# match_count = 0
 	# hoho_mcts = None
 	# hoho_game = None

@@ -170,28 +170,51 @@ class ValueNet(nn.Module):
         return win_score
 
 
-def self_battle(agent_current, agent_new):
+def self_battle(agent_current, agent_new, use_mcts=True):
     """新训练网络与当前网络自博弈"""
 
     print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] start self battle!!!')
 
-    def red_turn(last_black_action, mcts, agent, game):
+    def red_turn(last_black_action, mcts, agent, game, use_mcts=True):
         done = False
-        if last_black_action is not None:
-            if not mcts.is_current_root_expanded():
-                mcts.take_simulation(agent, game, update_root=False)
-            mcts.update_root_with_action(last_black_action)
-        pi, action = mcts.take_simulation(agent, game, update_root=True)
-        _, _, done = game.step(action)
+        action = None
+        if use_mcts:
+            if last_black_action is not None:
+                if not mcts.is_current_root_expanded():
+                    mcts.take_simulation(agent, game, update_root=False)
+                mcts.update_root_with_action(last_black_action)
+            pi, action = mcts.take_simulation(agent, game, update_root=True)
+            _, _, done = game.step(action)
+        else:
+            planes = convert_board_to_tensor(game.state).unsqueeze(0).to(DEVICE)
+            pis, _ = agent.predict(planes)
+            pi = pis.to(torch.device('cpu')).detach().numpy()[0]
+            pi = pi / np.sum(pi)  # 神经网络输出的概率总和有时候不为1，会有点偏差（如0.9999..）,这里强制做一下归一化
+            action_idx = np.random.choice(ACTION_DIM, p=pi)
+            action = INDEXS_2_ACTION[action_idx]
+            _, _, done = game.step(action)
         return action, done
 
-    def black_turn(last_red_action, mcts, agent, game, expanded):
-        if (last_red_action is not None) and expanded:
-            if not mcts.is_current_root_expanded():
-                mcts.take_simulation(agent, game, update_root=False)
-            mcts.update_root_with_action(last_red_action)
-        pi, action = mcts.take_simulation(agent, game, update_root=True)
-        _, _, done = game.step(action)
+    def black_turn(last_red_action, mcts, agent, game, expanded, use_mcts=True):
+        done = False
+        action = None
+        if use_mcts:
+            if (last_red_action is not None) and expanded:
+                if not mcts.is_current_root_expanded():
+                    mcts.take_simulation(agent, game, update_root=False)
+                mcts.update_root_with_action(last_red_action)
+            pi, action = mcts.take_simulation(agent, game, update_root=True)
+            _, _, done = game.step(action)
+        else:
+            state = flip_board(game.state)
+            planes = convert_board_to_tensor(state).unsqueeze(0).to(DEVICE)
+            probas, _ = agent.predict(planes)
+            pi = probas.to(torch.device('cpu')).detach().numpy()[0]
+            pi = flip_action_probas(pi)
+            pi = pi / np.sum(pi)
+            action_idx = np.random.choice(ACTION_DIM, p=pi)
+            action = INDEXS_2_ACTION[action_idx]
+            _, _, done = game.step(action)
         return action, done
 
     accepted = False
@@ -208,7 +231,7 @@ def self_battle(agent_current, agent_new):
         black_expanded = False
         round_count = 0
         while not done:
-            last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game)
+            last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game, use_mcts)
             print(f'{LOG_TAG_AGENT} Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | action={last_red_action}, red turn: state={game.state}')
             if done:
                 break
@@ -217,7 +240,7 @@ def self_battle(agent_current, agent_new):
 
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
-            last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded)
+            last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded, use_mcts)
             print(f'{LOG_TAG_AGENT} Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | action={last_black_action}, black turn: state={game.state}')
             if done:
                 break
@@ -233,7 +256,7 @@ def self_battle(agent_current, agent_new):
             if game.winner == PLAYER_RED:
                 win_count += 1
 
-        print(f'{LOG_TAG_AGENT} Self battle! win_count: {win_count} | total count: {match_count + 1} | elapse: {time.time() - start_time:.3f}s')
+        print(f'{LOG_TAG_AGENT} Self battle! win_count: {win_count} | match count: {match_count + 1} | current win rate = {win_count / (match_count + 1)} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 
@@ -261,7 +284,7 @@ def train(agent, replay_buffer):
     if len(model_files) == 0:
         agent_new.save_model()
 
-    accepted = self_battle(agent_current, agent_new)
+    accepted = self_battle(agent_current, agent_new, use_mcts=False)
     if accepted:
         agent_new.save_model()
         # hoho_todo: 通知主进程更新模型
@@ -314,3 +337,4 @@ if __name__ == '__main__':
 
     testt = torch.tensor([1, 2, 3, 4, 5, -1, 0.1, -2], dtype=torch.float)
     print(testt.clamp(min=1e-3))
+    print(testt.unsqueeze(0))

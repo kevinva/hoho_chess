@@ -263,15 +263,19 @@ class MCTS:
         evaluator.join()
     
         # 模拟走子之后，生成走子策略
+        final_action_idx = 0
         action_scores = np.zeros((ACTION_DIM,))
         for node in self.root.childrens:
             action_scores[ACTIONS_2_INDEX[node.action]] = np.power(node.N, 1 / POLICY_TEMPERATURE)
         
         total = np.sum(action_scores)
         if total == 0:
-            total += 1e-3
-        pi = action_scores / total
-        final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
+            final_action_idx = np.random.choice(action_scores.shape[0])
+            if DEBUG:
+                print(f'{LOG_TAG_MCTS} Total score is 0. The root children count: {len(self.root.childrens)}')
+        else:
+            pi = action_scores / total
+            final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
         # 替换为新的根节点
         final_action = INDEXS_2_ACTION[final_action_idx]
