@@ -55,7 +55,7 @@ class Player:
         torch.save(state, filename)
 
     def load_model_from_path(self, model_path):
-        filename = model_path.split('/')[-1]
+        filename = os.path.basename(model_path)
         filename = filename.split('.')[0]
         items = filename.split('_')
         if len(items) == 4:
@@ -63,10 +63,6 @@ class Player:
 
         checkpoint = torch.load(model_path)
         self.agent_net.load_state_dict(checkpoint)
-        self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
-
-    def sync_from_agent(self, other_agent):
-        self.agent_net.load_state_dict(other_agent.agent_net.state_dict())
         self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
     
     def update_version(self):
@@ -187,7 +183,7 @@ class ValueNet(nn.Module):
 def self_battle(agent_current, agent_new, use_mcts=True):
     """新训练网络与当前网络自博弈"""
 
-    print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] start self battle!!!')
+    print(f'{LOG_TAG_AGENT} start self battle!!!')
 
     def red_turn(last_black_action, mcts, agent, game, use_mcts=True):
         done = False
@@ -291,17 +287,18 @@ def train(agent, replay_buffer):
         loss = agent_new.update(planes, batch_pis, batch_zs)
         losses.append(loss)
 
-        print(f'{LOG_TAG_AGENT} Train agent! epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
+        print(f'{LOG_TAG_AGENT} Training! epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
 
-    dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
-    model_files = os.listdir(dir_path)
-    if len(model_files) == 0:
-        agent_new.save_model()
+    # dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
+    # model_files = os.listdir(dir_path)
+    # if len(model_files) == 0:
+    #     agent_new.save_model()
 
     accepted = self_battle(agent_current, agent_new, use_mcts=False)
     if accepted:
+        agent_new.update_version()
         agent_new.save_model()
-        # hoho_todo: 通知主进程更新模型
+        # hoho_todo: 通知主线程更新模型
 
 
 if __name__ == '__main__':

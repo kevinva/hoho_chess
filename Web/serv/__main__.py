@@ -35,6 +35,7 @@ def ajax_(request_, response_, route_args_):
 	if data_board == 'Action!': # 开始！
 		global hoho_game, hoho_mcts, match_count
 
+		try_update_agent()
 		hoho_game = CChessGame()
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
 		match_count += 1
@@ -90,10 +91,10 @@ def ajax_(request_, response_, route_args_):
 			hoho_replay_buffer.save()
 			hoho_replay_buffer.clear()
 
-		start_train_agent()
+		try_train_agent()
 
 		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{LOG_TAG_SERV} model version: {hoho_agent.version} | {round_count} rounds / {match_count} matches | elapsed={(time.time() - start_time):.3f}s/round')
+		print(f'{LOG_TAG_SERV} model version: {hoho_agent.version} | {round_count} rounds / {match_count} matches | elapsed={(time.time() - start_time):.3f}s')
 		print('========================================================')
 
 			
@@ -111,13 +112,35 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 
-def start_train_agent():
-	if time.time() - last_train_time < 1800:
+def try_update_agent():
+	global hoho_agent
+
+	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	model_dir_path = os.path.join(root_dir_path, 'output', 'models')
+	found_filename = None
+	for filename in os.listdir(model_dir_path):
+		name = filename.split('.')[0]
+		items = name.split('_')
+		if len(items) == 4:
+			check_version = int(items[3])
+			if hoho_agent.version < check_version:
+				found_filename = filename
+				break
+
+	if found_filename is None:
+		return
+
+	model_file_path = os.path.join(model_dir_path, found_filename)
+	hoho_agent.load_model_from_path(model_file_path)
+	print(f'{LOG_TAG_SERV} Agent updated! version={hoho_agent.version}')
+
+
+def try_train_agent():
+	if (time.time() - last_train_time) < 3600:
 		return
 
 	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
-	# rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
 	if len(os.listdir(data_dir_path)) < 5:   # 每个文件有100条数据，即收集到达到500条数据即开始训练
 		return
 
@@ -126,14 +149,14 @@ def start_train_agent():
 	print(f'{LOG_TAG_SERV} Buffer size: {rb.size()}')
 	print(f'{LOG_TAG_SERV} Start training!')
 
+	train_thread = threading.Thread(target=train, args=(hoho_agent, rb), name='train_thread')
+	train_thread.start()
+	train_thread.join()
+
 	# mp.set_start_method('spawn')
 	# train_proc = mp.Process(target=train, args=(agent, replay_buffer))
 	# train_proc.start()
 	# train_proc.join()
-
-	train_thread = threading.Thread(target=train, args=(hoho_agent, rb), name='train_thread')
-	train_thread.start()
-	train_thread.join()
 
 
 if __name__ == '__main__':
@@ -150,7 +173,6 @@ if __name__ == '__main__':
 
 	# root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 	# data_dir_path = os.path.join(root_dir_path, 'output', 'data')
-	# # rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
 	# rb = ReplayBuffer.load_from_dir(data_dir_path)
 	# print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
 	# agent = Player()

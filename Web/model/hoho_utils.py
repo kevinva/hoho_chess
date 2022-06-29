@@ -13,7 +13,8 @@ BOARD_HEIGHT = 10
 BOARD_POSITION_NUM = BOARD_WIDTH * BOARD_HEIGHT
 
 # 棋子总览！ K：帅，A：仕，R：车，B：相，N：马，P：兵，C：炮/ 大写红方，小写黑方
-INDEXS_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9
+INDEXS_2_PIECES = 'KARBNPCkarbnpc' # 14 x 10 x 9 # 14种棋子，每种棋子一个plane，plane大小为10行 x 9列
+# hoho_todo: 暂时只输入当前棋局，可按paper设计考虑增加各7个历史棋局的planes
 PIECES_2_INDEX = {INDEXS_2_PIECES[i]: i for i in range(len(INDEXS_2_PIECES))}
 
 # webgame棋子映射
