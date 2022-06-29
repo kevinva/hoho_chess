@@ -1,6 +1,7 @@
 import os
 import sys
 import random
+import threading
 from copy import deepcopy
 
 
@@ -52,9 +53,11 @@ class Player:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
-        filename = os.path.join(dir_path, 'hoho_agent_{}_{}.pth'.format(int(time.time()), self.version))
+        filepath = os.path.join(dir_path, 'hoho_agent_{}_{}.pth'.format(int(time.time()), self.version))
         state = self.agent_net.state_dict()
-        torch.save(state, filename)
+        torch.save(state, filepath)
+
+        return filepath
 
     def load_model_from_path(self, model_path):
         filename = os.path.basename(model_path)
@@ -260,7 +263,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
         round_count = 0
         while not done:
             last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game, use_mcts)
-            print(f'{LOG_TAG_AGENT} Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | red turn: action={last_red_action}, state={game.state}')
+            print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | red turn: action={last_red_action}, state={game.state}')
             if done:
                 break
 
@@ -269,7 +272,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
             last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded, use_mcts)
-            print(f'{LOG_TAG_AGENT} Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | black turn: action={last_black_action}, state={game.state}')
+            print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | black turn: action={last_black_action}, state={game.state}')
             if done:
                 break
 
@@ -284,14 +287,14 @@ def self_battle(agent_current, agent_new, use_mcts=True):
             if game.winner == PLAYER_RED:
                 win_count += 1
 
-        print(f'{LOG_TAG_AGENT} Self battle! win count: {win_count} | match count: {match_count + 1} | current win rate = {win_count / (match_count + 1)} | elapse: {time.time() - start_time:.3f}s')
+        print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | current win rate = {win_count / (match_count + 1)} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 
     return accepted
 
 
-def train(agent, replay_buffer):
+def train(agent, replay_buffer, msg_queue):
     agent_current = deepcopy(agent)
     agent_new = deepcopy(agent)
 
@@ -305,18 +308,23 @@ def train(agent, replay_buffer):
         loss = agent_new.update(planes, batch_pis, batch_zs)
         losses.append(loss)
 
-        print(f'{LOG_TAG_AGENT} Training! epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
+        print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
 
     # dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
     # model_files = os.listdir(dir_path)
     # if len(model_files) == 0:
     #     agent_new.save_model()
 
+    msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_TRAIN_FINISH})
+
+    model_path = None
     accepted = self_battle(agent_current, agent_new, use_mcts=False)
     if accepted:
         agent_new.update_version()
-        agent_new.save_model()
+        model_path = agent_new.save_model()
         # hoho_todo: 通知主线程更新模型
+
+    msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_SELF_BATTLE_FINISH, KEY_AGENT_ACCEPT: accepted, KEY_MODEL_PATH: model_path})
 
 
 if __name__ == '__main__':

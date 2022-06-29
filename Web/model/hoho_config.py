@@ -65,3 +65,9 @@ LOG_TAG_CCHESSGAME = '[hoho_cchessgame]'
 LOG_TAG_REPLAY_BUFFER = '[hoho_replay_buffer]'
 LOG_TAG_MCTS = '[hoho_mcts]'
 LOG_TAG_SERV = '[hoho_serv]'
+
+KEY_MSG_ID = 'msg_id'
+KEY_AGENT_ACCEPT = 'agent_accept'
+KEY_MODEL_PATH = 'model_path'
+AGENT_MSG_ID_TRAIN_FINISH = 1
+AGENT_MSG_ID_SELF_BATTLE_FINISH = 2

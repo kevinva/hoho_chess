@@ -4,11 +4,13 @@ import time
 from web.py_lib import auto_chess
 import torch
 import torch.multiprocessing as mp
+import queue
 
 from model.hoho_utils import *
 from model.hoho_agent import *
 from model.hoho_mcts import *
 from model.hoho_cchessgame import *
+from model.hoho_config import *
 
 
 def __dir__(request_, response_, route_args_):
@@ -33,9 +35,14 @@ def ajax_(request_, response_, route_args_):
 	json_ = None
 
 	if data_board == 'Action!': # 开始！
-		global hoho_game, hoho_mcts, match_count
+		global hoho_game, hoho_mcts
+		global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time
 
-		try_update_agent()
+		if agent_update_accepted and (agent_update_path is not None):
+			update_agent(agent_update_accepted)
+			agent_update_accepted = False
+			agent_update_path = None
+
 		hoho_game = CChessGame()
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
 		match_count += 1
@@ -91,13 +98,27 @@ def ajax_(request_, response_, route_args_):
 			hoho_replay_buffer.save()
 			hoho_replay_buffer.clear()
 
-		try_train_agent()
-
 		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
 		print(f'{LOG_TAG_SERV} model version: {hoho_agent.version} | {round_count} rounds / {match_count} matches | elapsed={(time.time() - start_time):.3f}s')
 		print('========================================================')
 
+	if not message_queue.empty():
+		msg_info = message_queue.get()
+		print(f'{LOG_TAG_SERV} thread message: {msg_info}')
+		if msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_TRAIN_FINISH:
+			pass
+		elif msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_SELF_BATTLE_FINISH:
+			agent_update_accepted = msg_info.get(KEY_AGENT_ACCEPT)
+			agent_update_path = msg_info.get(KEY_MODEL_PATH)
+			agent_updating = False
+			last_update_finish_time = time.time()
+
+	if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
+		successful = train_agent()
+		if successful:
+			agent_updating = True
 			
+
 	return response_.write_response_JSON_OK_(json_)
 
 
@@ -112,46 +133,24 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 
-def try_update_agent():
+def update_agent(model_path):
 	global hoho_agent
 
-	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-	model_dir_path = os.path.join(root_dir_path, 'output', 'models')
-	found_filename = None
-	for filename in os.listdir(model_dir_path):
-		name = filename.split('.')[0]
-		items = name.split('_')
-		if len(items) == 4:
-			check_version = int(items[3])
-			if hoho_agent.version < check_version:
-				found_filename = filename
-				break
-
-	if found_filename is None:
-		return
-
-	model_file_path = os.path.join(model_dir_path, found_filename)
-	hoho_agent.load_model_from_path(model_file_path)
+	hoho_agent.load_model_from_path(model_path)
 	print(f'{LOG_TAG_SERV} Agent updated! version={hoho_agent.version}')
 
 
-def try_train_agent():
-	global last_train_time
-	
-	if (time.time() - last_train_time) < 3600:
-		return
-
+def train_agent():
 	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
 	if len(os.listdir(data_dir_path)) < 5:   # 每个文件有100条数据，即收集到达到500条数据即开始训练
-		return
+		return False
 
-	last_train_time = time.time()
 	rb = ReplayBuffer.load_from_dir(data_dir_path)
 	print(f'{LOG_TAG_SERV} Buffer size: {rb.size()}')
 	print(f'{LOG_TAG_SERV} Start training!')
 
-	train_thread = threading.Thread(target=train, args=(hoho_agent, rb), name='train_thread')
+	train_thread = threading.Thread(target=train, args=(hoho_agent, rb, message_queue), name='train_thread')
 	train_thread.start()
 	# train_thread.join()
 
@@ -160,10 +159,16 @@ def try_train_agent():
 	# train_proc.start()
 	# # train_proc.join()
 
+	return True
+
 
 if __name__ == '__main__':
 	match_count = 0
-	last_train_time = 0
+	last_update_finish_time = 0
+	message_queue = queue.Queue()
+	agent_updating = False
+	agent_update_accepted = False
+	agent_update_path = None
 	hoho_mcts = None
 	hoho_game = None
 	hoho_agent = Player()
@@ -173,17 +178,6 @@ if __name__ == '__main__':
 	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
 	start_server_(8000, 100)
 
-	# root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-	# data_dir_path = os.path.join(root_dir_path, 'output', 'data')
-	# rb = ReplayBuffer.load_from_dir(data_dir_path)
-	# print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
-	# agent = Player()
-	# model_dir_path = os.path.join(root_dir_path, 'output', 'models')
-	# model_files = os.listdir(model_dir_path)
-	# if len(model_files) > 0:
-	# 	model_path = os.path.join(model_dir_path, model_files[0])
-	# 	agent.load_model_from_path(model_path)
-	# start_train(agent, rb)
 
 
 	
