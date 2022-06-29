@@ -209,7 +209,7 @@ def self_battle(agent_current, agent_new):
         round_count = 0
         while not done:
             last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game)
-            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] rounds: {round_count + 1} / matches: {match_count + 1} | action={last_red_action}, red turn: state={game.state}')
+            print(f'{LOG_TAG_AGENT} Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | action={last_red_action}, red turn: state={game.state}')
             if done:
                 break
 
@@ -218,7 +218,7 @@ def self_battle(agent_current, agent_new):
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
             last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded)
-            print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] rounds: {round_count + 1} / matches: {match_count + 1} | action={last_black_action}, black turn: state={game.state}')
+            print(f'{LOG_TAG_AGENT} Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | action={last_black_action}, black turn: state={game.state}')
             if done:
                 break
 
@@ -233,7 +233,7 @@ def self_battle(agent_current, agent_new):
             if game.winner == PLAYER_RED:
                 win_count += 1
 
-        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}] win_count: {win_count} | total count: {match_count + 1} | elapse: {time.time() - start_time:.3f}s')
+        print(f'{LOG_TAG_AGENT} Self battle! win_count: {win_count} | total count: {match_count + 1} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 
@@ -254,7 +254,7 @@ def train(agent, replay_buffer):
         loss = agent_new.update(planes, batch_pis, batch_zs)
         losses.append(loss)
 
-        print(f'{LOG_TAG_AGENT}[pid={os.getpid()}][train agent] epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
+        print(f'{LOG_TAG_AGENT} Train agent! epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
 
     dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
     model_files = os.listdir(dir_path)
