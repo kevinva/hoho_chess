@@ -242,7 +242,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
             action_idx = np.random.choice(ACTION_DIM, p=probas)
             black_action = INDEXS_2_ACTION[action_idx]
             _, _, done = game.step(black_action)
-            
+
         return black_action, done
 
     accepted = False
@@ -277,7 +277,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
                 black_expanded = True
 
             round_count += 1
-            if round_count > RESTRICT_ROUND_NUM:   # 超过步数，提前结束
+            if round_count > SELF_BATTLE_RESTRICT_ROUND_NUM:   # 超过步数，提前结束
                 break
        
         if done:
