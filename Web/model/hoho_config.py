@@ -51,10 +51,11 @@ RESTRICT_ROUND_NUM = 80
 SELF_BATTLE_NUM = 400
 
 # 训练的网络与当前网络的自博弈，超过该阈值即替换当前网络
-SELF_BATTLE_WIN_RATE = 0.55
+SELF_BATTLE_WIN_RATE = 0.45 # 0.55
 
 # 控制某些日志是否打印
 DEBUG = True
+
 
 LOG_TAG_AGENT = '[hoho_agent]'
 LOG_TAG_CCHESSGAME = '[hoho_cchessgame]'

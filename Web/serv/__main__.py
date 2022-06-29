@@ -90,8 +90,10 @@ def ajax_(request_, response_, route_args_):
 			hoho_replay_buffer.save()
 			hoho_replay_buffer.clear()
 
+		start_train_agent()
+
 		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{LOG_TAG_SERV}[pid={os.getpid()}] {round_count} rounds / {match_count} matches | elapsed={(time.time() - start_time):.3f}s/round')
+		print(f'{LOG_TAG_SERV} model version: {hoho_agent.version} | {round_count} rounds / {match_count} matches | elapsed={(time.time() - start_time):.3f}s/round')
 		print('========================================================')
 
 			
@@ -109,42 +111,55 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 
-def start_train(agent, replay_buffer):
-	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start training!')
+def start_train_agent():
+	if time.time() - last_train_time < 1800:
+		return
+
+	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
+	# rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
+	if len(os.listdir(data_dir_path)) < 5:   # 每个文件有100条数据，即收集到达到500条数据即开始训练
+		return
+
+	last_train_time = time.time()
+	rb = ReplayBuffer.load_from_dir(data_dir_path)
+	print(f'{LOG_TAG_SERV} Buffer size: {rb.size()}')
+	print(f'{LOG_TAG_SERV} Start training!')
 
 	# mp.set_start_method('spawn')
 	# train_proc = mp.Process(target=train, args=(agent, replay_buffer))
 	# train_proc.start()
 	# train_proc.join()
 
-	train_thread = threading.Thread(target=train, args=(agent, replay_buffer), name='train_thread')
+	train_thread = threading.Thread(target=train, args=(hoho_agent, rb), name='train_thread')
 	train_thread.start()
 	train_thread.join()
 
 
 if __name__ == '__main__':
-	# match_count = 0
-	# hoho_mcts = None
-	# hoho_game = None
-	# hoho_agent = Player()
-	# hoho_replay_buffer = ReplayBuffer()
+	match_count = 0
+	last_train_time = 0
+	hoho_mcts = None
+	hoho_game = None
+	hoho_agent = Player()
+	hoho_replay_buffer = ReplayBuffer()
 
-	# # hoho_step 1
-	# print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
-	# start_server_(8000, 100)
+	# hoho_step 1
+	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
+	start_server_(8000, 100)
 
-	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
-	# rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
-	rb = ReplayBuffer.load_from_dir(data_dir_path)
-	print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
-	agent = Player()
-	model_dir_path = os.path.join(root_dir_path, 'output', 'models')
-	model_files = os.listdir(model_dir_path)
-	if len(model_files) > 0:
-		model_path = os.path.join(model_dir_path, model_files[0])
-		agent.load_model_from_path(model_path)
-	start_train(agent, rb)
+	# root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	# data_dir_path = os.path.join(root_dir_path, 'output', 'data')
+	# # rb = ReplayBuffer.load_from_dir('../output/data/')  # 路径不能这样写！！！
+	# rb = ReplayBuffer.load_from_dir(data_dir_path)
+	# print(f'{LOG_TAG_SERV} buffer size: {rb.size()}')
+	# agent = Player()
+	# model_dir_path = os.path.join(root_dir_path, 'output', 'models')
+	# model_files = os.listdir(model_dir_path)
+	# if len(model_files) > 0:
+	# 	model_path = os.path.join(model_dir_path, model_files[0])
+	# 	agent.load_model_from_path(model_path)
+	# start_train(agent, rb)
 
 
 	

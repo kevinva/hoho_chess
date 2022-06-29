@@ -22,6 +22,7 @@ class Player:
         self.agent_net = AgentNet().to(DEVICE)
         self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
         # self.agent_net.share_memory()
+        self.version = 0
 
         print(f'{LOG_TAG_AGENT} Player agent created!')
     
@@ -49,14 +50,27 @@ class Player:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
-        filename = os.path.join(dir_path, 'hoho_agent_{}.pth'.format(int(time.time())))
+        filename = os.path.join(dir_path, 'hoho_agent_{}_{}.pth'.format(int(time.time()), self.version))
         state = self.agent_net.state_dict()
         torch.save(state, filename)
 
     def load_model_from_path(self, model_path):
+        filename = model_path.split('/')[-1]
+        filename = filename.split('.')[0]
+        items = filename.split('_')
+        if len(items) == 4:
+            self.version = int(items[3])
+
         checkpoint = torch.load(model_path)
         self.agent_net.load_state_dict(checkpoint)
         self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
+
+    def sync_from_agent(self, other_agent):
+        self.agent_net.load_state_dict(other_agent.agent_net.state_dict())
+        self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
+    
+    def update_version(self):
+        self.version += 1
 
     def printModel(self):
         print(f'{LOG_TAG_AGENT} {self.agent_net}')
