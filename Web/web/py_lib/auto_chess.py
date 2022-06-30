@@ -48,7 +48,7 @@ class Controller(chess.Controller):
 		if move_black is None:
 			# javascript.alert("红方胜出!")
 			self.restart()
-			self.hoho_startup()
+			self.hoho_startup('Red')
 			return
 
 		i1,j1,i2,j2 = move_black
@@ -62,7 +62,7 @@ class Controller(chess.Controller):
 		if (eaten is not None) and (eaten.type=='King'):
 			# javascript.alert("黑方胜出!")
 			self.restart()
-			self.hoho_startup()
+			self.hoho_startup('Black')
 			return
 
 		self.player = 'Red'
@@ -79,7 +79,7 @@ class Controller(chess.Controller):
 		if move is None:
 			# javascript.alert("黑方胜出!")
 			self.restart()
-			self.hoho_startup()
+			self.hoho_startup('Black')
 			return
 
 		time.sleep(0.2)
@@ -93,14 +93,14 @@ class Controller(chess.Controller):
 		if (eaten is not None) and (eaten.type == 'King'):
 			# javascript.alert('红方胜出！')
 			self.restart()
-			self.hoho_startup()
+			self.hoho_startup('Red')
 			return
 
 		self.player = 'Black'
 		self.blacks_turn()
 
 
-	def hoho_startup(self):
+	def hoho_startup(self, win_player=None):
 		time.sleep(1)
 
 		done = False
@@ -119,7 +119,7 @@ class Controller(chess.Controller):
 			res = data
 			done = True
 
-		ajax.send(('Action!', self.round_count), callback)
+		ajax.send(('Action!', self.round_count, win_player), callback)
 		while not done:
 			time.sleep(.1)
 

@@ -75,12 +75,13 @@ class ReplayBuffer:
     def clear(self):
         self.buffer.clear()
 
-    def save(self):
+    def save(self, expand_data=None):
         filedir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data')
         if not os.path.exists(filedir):
             os.makedirs(filedir)
         
-        filename = 'replay_buffer_{}.json'.format(int(time.time()))
+        model_version = expand_data.get('version', 0)
+        filename = 'replay_buffer_{}_{}.json'.format(int(time.time()), model_version)
         filepath = os.path.join(filedir, filename)
         
         with open(filepath, 'w') as f:

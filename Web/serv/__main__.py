@@ -35,17 +35,23 @@ def ajax_(request_, response_, route_args_):
 	json_ = None
 
 	if data_board == 'Action!': # 开始！
-		global hoho_game, hoho_mcts
-		global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time
+		global hoho_game, hoho_mcts, hoho_agent
+		global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
 
 		if agent_update_accepted and (agent_update_path is not None):
-			update_agent(agent_update_accepted)
+			hoho_agent.load_model_from_path(model_path)
+			print(f'{LOG_TAG_SERV} Agent updated! version={hoho_agent.version}')
+
 			agent_update_accepted = False
 			agent_update_path = None
 
 		hoho_game = CChessGame()
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
+
 		match_count += 1
+		win_player = data[2]
+		if win_player == 'Red':
+			win_count += 1
 
 		state = hoho_game.state
 		pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
@@ -53,7 +59,7 @@ def ajax_(request_, response_, route_args_):
 		hoho_replay_buffer.add(state, pi.tolist(), z)
 
 		move = convert_my_action_to_webgame_move(action)
-		print(f'{LOG_TAG_SERV} [ajax_] get red move={move}')
+		print(f'{LOG_TAG_SERV} get red move={move}')
 
 		json_ = json.dumps(move)
 	else:
@@ -63,7 +69,7 @@ def ajax_(request_, response_, route_args_):
 		# print(f'hoho: [ajax_] board_key={board_key}')
 		board = auto_chess._board_from_key(board_key)
 		black_move = auto_chess.auto_move(board)
-		print(f'{LOG_TAG_SERV} [ajax_] get black move={black_move}')   # 注意这里黑方走法，是已经翻转了棋盘
+		print(f'{LOG_TAG_SERV} get black move={black_move}')   # 注意这里黑方走法，是已经翻转了棋盘
 		if black_move is None:
 			black_move = []
 			print(f'{LOG_TAG_SERV} [Error] black_move is None! ')
@@ -95,11 +101,14 @@ def ajax_(request_, response_, route_args_):
 		json_ = json.dumps(json_data)
 
 		if hoho_replay_buffer.size() >= 100:
-			hoho_replay_buffer.save()
+			hoho_replay_buffer.save({'model_version': hoho_agent.version})
 			hoho_replay_buffer.clear()
 
 		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{LOG_TAG_SERV} model version: {hoho_agent.version} | {round_count} rounds / {match_count} matches | elapsed={(time.time() - start_time):.3f}s')
+		print(f'{LOG_TAG_SERV} {round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
+
+		win_rate = (win_count / match_count) if match_count > 0 else 0
+		print(f'{LOG_TAG_SERV} model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
 		print('========================================================')
 
 	if not message_queue.empty():
@@ -133,13 +142,6 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 
-def update_agent(model_path):
-	global hoho_agent
-
-	hoho_agent.load_model_from_path(model_path)
-	print(f'{LOG_TAG_SERV} Agent updated! version={hoho_agent.version}')
-
-
 def train_agent():
 	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
@@ -162,7 +164,24 @@ def train_agent():
 	return True
 
 
+def find_top_version_model_path():
+	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	model_dir_path = os.path.join(root_dir_path, 'output', 'models')
+	result_path = None
+	top_version = 0
+	for filename in os.listdir(model_dir_path):
+		name = filename.split('.')[0]
+		items = name.split('_')
+		if len(items) == 4:
+			if int(items[3]) > top_version:
+				top_version = int(items[3])
+				result_path = os.path.join(model_dir_path, filename)
+          
+	return result_path
+
+
 if __name__ == '__main__':
+	win_count = 0
 	match_count = 0
 	last_update_finish_time = 0
 	message_queue = queue.Queue()
@@ -171,8 +190,12 @@ if __name__ == '__main__':
 	agent_update_path = None
 	hoho_mcts = None
 	hoho_game = None
-	hoho_agent = Player()
 	hoho_replay_buffer = ReplayBuffer()
+
+	hoho_agent = Player()
+	model_path = find_top_version_model_path()
+	if model_path is not None:
+		hoho_agent.load_model_from_path(model_path)
 
 	# hoho_step 1
 	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
