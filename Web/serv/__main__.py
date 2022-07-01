@@ -145,6 +145,9 @@ def start_server_(port_, max_threads_):
 def train_agent():
 	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
+	if not os.path.exists(data_dir_path):
+		return False
+		
 	if len(os.listdir(data_dir_path)) < 5:   # 每个文件有100条数据，即收集到达到500条数据即开始训练
 		return False
 
