@@ -75,16 +75,15 @@ def ajax_(request_, response_, route_args_):
 			print(f'{LOG_TAG_SERV} [Error] black_move is None! ')
 		else:
 			black_state = hoho_game.state
-			black_pi = None
-			black_action_expected = None
 			black_action = convert_webgame_opponent_move_to_action(black_move)
-			if not hoho_mcts.is_current_root_expanded():
-				black_pi, black_action_expected = hoho_mcts.take_simulation(hoho_agent, hoho_game, update_root=False)  # 黑方用webgame自身的action，所以不要自动更新根节点
+		
+			# 模型只关心红方，这里强制造一个确定性黑方走子策略
+			black_pi = np.zeros((ACTION_DIM,))
+			black_pi[ACTIONS_2_INDEX[black_action]] = 1.0
+
 			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_next_state, black_z, _ = hoho_game.step(black_action)
-			if (black_pi is not None) and (black_action == black_action_expected):
-				print(f'{LOG_TAG_SERV} same action choose by model and webgame!')
-				hoho_replay_buffer.add(black_state, black_pi.tolist(), black_z)
+			hoho_replay_buffer.add(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_z)  # 注意：这里要翻转为红方走子
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state

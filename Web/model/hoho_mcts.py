@@ -265,6 +265,7 @@ class MCTS:
         # 模拟走子之后，生成走子策略
         final_action_idx = 0
         action_scores = np.zeros((ACTION_DIM,))
+        pi = np.zeros((ACTION_DIM,))
         for node in self.root.childrens:
             action_scores[ACTIONS_2_INDEX[node.action]] = np.power(node.N, 1 / POLICY_TEMPERATURE)
         
