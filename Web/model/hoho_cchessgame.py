@@ -101,6 +101,9 @@ class ReplayBuffer:
 
     @staticmethod
     def load_from_dir(dirpath):
+        if not os.path.exists(dirpath):
+            return
+            
         all_data_list = list()
         for filename in os.listdir(dirpath):
             if filename.endswith('json') and filename.startswith('replay_buffer'):
