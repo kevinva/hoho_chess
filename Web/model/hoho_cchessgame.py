@@ -80,7 +80,9 @@ class ReplayBuffer:
         if not os.path.exists(filedir):
             os.makedirs(filedir)
         
-        model_version = expand_data.get('version', 0)
+        model_version = 0
+        if expand_data is not None:
+            model_version = expand_data.get('model_version')
         filename = 'replay_buffer_{}_{}.json'.format(int(time.time()), model_version)
         filepath = os.path.join(filedir, filename)
         

@@ -186,7 +186,12 @@ class ValueNet(nn.Module):
 
 
 def self_battle(agent_current, agent_new, use_mcts=True):
-    """新训练网络与当前网络自博弈"""
+    """
+    新训练网络与当前网络自博弈
+    
+    Arguments:
+        use_mcts: 是否使用MCTS进行策略生成。False则直接使用神经网络预测的走子策略。
+    """
 
     print(f'{LOG_TAG_AGENT} start self battle!!!')
 
@@ -267,7 +272,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
             if done:
                 break
 
-            time.sleep(random.randint(0, 3))
+            time.sleep(random.randint(0, 3))  # 随机让线程睡眠几秒，让其他线程有机会执行
 
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
