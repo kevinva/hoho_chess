@@ -167,6 +167,9 @@ def train_agent():
 def find_top_version_model_path():
 	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 	model_dir_path = os.path.join(root_dir_path, 'output', 'models')
+	if not os.path.exists(model_dir_path):
+		return None
+		
 	result_path = None
 	top_version = 0
 	for filename in os.listdir(model_dir_path):
