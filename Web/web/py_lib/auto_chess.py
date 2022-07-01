@@ -5,12 +5,21 @@ from . import spinner
 from . import ajax
 import heapq
 
+HOHO_RESTRICT_ROUND_NUM = 80  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
+
+
 class Controller(chess.Controller):
+	
+	def __init__(self, board):
+		super(Controller, self).__init__(board)
+		self.hoho_startup()
+
 	def onmouseup(self, ev):
 		if self.dragging_chess is None: return
 		x, y = ev.x.data(), ev.y.data()
 		i2, j2 = self.chess_board.plate.pixel_to_nearest_pos(x, y)
 		px, py = self.chess_board.plate.pos_to_pixel(i2, j2)
+		print(f'hoho: mouseup=({i2}, {j2}), x={x}, y={y}')
 		near = chess._distance(x, y, px, py) < self.chess_board.setting.chess_size
 		succ = False
 		if near:
@@ -27,28 +36,96 @@ class Controller(chess.Controller):
 			self.blacks_turn()
 
 	def blacks_turn(self):
+		self.round_count = self.round_count + 1
+
 		spinner.show()
 		self.chess_board.rotate_board()
-		move = auto_move_remote(self.chess_board)
+		move_dict = auto_move_remote(self.chess_board, self.round_count)
+		move_black = move_dict.get('Black')
+		print(f'hoho: Black move: {move_black}')
 		self.chess_board.rotate_board()
 		spinner.hide()
-		if move is None:
-			javascript.alert("红方胜出!")
+		if move_black is None:
+			# javascript.alert("红方胜出!")
 			self.restart()
+			self.hoho_startup('Red')
 			return
-		i1,j1,i2,j2 = move
+
+		i1,j1,i2,j2 = move_black
+
 		i1,j1,i2,j2 = 8-i1,9-j1,8-i2,9-j2
 		chess = self.chess_board.board_map[(i1,j1)]
 		succ, eaten = self._move_chess_to(chess, i2, j2)
-		assert succ
+		assert succ, 'black move is illegal!'
 		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
 		self._move_chess_img(chess, px, py)
 		if (eaten is not None) and (eaten.type=='King'):
-			javascript.alert("黑方胜出!")
+			# javascript.alert("黑方胜出!")
 			self.restart()
+			self.hoho_startup('Black')
 			return
-		self.player = 'Red'
 
+		self.player = 'Red'
+		move_red = move_dict.get('Red')
+		self.hoho_red_turn(move_red)
+
+
+	def hoho_red_turn(self, move):
+		if self.round_count >= HOHO_RESTRICT_ROUND_NUM:
+			self.restart()
+			self.hoho_startup()
+			return
+
+		if move is None:
+			# javascript.alert("黑方胜出!")
+			self.restart()
+			self.hoho_startup('Black')
+			return
+
+		time.sleep(0.2)
+
+		i1, j1, i2, j2 = move
+		chess = self.chess_board.board_map[(i1, j1)]
+		succ, eaten = self._move_chess_to(chess, i2, j2)
+		assert succ, 'red move is illegal!'
+		px, py = self.chess_board.plate.pos_to_pixel(i1, j1)
+		self._move_chess_img(chess, px, py)
+		if (eaten is not None) and (eaten.type == 'King'):
+			# javascript.alert('红方胜出！')
+			self.restart()
+			self.hoho_startup('Red')
+			return
+
+		self.player = 'Black'
+		self.blacks_turn()
+
+
+	def hoho_startup(self, win_player=None):
+		time.sleep(1)
+
+		done = False
+		res = None
+		def callback(data):
+			nonlocal res
+			nonlocal done
+			if 'error' in data:
+				javascript.alert(data['error'])
+				done = True
+				return
+				
+			if data is None:
+				return
+
+			res = data
+			done = True
+
+		ajax.send(('Action!', self.round_count, win_player), callback)
+		while not done:
+			time.sleep(.1)
+
+		move = res
+		self.hoho_red_turn(move)
+		
 
 def _chess_moves(chess):
 	moves = []
@@ -227,6 +304,8 @@ class BoardExplorer:
 		self.board_cache = None
 		self.heap = None
 		self.time_limit = time_limit
+		# print('hoho: BoardExplorer created!')
+
 	def run(self, board):
 		board_node = BoardNode(board)
 		self.board_cache = {}
@@ -234,8 +313,12 @@ class BoardExplorer:
 		start_time = time.time()
 		explored = 0
 		while True:
-			if (time.time()-start_time) > self.time_limit: break
-			if len(board_explorer.heap)==0: break
+			if (time.time()-start_time) > self.time_limit: 
+				print(f'hoho: time_limit!')
+				break
+			if len(board_explorer.heap)==0: 
+				print(f'explorer heap empty!')
+				break
 			node = heapq.heappop(board_explorer.heap)
 			score0 = node.score
 			if score0 in (-BoardNode.win_score, BoardNode.win_score):
@@ -265,8 +348,7 @@ def _dump_tree(node):
 			fp.write(')')
 		dump_node(node)
 
-
-board_explorer = BoardExplorer(5)
+board_explorer = BoardExplorer(3)
 
 def auto_move(board):
 	board_node = board_explorer.run(board)
@@ -275,31 +357,42 @@ def auto_move(board):
 	# print('board_node.score', board_node.score)
 	# print('board_node.best_child.move_key', board_node.best_child.move_key)
 	# print('board_node.best_child.score', board_node.best_child.score)
+
+	# print(f'hoho: board_node: {board_node.board_key}')
+	# print(f'hoho: move: {board_node.best_child.move_key}')
+	# print(f'hoho: board_node\'s best_child: {board_node.best_child.board_key}')
 	return board_node.best_child.move_key[2:]
 	
-def auto_move_remote(board):
+def auto_move_remote(board, round_count):
 	board_key = _board_key(board)
 	done = False
 	res = None
 	def callback(data):
+		print(f'hoho: receive = {data}')
 		nonlocal res
 		nonlocal done
 		if 'error' in data:
 			javascript.alert(data['error'])
 			done = True
 			return
-		if data==[]:
+	
+		if data is None:
 			return
+
 		res = data
 		done = True
-	ajax.send(board_key, callback)
+	print(f'hoho: send = {board_key}')
+	ajax.send((board_key, round_count), callback)
 	while not done:
 		time.sleep(.1)
 	return res
 
 
 def run_app():
+	# hoho_step 3
+	# print('hoho: auto_chess run_app()!') # 用javascript打印
 	chess_board = chess.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
-	Controller(chess_board)
+	controller = Controller(chess_board)
+
 

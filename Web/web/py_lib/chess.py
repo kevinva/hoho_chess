@@ -71,7 +71,7 @@ class ChessMan:
 class King(ChessMan):
 	def __init__(self, board, player, x, y):
 		super(King, self).__init__(board, player, 'King', x, y)
-		self.allowed_moves=((-1,0),(1,0),(0,-1),(0,1))
+		self.allowed_moves=((-1,0),(1,0),(0,-1),(0,1))  # 允许走的步长坐标
 		self.pos_range=(3,0,5,2)
 	def can_move_to(self, x, y):
 		if super(King, self).can_move_to(x, y):
@@ -255,10 +255,12 @@ class Controller:
 		self.player = 'Red'
 		self.chess_board._init_board()
 		self.chess_board._refresh_elt()
+		self.round_count = 0
 
 	def onmousedown(self, ev):
 		x, y = ev.x.data(), ev.y.data()
 		i, j = self.chess_board.plate.pixel_to_nearest_pos(x, y)
+		print(f'hoho: mousedown=({i}, {j})')
 		px, py = self.chess_board.plate.pos_to_pixel(i, j)
 		if _distance(x, y, px, py) > self.chess_board.setting.chess_size:
 			return
@@ -317,6 +319,7 @@ class Controller:
 			img.style.top = f'{y-size}px'
 			time.sleep(1/animation_frames)
 		assert x==px, (x,px)
+		print(f'hoho: move_chess_img: x={x}, y={y}')
 		setattr(img.style, 'z-index', '0')
 		self.player = player
 		self.dragging_chess = dragging_chess
