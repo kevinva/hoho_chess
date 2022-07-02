@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 from model.hoho_config import *
 from model.hoho_utils import *
@@ -28,6 +29,12 @@ class Player:
         self.version = 0
 
         print(f'{LOG_TAG_AGENT} Player agent created!')
+
+    def set_train_mode(self):
+        self.agent_net.train()
+    
+    def set_eval_mode(self):
+        self.agent_net.eval()
     
     def predict(self, state):
         prob, value = self.agent_net(state)
@@ -35,8 +42,8 @@ class Player:
 
     def update(self, states, pis, zs):
         batch_states = states.to(DEVICE)
-        batch_pis = torch.tensor(pis, dtype=torch.float).to(DEVICE)
-        batch_zs = torch.tensor(zs, dtype=torch.float).view(-1, 1).to(DEVICE)
+        batch_pis = pis.to(DEVICE)
+        batch_zs = zs.view(-1, 1).to(DEVICE)
         predict_probs, predict_values = self.agent_net(batch_states)
         policy_error = torch.sum(-batch_pis * torch.log(predict_probs.clamp(min=1e-6)), dim=1)   # clamp(min=1e-6)防止log(0)
         value_error = (batch_zs - predict_values) ** 2
@@ -299,28 +306,35 @@ def self_battle(agent_current, agent_new, use_mcts=True):
     return accepted
 
 
-def train(agent, replay_buffer, msg_queue):
+def train(agent, msg_queue):
+    root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    data_dir_path = os.path.join(root_dir_path, 'output', 'data')
+    if not os.path.exists(data_dir_path):
+        return
+    
+    if len(os.listdir(data_dir_path)) < 5:
+        return
+
+    train_dataset = ChessDataset.load_from_dir(data_dir_path)
+    train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_data_len = len(train_dataloader)
     agent_current = deepcopy(agent)
     agent_new = deepcopy(agent)
 
-    losses = []
+    agent.set_train_mode()
     for epoch in range(EPOCH_NUM):
         start_time = time.time()
+        train_loss = 0.0
+        for batch_i, (batch_states, batch_pis, batch_zs) in enumerate(train_dataloader):
+            planes = [convert_board_to_tensor(state) for state in batch_states]
+            batch_planes = torch.stack(planes, dim=0)
+            loss = agent_new.update(batch_planes, batch_pis, batch_zs)
+            train_loss += loss
 
-        batch_states, batch_pis, batch_zs = replay_buffer.sample(BATCH_SIZE)
-        planes = [convert_board_to_tensor(state) for state in batch_states]
-        planes = torch.stack(planes, dim=0)
-        loss = agent_new.update(planes, batch_pis, batch_zs)
-        losses.append(loss)
-
-        print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapsed: {time.time() - start_time:.3f}s | loss: {loss}')
-
-    # dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
-    # model_files = os.listdir(dir_path)
-    # if len(model_files) == 0:
-    #     agent_new.save_model()
+        print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapse: {(time.time() - start_time):.3f}s | loss: {(train_loss / train_data_len):.6f}')
 
     msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_TRAIN_FINISH})
+    agent.set_eval_mode()
 
     model_path = None
     accepted = self_battle(agent_current, agent_new, use_mcts=False)

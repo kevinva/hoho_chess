@@ -122,9 +122,8 @@ def ajax_(request_, response_, route_args_):
 			last_update_finish_time = time.time()
 
 	if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
-		successful = train_agent()
-		if successful:
-			agent_updating = True
+		train_agent()
+		agent_updating = True
 			
 
 	return response_.write_response_JSON_OK_(json_)
@@ -142,19 +141,9 @@ def start_server_(port_, max_threads_):
 
 
 def train_agent():
-	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
-	if not os.path.exists(data_dir_path):
-		return False
-		
-	if len(os.listdir(data_dir_path)) < 5:   # 每个文件有100条数据，即收集到达到500条数据即开始训练
-		return False
-
-	rb = ReplayBuffer.load_from_dir(data_dir_path)
-	print(f'{LOG_TAG_SERV} Buffer size: {rb.size()}')
 	print(f'{LOG_TAG_SERV} Start training!')
 
-	train_thread = threading.Thread(target=train, args=(hoho_agent, rb, message_queue), name='train_thread')
+	train_thread = threading.Thread(target=train, args=(hoho_agent, message_queue), name='hoho_train_thread')
 	train_thread.start()
 	# train_thread.join()
 
@@ -162,8 +151,6 @@ def train_agent():
 	# train_proc = mp.Process(target=train, args=(hoho_agent, rb))
 	# train_proc.start()
 	# # train_proc.join()
-
-	return True
 
 
 def find_top_version_model_path():
