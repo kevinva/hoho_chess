@@ -82,7 +82,7 @@ class Controller(chess.Controller):
 			self.hoho_startup('Black')
 			return
 
-		time.sleep(0.2)
+		time.sleep(0.1)
 
 		i1, j1, i2, j2 = move
 		chess = self.chess_board.board_map[(i1, j1)]
@@ -101,7 +101,7 @@ class Controller(chess.Controller):
 
 
 	def hoho_startup(self, win_player=None):
-		time.sleep(1)
+		time.sleep(0.1)
 
 		done = False
 		res = None
