@@ -8,6 +8,8 @@ root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(root_dir)
 # print(f'{sys.path}')
 
+from torch.utils.data import Dataset, DataLoader
+
 from model.hoho_utils import *
 from model.hoho_config import *
 
@@ -46,6 +48,48 @@ class CChessGame:
         self.restrict_count = RESTRICT_ROUND_NUM
         self.winner = None
         self.current_player = PLAYER_RED
+
+
+class ChessDataset(Dataset):
+
+    def __init__(self, data_list=None):
+        super(ChessDataset, self).__init__()
+        # 注意：需要在这里将list转换为tensor, 否则dataloader取每个batch时，batch_size不会在第0维
+        self.data_list = [(exp[0], torch.tensor(exp[1], dtype=torch.float), exp[2]) for exp in data_list]
+
+    def __len__(self):
+        return len(self.data_list)
+
+    def __getitem__(self, idx):
+        experience = self.data_list[idx]
+        return experience[0], experience[1], experience[2]
+
+    @staticmethod
+    def load_from_dir(dirpath, version=None):
+        if not os.path.exists(dirpath):
+            return None
+            
+        all_data_list = list()
+        for filename in os.listdir(dirpath):
+            if filename.endswith('json') and filename.startswith('replay_buffer'):
+                if version is  None:
+                    with open(os.path.join(dirpath, filename), 'r') as f:
+                        jsonstr = f.read()
+                        data_list = json.loads(jsonstr)
+                        all_data_list.extend(data_list)
+                else:
+                    name = filename.split('.')[0]
+                    items = name.split('_')
+                    if len(items) == 4:
+                        check_version = int(items[3])
+                        if version == check_version:
+                            with open(os.path.join(dirpath, filename), 'r') as f:
+                                jsonstr = f.read()
+                                data_list = json.loads(jsonstr)
+                                all_data_list.extend(data_list)
+
+        dataset = ChessDataset(all_data_list)
+        return dataset
 
 
 class ReplayBuffer:
@@ -115,6 +159,7 @@ class ReplayBuffer:
         replay_buffer = ReplayBuffer(data_list=all_data_list)
         return replay_buffer
 
+
 if __name__ == '__main__':
     # s = 'ERIOC<VGK1234q24ds'
     # print(('k' in s))
@@ -131,6 +176,13 @@ if __name__ == '__main__':
     # result_load = json.loads(result)
     # print(result_load)
 
-    filepath = '../output/data/replay_buffer_1656040190.json'
-    rb = ReplayBuffer.load(filepath)
-    print(rb.buffer)
+    # filepath = '../output/data/replay_buffer_1656040190.json'
+    # rb = ReplayBuffer.load(filepath)
+    # print(rb.buffer)
+
+    dataset = ChessDataset.load_from_dir('../output/data')
+    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    for i, (batch_states, batch_pis, batch_zs) in enumerate(dataloader):
+        print(len(batch_states), batch_pis.size(), batch_zs)
+        if i == 0:
+            break
