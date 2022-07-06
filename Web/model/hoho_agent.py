@@ -315,9 +315,10 @@ def train(agent, msg_queue):
     if len(os.listdir(data_dir_path)) < 5:
         return
 
-    train_dataset = ChessDataset.load_from_dir(data_dir_path)
+    train_dataset = ChessDataset.load_from_dir(data_dir_path, version=agent.version)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     train_data_len = len(train_dataloader)
+    print(f'{LOG_TAG_AGENT} train_data_len={train_data_len}')
     agent_current = deepcopy(agent)
     agent_new = deepcopy(agent)
 

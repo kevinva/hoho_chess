@@ -72,7 +72,7 @@ class ChessDataset(Dataset):
         all_data_list = list()
         for filename in os.listdir(dirpath):
             if filename.endswith('json') and filename.startswith('replay_buffer'):
-                if version is  None:
+                if version is None:
                     with open(os.path.join(dirpath, filename), 'r') as f:
                         jsonstr = f.read()
                         data_list = json.loads(jsonstr)
@@ -83,6 +83,13 @@ class ChessDataset(Dataset):
                     if len(items) == 4:
                         check_version = int(items[3])
                         if version == check_version:
+                            with open(os.path.join(dirpath, filename), 'r') as f:
+                                jsonstr = f.read()
+                                data_list = json.loads(jsonstr)
+                                all_data_list.extend(data_list)
+                    elif len(items) < 4:
+                        # 没有版本后缀的默认为version 0
+                        if version == 0:
                             with open(os.path.join(dirpath, filename), 'r') as f:
                                 jsonstr = f.read()
                                 data_list = json.loads(jsonstr)
@@ -180,7 +187,8 @@ if __name__ == '__main__':
     # rb = ReplayBuffer.load(filepath)
     # print(rb.buffer)
 
-    dataset = ChessDataset.load_from_dir('../output/data')
+    dataset = ChessDataset.load_from_dir('../output/data', version=0)
+    print(len(dataset))
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
     for i, (batch_states, batch_pis, batch_zs) in enumerate(dataloader):
         print(len(batch_states), batch_pis.size(), batch_zs)
