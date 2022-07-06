@@ -317,8 +317,8 @@ def train(agent, msg_queue):
 
     train_dataset = ChessDataset.load_from_dir(data_dir_path, version=agent.version)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    train_data_len = len(train_dataloader)
-    print(f'{LOG_TAG_AGENT} train_data_len={train_data_len}')
+    train_batch_len = len(train_dataloader)
+    print(f'{LOG_TAG_AGENT} train batch len={train_batch_len}, total train data size={len(train_dataset)}')
     agent_current = deepcopy(agent)
     agent_new = deepcopy(agent)
 
@@ -332,7 +332,7 @@ def train(agent, msg_queue):
             loss = agent_new.update(batch_planes, batch_pis, batch_zs)
             train_loss += loss
 
-        print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapse: {(time.time() - start_time):.3f}s | loss: {(train_loss / train_data_len):.6f}')
+        print(f'{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapse: {(time.time() - start_time):.3f}s | loss: {(train_loss / train_batch_len):.6f}')
 
     msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_TRAIN_FINISH})
     agent.set_eval_mode()
