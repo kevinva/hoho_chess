@@ -754,7 +754,8 @@ def convert_board_to_webgame(board_str):
 
     return result_list
                     
-
+def now_datetime():
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
 if __name__ == '__main__':
     # plane = convert_board_to_tensor(INIT_BOARD_STATE)
@@ -774,3 +775,5 @@ if __name__ == '__main__':
     start_time = time.time()
     board_str_to_list1(test_board_state)
     print(f'2 time elapse: {time.time() - start_time}')
+
+    print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))

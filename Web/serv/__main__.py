@@ -40,7 +40,7 @@ def ajax_(request_, response_, route_args_):
 
 		if agent_update_accepted and (agent_update_path is not None):
 			hoho_agent.load_model_from_path(model_path)
-			print(f'{LOG_TAG_SERV} Agent updated! version={hoho_agent.version}')
+			print(f'[{now_datetime()}]{LOG_TAG_SERV} Agent updated! version={hoho_agent.version}')
 
 			agent_update_accepted = False
 			agent_update_path = None
@@ -59,7 +59,7 @@ def ajax_(request_, response_, route_args_):
 		hoho_replay_buffer.add(state, pi.tolist(), z)
 
 		move = convert_my_action_to_webgame_move(action)
-		print(f'{LOG_TAG_SERV} get red move={move}')
+		print(f'[{now_datetime()}]{LOG_TAG_SERV} get red move={move}')
 
 		json_ = json.dumps(move)
 	else:
@@ -69,10 +69,10 @@ def ajax_(request_, response_, route_args_):
 		# print(f'hoho: [ajax_] board_key={board_key}')
 		board = auto_chess._board_from_key(board_key)
 		black_move = auto_chess.auto_move(board)
-		print(f'{LOG_TAG_SERV} get black move={black_move}')   # 注意这里黑方走法，是已经翻转了棋盘
+		print(f'[{now_datetime()}]{LOG_TAG_SERV} get black move={black_move}')   # 注意这里黑方走法，是已经翻转了棋盘
 		if black_move is None:
 			black_move = []
-			print(f'{LOG_TAG_SERV} [Error] black_move is None! ')
+			print(f'[{now_datetime()}]{LOG_TAG_SERV} [Error] black_move is None! ')
 		else:
 			black_state = hoho_game.state
 			black_action = convert_webgame_opponent_move_to_action(black_move)
@@ -91,11 +91,11 @@ def ajax_(request_, response_, route_args_):
 			red_next_state, red_z, _ = hoho_game.step(red_action)
 			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
 
-			print(f'{LOG_TAG_SERV} black_state={black_state}, with action={black_action}, to state={black_next_state}')
-			print(f'{LOG_TAG_SERV} red_state={red_state}, with action={red_action}, to state={red_next_state}')
+			print(f'[{now_datetime()}]{LOG_TAG_SERV} black_state={black_state}, with action={black_action}, to state={black_next_state}')
+			print(f'[{now_datetime()}]{LOG_TAG_SERV} red_state={red_state}, with action={red_action}, to state={red_next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
-			print(f'{LOG_TAG_SERV} get red move={red_move}')
+			print(f'[{now_datetime()}]{LOG_TAG_SERV} get red move={red_move}')
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
@@ -103,16 +103,16 @@ def ajax_(request_, response_, route_args_):
 			hoho_replay_buffer.save({'model_version': hoho_agent.version})
 			hoho_replay_buffer.clear()
 
-		print(f'{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'{LOG_TAG_SERV} {round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
+		print(f'[{now_datetime()}]{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
+		print(f'[{now_datetime()}]{LOG_TAG_SERV} {round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
 
 		win_rate = (win_count / match_count) if match_count > 0 else 0
-		print(f'{LOG_TAG_SERV} model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
+		print(f'[{now_datetime()}]{LOG_TAG_SERV} model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
 		print('========================================================')
 
 	if not message_queue.empty():
 		msg_info = message_queue.get()
-		print(f'{LOG_TAG_SERV} thread message: {msg_info}')
+		print(f'[{now_datetime()}]{LOG_TAG_SERV} thread message: {msg_info}')
 		if msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_TRAIN_FINISH:
 			pass
 		elif msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_SELF_BATTLE_FINISH:
@@ -121,9 +121,10 @@ def ajax_(request_, response_, route_args_):
 			agent_updating = False
 			last_update_finish_time = time.time()
 
-	if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
-		train_agent()
-		agent_updating = True
+	# hoho_test
+	# if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
+	# 	train_agent()
+	# 	agent_updating = True
 			
 
 	return response_.write_response_JSON_OK_(json_)
@@ -141,7 +142,7 @@ def start_server_(port_, max_threads_):
 
 
 def train_agent():
-	print(f'{LOG_TAG_SERV} Start training!')
+	print(f'[{now_datetime()}]{LOG_TAG_SERV} Start training!')
 
 	train_thread = threading.Thread(target=train, args=(hoho_agent, message_queue), name='hoho_train_thread')
 	train_thread.start()
@@ -190,7 +191,7 @@ if __name__ == '__main__':
 		hoho_agent.load_model_from_path(model_path)
 
 	# hoho_step 1
-	print(f'{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
+	print(f'[{now_datetime()}]{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
 	start_server_(8000, 100)
 
 

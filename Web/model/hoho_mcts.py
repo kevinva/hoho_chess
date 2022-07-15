@@ -236,7 +236,7 @@ class MCTS:
     def __init__(self, start_player=PLAYER_RED, start_state=INIT_BOARD_STATE):
         self.root = Node(to_state=start_state, player=start_player)
 
-        print(f'{LOG_TAG_MCTS} MCTS created!')
+        print(f'[{now_datetime()}]{LOG_TAG_MCTS} MCTS created!')
     
     def take_simulation(self, agent, game, update_root=True):
         condition_eval = threading.Condition()
@@ -273,7 +273,7 @@ class MCTS:
         if total == 0:
             final_action_idx = np.random.choice(action_scores.shape[0])
             if DEBUG:
-                print(f'{LOG_TAG_MCTS} Total score is 0. The root children count: {len(self.root.childrens)}')
+                print(f'[{now_datetime()}]{LOG_TAG_MCTS} Total score is 0. The root children count: {len(self.root.childrens)}')
         else:
             pi = action_scores / total
             final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
@@ -298,7 +298,7 @@ class MCTS:
             self.root = self.root.childrens[found_idx]
             self.root.parent = None
         else:
-            print(f'{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
+            print(f'[{now_datetime()}]{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
 
     def is_current_root_expanded(self):
         return len(self.root.childrens) > 0
