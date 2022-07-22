@@ -81,16 +81,16 @@ class Player:
         self.version += 1
 
     def printModel(self):
-        print(f'{LOG_TAG_AGENT} {self.agent_net}')
+        print(f'[{now_datetime()}]{LOG_TAG_AGENT} {self.agent_net}')
 
 
 class AgentNet(nn.Module):
 
     def __init__(self):
         super(AgentNet, self).__init__()
-        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, FILTER_NUM, RESIDUAL_BLOCK_NUM).to(DEVICE)
-        self.value_net = ValueNet(FILTER_NUM, BOARD_POSITION_NUM).to(DEVICE)
-        self.policy_net = PolicyNet(FILTER_NUM, BOARD_POSITION_NUM, ACTION_DIM).to(DEVICE)
+        self.plane_extractor = PlaneExtractor(IN_PLANES_NUM, FILTER_NUM, RESIDUAL_BLOCK_NUM)
+        self.value_net = ValueNet(FILTER_NUM, BOARD_POSITION_NUM)
+        self.policy_net = PolicyNet(FILTER_NUM, BOARD_POSITION_NUM, ACTION_DIM)
 
     def forward(self, state):
         board_features = self.plane_extractor(state)
@@ -392,6 +392,16 @@ if __name__ == '__main__':
     # rb = ReplayBuffer.load_from_dir(dirpath)
     # print(sum(list(rb.buffer)[100][1]))
 
-    testt = torch.tensor([1, 2, 3, 4, 5, -1, 0.1, -2], dtype=torch.float)
-    print(testt.clamp(min=1e-3))
-    print(testt.unsqueeze(0))
+    # testt = torch.tensor([1, 2, 3, 4, 5, -1, 0.1, -2], dtype=torch.float)
+    # print(testt.clamp(min=1e-3))
+    # print(testt.unsqueeze(0))
+
+    from thop import profile
+    from thop import clever_format
+
+    model = AgentNet()
+    input = torch.rand((1, IN_PLANES_NUM, BOARD_HEIGHT, BOARD_WIDTH))
+    flops, params = profile(model, inputs=(input,))
+    flops, params = clever_format([flops, params], "%.3f")
+    print(f'flops: {flops}, params: {params}')
+

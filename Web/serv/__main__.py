@@ -121,7 +121,7 @@ def ajax_(request_, response_, route_args_):
 			agent_updating = False
 			last_update_finish_time = time.time()
 
-	# hoho_test
+	# hoho_test，暂时不训练
 	# if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
 	# 	train_agent()
 	# 	agent_updating = True
