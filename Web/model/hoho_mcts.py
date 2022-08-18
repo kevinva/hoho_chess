@@ -42,6 +42,7 @@ class Node:
         return len(self.childrens) == 0
 
     def select(self):
+        # hoho_update: 1. 找到这颗树的最大和最小u值，以便后面做归一化
         return max(self.childrens, key=lambda node: node.get_uq_score())
 
     def expand(self, all_action_probas, legal_actions):
