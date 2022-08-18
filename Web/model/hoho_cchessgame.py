@@ -38,6 +38,7 @@ class CChessGame:
             self.winner = PLAYER_RED
         else:
             # hoho_todo: 增加restrict_count的逻辑
+            # hoho_update: 2. 以节点的u值作为游戏结束前每一步的reward
             pass
 
         self.state = state_new
