@@ -16,11 +16,12 @@ from model.hoho_config import *
 
 class CChessGame:
 
-    def __init__(self, state=INIT_BOARD_STATE, restrict_count=RESTRICT_ROUND_NUM, winner=None, current_player=PLAYER_RED):
+    def __init__(self, state=INIT_BOARD_STATE, restrict_count=RESTRICT_ROUND_NUM, winner=None, current_player=PLAYER_RED, mcts=None):
         self.state = state
         self.restrict_count = restrict_count
         self.winner = winner
         self.current_player = current_player
+        self.mcts = mcts
 
         print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} CChessGame created!')
 
@@ -38,8 +39,12 @@ class CChessGame:
             self.winner = PLAYER_RED
         else:
             # hoho_todo: 增加restrict_count的逻辑
-            # hoho_update: 2. 以节点的u值作为游戏结束前每一步的reward
-            pass
+            # 2. 以节点的u值作为游戏结束前每一步的reward
+            if self.mcts is not None:
+                action_u, min_u, max_u = self.mcts.tree_u_score_list()
+                if abs(min_u - 0.0) > 1e-6 or abs(max_u - 0.0) > 1e-6: # 防止分母为0
+                    z = (action_u - min_u) / (max_u - min_u)
+                    print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} z = {z}')
 
         self.state = state_new
         return state_new, z, done

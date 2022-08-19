@@ -45,8 +45,8 @@ def ajax_(request_, response_, route_args_):
 			agent_update_accepted = False
 			agent_update_path = None
 
-		hoho_game = CChessGame()
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
+		hoho_game = CChessGame(mcts=hoho_mcts)
 
 		match_count += 1
 		win_player = data[2]

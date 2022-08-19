@@ -34,16 +34,41 @@ class Node:
         self.W = 0       # 总行为价值，由value net输出累加, 
         self.Q = 0       # 平均价值 w/n
 
+        self.root = None   # 该节点所在树的根节点，若为None，即该节点本身即为树的根节点
+        self.max_u = 0.0
+        self.min_u = None
+
+    def get_u_score(self):
+        u = C_PUCT * self.P * np.sqrt(self.parent.N) / (1 + self.N)
+        return u
+
     def get_uq_score(self):
-        U = C_PUCT * self.P * np.sqrt(self.parent.N) / (1 + self.N)
-        return U + self.Q
+        return self.get_u_score() + self.Q
 
     def is_leaf(self):
         return len(self.childrens) == 0
 
     def select(self):
-        # hoho_update: 1. 找到这颗树的最大和最小u值，以便后面做归一化
-        return max(self.childrens, key=lambda node: node.get_uq_score())
+        result_node = None
+        max_uq = 0.0
+        for child in self.childrens:
+            score = child.get_uq_score()
+            assert score > 0, f'score = u+q should be greater than 0, but scoer={score}'
+            if score > max_score:
+                max_score = score
+                result_node = child
+
+            # 找到这颗树的最大和最小u值，以便后面做归一化
+            u_score = child.get_u_score()
+            if u_score > self.root.max_u:
+                self.root.max_u = u_score
+
+        for child in self.childrens:
+            u_score = child.get_u_score()
+            if u_score < self.root.min_u:
+                self.root.min_u = u_score
+            
+        return result_node
 
     def expand(self, all_action_probas, legal_actions):
         nodes = []
@@ -55,6 +80,11 @@ class Node:
             prob = all_action_probas[ACTIONS_2_INDEX[action]]
             to_state_new = do_action_on_board(self.to_state, action)
             node = Node(to_state=to_state_new, action=action, parent=self, proba=prob, player=node_player)
+            if self.parent is None:
+                node.root = self
+            else:
+                node.root = self.root
+
             nodes.append(node)
         self.childrens = nodes
 
@@ -296,13 +326,21 @@ class MCTS:
                 break
 
         if found_idx >= 0 and found_idx < len(self.root.childrens):
+            max_u = self.root.max_u
+            min_u = self.root.min_u
             self.root = self.root.childrens[found_idx]
             self.root.parent = None
+            self.root.root = None
+            self.root.max_u = max_u
+            self.root.min_u = min_u
         else:
             print(f'[{now_datetime()}]{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
 
     def is_current_root_expanded(self):
         return len(self.root.childrens) > 0
+
+    def tree_u_score_list(self):
+        return self.root.get_u_score(), self.root.min_u, self.root.max_u
 
 if __name__ == '__main__':
     myl = [11, 23, 3, 55, 23, 7, 20, 29]
