@@ -90,6 +90,7 @@ def ajax_(request_, response_, route_args_):
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
 			red_pi, red_action, red_reward_u = hoho_mcts.take_simulation(hoho_agent, hoho_game)
+			print(f'[{now_datetime()}]{LOG_TAG_SERV} red_reward_u={red_reward_u}')
 			red_min_u, red_max_u = hoho_mcts.tree_u_score_bound()
 			red_next_state, red_z, _ = hoho_game.step(red_action, red_reward_u, red_max_u, red_min_u)
 			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
