@@ -46,7 +46,7 @@ def ajax_(request_, response_, route_args_):
 			agent_update_path = None
 
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
-		hoho_game = CChessGame(mcts=hoho_mcts)
+		hoho_game = CChessGame()
 
 		match_count += 1
 		win_player = data[2]
@@ -54,8 +54,9 @@ def ajax_(request_, response_, route_args_):
 			win_count += 1
 
 		state = hoho_game.state
-		pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-		_, z, _ = hoho_game.step(action)
+		pi, action, reward_u = hoho_mcts.take_simulation(hoho_agent, hoho_game)
+		min_u, max_u = hoho_mcts.tree_u_score_bound()
+		_, z, _ = hoho_game.step(action, reward_u, max_u, min_u)
 		hoho_replay_buffer.add(state, pi.tolist(), z)
 
 		move = convert_my_action_to_webgame_move(action)
@@ -81,14 +82,16 @@ def ajax_(request_, response_, route_args_):
 			black_pi = np.zeros((ACTION_DIM,))
 			black_pi[ACTIONS_2_INDEX[black_action]] = 1.0
 
-			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
-			black_next_state, black_z, _ = hoho_game.step(black_action)
+			black_reward_u = hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
+			black_min_u, black_max_u = hoho_mcts.tree_u_score_bound()
+			black_next_state, black_z, _ = hoho_game.step(black_action, black_reward_u, black_max_u, black_min_u)
 			hoho_replay_buffer.add(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_z)  # 注意：这里要翻转为红方走子
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
-			red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-			red_next_state, red_z, _ = hoho_game.step(red_action)
+			red_pi, red_action, red_reward_u = hoho_mcts.take_simulation(hoho_agent, hoho_game)
+			red_min_u, red_max_u = hoho_mcts.tree_u_score_bound()
+			red_next_state, red_z, _ = hoho_game.step(red_action, red_reward_u, red_max_u, red_min_u)
 			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
 
 			print(f'[{now_datetime()}]{LOG_TAG_SERV} black_state={black_state}, with action={black_action}, to state={black_next_state}')
@@ -165,9 +168,9 @@ def find_top_version_model_path():
 	for filename in os.listdir(model_dir_path):
 		name = filename.split('.')[0]
 		items = name.split('_')
-		if len(items) == 4:
-			if int(items[3]) > top_version:
-				top_version = int(items[3])
+		if len(items) == 5:
+			if int(items[4]) > top_version:
+				top_version = int(items[4])
 				result_path = os.path.join(model_dir_path, filename)
           
 	return result_path

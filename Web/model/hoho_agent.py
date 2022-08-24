@@ -60,7 +60,7 @@ class Player:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
-        filepath = os.path.join(dir_path, 'hoho_agent_{}_{}.pth'.format(int(time.time()), self.version))
+        filepath = os.path.join(dir_path, 'hoho_agent_u_{}_{}.pth'.format(int(time.time()), self.version))
         state = self.agent_net.state_dict()
         torch.save(state, filepath)
 
@@ -70,8 +70,8 @@ class Player:
         filename = os.path.basename(model_path)
         filename = filename.split('.')[0]
         items = filename.split('_')
-        if len(items) == 4:
-            self.version = int(items[3])
+        if len(items) == 5:
+            self.version = int(items[4])
 
         checkpoint = torch.load(model_path)
         self.agent_net.load_state_dict(checkpoint)
@@ -210,7 +210,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
                 if not mcts.is_current_root_expanded():
                     mcts.take_simulation(agent, game, update_root=False)
                 mcts.update_root_with_action(last_black_action)
-            pi, action = mcts.take_simulation(agent, game, update_root=True)
+            pi, action, _ = mcts.take_simulation(agent, game, update_root=True)
             _, _, done = game.step(action)
         else:
             planes = convert_board_to_tensor(game.state).unsqueeze(0).to(DEVICE)
@@ -238,7 +238,7 @@ def self_battle(agent_current, agent_new, use_mcts=True):
                 if not mcts.is_current_root_expanded():
                     mcts.take_simulation(agent, game, update_root=False)
                 mcts.update_root_with_action(last_red_action)
-            pi, action = mcts.take_simulation(agent, game, update_root=True)
+            pi, action, _ = mcts.take_simulation(agent, game, update_root=True)
             _, _, done = game.step(action)
         else:
             state = flip_board(game.state)

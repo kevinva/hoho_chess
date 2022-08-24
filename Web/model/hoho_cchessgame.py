@@ -16,16 +16,15 @@ from model.hoho_config import *
 
 class CChessGame:
 
-    def __init__(self, state=INIT_BOARD_STATE, restrict_count=RESTRICT_ROUND_NUM, winner=None, current_player=PLAYER_RED, mcts=None):
+    def __init__(self, state=INIT_BOARD_STATE, restrict_count=RESTRICT_ROUND_NUM, winner=None, current_player=PLAYER_RED):
         self.state = state
         self.restrict_count = restrict_count
         self.winner = winner
         self.current_player = current_player
-        self.mcts = mcts
 
         print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} CChessGame created!')
 
-    def step(self, action):
+    def step(self, action, u_score=0.0, max_u=0.0, min_u=0.0):
         state_new = do_action_on_board(self.state, action)
         z = 0
         done = False
@@ -40,11 +39,10 @@ class CChessGame:
         else:
             # hoho_todo: 增加restrict_count的逻辑
             # 2. 以节点的u值作为游戏结束前每一步的reward
-            if self.mcts is not None:
-                action_u, min_u, max_u = self.mcts.tree_u_score_list()
-                if abs(min_u - 0.0) > 1e-6 or abs(max_u - 0.0) > 1e-6: # 防止分母为0
-                    z = (action_u - min_u) / (max_u - min_u)
-                    print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} z = {z}')
+            if abs(min_u - 0.0) > 1e-6 or abs(max_u - 0.0) > 1e-6: # 防止分母为0
+                z = (u_score - min_u) / (max_u - min_u)  # u_score作为中间reward，归一化
+                print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} z = {z}')
+
 
         self.state = state_new
         return state_new, z, done
@@ -86,8 +84,8 @@ class ChessDataset(Dataset):
                 else:
                     name = filename.split('.')[0]
                     items = name.split('_')
-                    if len(items) == 4:
-                        check_version = int(items[3])
+                    if len(items) == 5:
+                        check_version = int(items[4])
                         if version == check_version:
                             with open(os.path.join(dirpath, filename), 'r') as f:
                                 jsonstr = f.read()
@@ -140,7 +138,7 @@ class ReplayBuffer:
         model_version = 0
         if expand_data is not None:
             model_version = expand_data.get('model_version')
-        filename = 'replay_buffer_{}_{}.json'.format(int(time.time()), model_version)
+        filename = 'replay_buffer_u_{}_{}.json'.format(int(time.time()), model_version)
         filepath = os.path.join(filedir, filename)
         
         with open(filepath, 'w') as f:

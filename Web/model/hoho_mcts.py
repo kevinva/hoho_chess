@@ -36,9 +36,13 @@ class Node:
 
         self.root = None   # 该节点所在树的根节点，若为None，即该节点本身即为树的根节点
         self.max_u = 0.0
-        self.min_u = None
+        self.min_u = 0.0
+        self.u = 0.0
 
     def get_u_score(self):
+        if self.parent is None:
+            return 0.0
+
         u = C_PUCT * self.P * np.sqrt(self.parent.N) / (1 + self.N)
         return u
 
@@ -49,24 +53,31 @@ class Node:
         return len(self.childrens) == 0
 
     def select(self):
-        result_node = None
+        result_node = self.childrens[0]
         max_uq = 0.0
         for child in self.childrens:
             score = child.get_uq_score()
-            assert score > 0, f'score = u+q should be greater than 0, but scoer={score}'
-            if score > max_score:
-                max_score = score
+            if score > max_uq:
+                max_uq = score
                 result_node = child
 
             # 找到这颗树的最大和最小u值，以便后面做归一化
             u_score = child.get_u_score()
-            if u_score > self.root.max_u:
-                self.root.max_u = u_score
+            if self.root is None:
+                if u_score > self.max_u:
+                    self.max_u = u_score
+            else:
+                if u_score > self.root.max_u:
+                    self.root.max_u = u_score
 
         for child in self.childrens:
             u_score = child.get_u_score()
-            if u_score < self.root.min_u:
-                self.root.min_u = u_score
+            if self.root is None:
+                if u_score < self.min_u:
+                    self.min_u = u_score
+            else:
+                if u_score < self.root.min_u:
+                    self.root.min_u = u_score
             
         return result_node
 
@@ -311,14 +322,15 @@ class MCTS:
 
         # 替换为新的根节点
         final_action = INDEXS_2_ACTION[final_action_idx]
+        u_score = 0.0
         if update_root:
-            self.update_root_with_action(final_action)
-
-        return pi, final_action
+            u_score = self.update_root_with_action(final_action)
+        return pi, final_action, u_score
 
     def update_root_with_action(self, action):
-        """让action对应的子节点成为新的根节点"""
+        """让action对应的子节点成为新的根节点，返回该子节点的u值"""
 
+        u_score = 0.0
         found_idx = -1
         for idx in range(len(self.root.childrens)):
             if self.root.childrens[idx].action == action:
@@ -326,21 +338,26 @@ class MCTS:
                 break
 
         if found_idx >= 0 and found_idx < len(self.root.childrens):
+            node_found = self.root.childrens[found_idx]
+            u_score = node_found.get_u_score()
             max_u = self.root.max_u
             min_u = self.root.min_u
-            self.root = self.root.childrens[found_idx]
+
+            self.root = node_found
             self.root.parent = None
             self.root.root = None
             self.root.max_u = max_u
             self.root.min_u = min_u
         else:
             print(f'[{now_datetime()}]{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
+        
+        return u_score
 
     def is_current_root_expanded(self):
         return len(self.root.childrens) > 0
 
-    def tree_u_score_list(self):
-        return self.root.get_u_score(), self.root.min_u, self.root.max_u
+    def tree_u_score_bound(self):
+        return self.root.min_u, self.root.max_u
 
 if __name__ == '__main__':
     myl = [11, 23, 3, 55, 23, 7, 20, 29]
