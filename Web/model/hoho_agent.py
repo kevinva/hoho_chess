@@ -60,7 +60,7 @@ class Player:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
-        filepath = os.path.join(dir_path, 'hoho_agent_{}_{}.pth'.format(int(time.time()), self.version))
+        filepath = os.path.join(dir_path, 'hoho_agent_her_{}_{}.pth'.format(int(time.time()), self.version))
         state = self.agent_net.state_dict()
         torch.save(state, filepath)
 
@@ -70,8 +70,8 @@ class Player:
         filename = os.path.basename(model_path)
         filename = filename.split('.')[0]
         items = filename.split('_')
-        if len(items) == 4:
-            self.version = int(items[3])
+        if len(items) == 5:
+            self.version = int(items[4])
 
         checkpoint = torch.load(model_path)
         self.agent_net.load_state_dict(checkpoint)

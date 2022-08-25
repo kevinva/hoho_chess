@@ -80,14 +80,14 @@ class ChessDataset(Dataset):
                 else:
                     name = filename.split('.')[0]
                     items = name.split('_')
-                    if len(items) == 4:
-                        check_version = int(items[3])
+                    if len(items) == 5:
+                        check_version = int(items[4])
                         if version == check_version:
                             with open(os.path.join(dirpath, filename), 'r') as f:
                                 jsonstr = f.read()
                                 data_list = json.loads(jsonstr)
                                 all_data_list.extend(data_list)
-                    elif len(items) < 4:
+                    elif len(items) < 5:
                         # 没有版本后缀的默认为version 0
                         if version == 0:
                             with open(os.path.join(dirpath, filename), 'r') as f:
@@ -99,12 +99,56 @@ class ChessDataset(Dataset):
         return dataset
 
 
+class Trajectory:
+
+    def __init__(self, model_version):
+        self.states = []
+        self.policies = []
+        self.rewards = []
+        self.dones = []
+        self.model_versions = model_version
+        self.length = 0
+
+    def store_step(self, state, pi, reward, done):
+        self.states.append(state)
+        self.policies.append(pi)
+        self.rewards.append(reward)
+        self.dones.append(done)
+        self.length += 1
+
+
+
 class ReplayBuffer:
     ''' 经验回放池 '''
     def __init__(self, capacity=10000, data_list=None):
         self.buffer = collections.deque(maxlen=capacity)  # 队列,先进先出
         if data_list is not None:
             self.buffer.extend(data_list)
+
+    def add_trajectory(self, traj, use_her=True, her_ratio=0.8):
+        if use_her and np.random.uniform() <= her_ratio:
+            print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} use HER method!')
+            for i in range(traj.length):
+                step_state = np.random.randint(traj.length)
+                state = traj.states[step_state]
+                step_goal = np.random.randint(step_state + 1, traj.length + 1)
+                goal = traj.states[step_goal]
+                next_state = traj.states[step_state + 1]
+                is_achieved = (next_state is goal)
+                done = True if is_achieved else False
+                reward = 1 if is_achieved else 0
+                pi = traj.policies[step_goal]
+                self.add(state, pi, reward)
+        else:
+            for i in range(traj.length):
+                state = traj.states[i]
+                pi = traj.policies[i]
+                reward = traj.rewards[i]
+                self.add(state, pi, reward)
+
+        if self.size() > 100:
+            self.save({'model_version': traj.model_version})
+            self.clear()
 
     def add(self, state, pi, z):  
         """将数据加入buffer"""
@@ -134,7 +178,7 @@ class ReplayBuffer:
         model_version = 0
         if expand_data is not None:
             model_version = expand_data.get('model_version')
-        filename = 'replay_buffer_{}_{}.json'.format(int(time.time()), model_version)
+        filename = 'replay_buffer_her_{}_{}.json'.format(int(time.time()), model_version)
         filepath = os.path.join(filedir, filename)
         
         with open(filepath, 'w') as f:

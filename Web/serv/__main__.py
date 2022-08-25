@@ -35,7 +35,7 @@ def ajax_(request_, response_, route_args_):
 	json_ = None
 
 	if data_board == 'Action!': # 开始！
-		global hoho_game, hoho_mcts, hoho_agent
+		global hoho_game, hoho_mcts, hoho_agent, hoho_trajectory
 		global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
 
 		if agent_update_accepted and (agent_update_path is not None):
@@ -47,6 +47,7 @@ def ajax_(request_, response_, route_args_):
 
 		hoho_game = CChessGame()
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
+		hoho_trajectory = Trajectory(model_version=hoho_agent.version)
 
 		match_count += 1
 		win_player = data[2]
@@ -55,8 +56,10 @@ def ajax_(request_, response_, route_args_):
 
 		state = hoho_game.state
 		pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-		_, z, _ = hoho_game.step(action)
-		hoho_replay_buffer.add(state, pi.tolist(), z)
+		_, z, done = hoho_game.step(action)
+		hoho_trajectory.store_step(state, pi.tolist(), z, done)
+		if done:
+			hoho_replay_buffer.add_trajectory(hoho_trajectory)
 
 		move = convert_my_action_to_webgame_move(action)
 		print(f'[{now_datetime()}]{LOG_TAG_SERV} get red move={move}')
@@ -82,14 +85,18 @@ def ajax_(request_, response_, route_args_):
 			black_pi[ACTIONS_2_INDEX[black_action]] = 1.0
 
 			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
-			black_next_state, black_z, _ = hoho_game.step(black_action)
-			hoho_replay_buffer.add(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_z)  # 注意：这里要翻转为红方走子
+			black_next_state, black_z, done = hoho_game.step(black_action)
+			hoho_trajectory.store_step(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_z, done)
+			if done:
+				hoho_replay_buffer.add_trajectory(hoho_trajectory)
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
 			red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-			red_next_state, red_z, _ = hoho_game.step(red_action)
-			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
+			red_next_state, red_z, done = hoho_game.step(red_action)
+			hoho_trajectory.store_step(red_state, red_pi.tolist(), red_z, done)
+			if done:
+				hoho_replay_buffer.add_trajectory(hoho_trajectory)
 
 			print(f'[{now_datetime()}]{LOG_TAG_SERV} black_state={black_state}, with action={black_action}, to state={black_next_state}')
 			print(f'[{now_datetime()}]{LOG_TAG_SERV} red_state={red_state}, with action={red_action}, to state={red_next_state}')
@@ -99,11 +106,7 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
-		if hoho_replay_buffer.size() >= 100:
-			hoho_replay_buffer.save({'model_version': hoho_agent.version})
-			hoho_replay_buffer.clear()
-
-		print(f'[{now_datetime()}]{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
+		print(f'[{now_datetime()}]{LOG_TAG_SERV} trajectory length: {hoho_trajectory.length}')
 		print(f'[{now_datetime()}]{LOG_TAG_SERV} {round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
 
 		win_rate = (win_count / match_count) if match_count > 0 else 0
@@ -165,9 +168,9 @@ def find_top_version_model_path():
 	for filename in os.listdir(model_dir_path):
 		name = filename.split('.')[0]
 		items = name.split('_')
-		if len(items) == 4:
-			if int(items[3]) > top_version:
-				top_version = int(items[3])
+		if len(items) == 5:
+			if int(items[4]) > top_version:
+				top_version = int(items[4])
 				result_path = os.path.join(model_dir_path, filename)
           
 	return result_path
@@ -189,6 +192,7 @@ if __name__ == '__main__':
 	model_path = find_top_version_model_path()
 	if model_path is not None:
 		hoho_agent.load_model_from_path(model_path)
+	hoho_trajectory = Trajectory(model_version=hoho_agent.version)
 
 	# hoho_step 1
 	print(f'[{now_datetime()}]{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
