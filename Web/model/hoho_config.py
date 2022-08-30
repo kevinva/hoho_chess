@@ -24,7 +24,7 @@ LEARNING_RATE = 5e-5
 L2_REGULARIZATION = 1e-4
 
 # 训练的epoch数
-EPOCH_NUM = 50
+EPOCH_NUM = 100
 
 # 计算节点UCB的常数
 C_PUCT = 0.2

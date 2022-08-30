@@ -204,14 +204,14 @@ def self_battle(agent_current, agent_new, use_mcts=True):
 
     def red_turn(last_black_action, mcts, agent, game, use_mcts=True):
         done = False
-        action = None
+        red_action = None
         if use_mcts:
             if last_black_action is not None:
                 if not mcts.is_current_root_expanded():
                     mcts.take_simulation(agent, game, update_root=False)
                 mcts.update_root_with_action(last_black_action)
-            pi, action, _ = mcts.take_simulation(agent, game, update_root=True)
-            _, _, done = game.step(action)
+            pi, red_action, _ = mcts.take_simulation(agent, game, update_root=True)
+            _, _, done = game.step(red_action)
         else:
             planes = convert_board_to_tensor(game.state).unsqueeze(0).to(DEVICE)
             pis, _ = agent.predict(planes)
@@ -232,14 +232,14 @@ def self_battle(agent_current, agent_new, use_mcts=True):
 
     def black_turn(last_red_action, mcts, agent, game, expanded, use_mcts=True):
         done = False
-        action = None
+        black_action = None
         if use_mcts:
             if (last_red_action is not None) and expanded:
                 if not mcts.is_current_root_expanded():
                     mcts.take_simulation(agent, game, update_root=False)
                 mcts.update_root_with_action(last_red_action)
-            pi, action, _ = mcts.take_simulation(agent, game, update_root=True)
-            _, _, done = game.step(action)
+            pi, black_action, _ = mcts.take_simulation(agent, game, update_root=True)
+            _, _, done = game.step(black_action)
         else:
             state = flip_board(game.state)
             planes = convert_board_to_tensor(state).unsqueeze(0).to(DEVICE)
