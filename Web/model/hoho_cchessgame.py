@@ -75,7 +75,7 @@ class ChessDataset(Dataset):
             
         all_data_list = list()
         for filename in os.listdir(dirpath):
-            if filename.endswith('json') and filename.startswith('replay_buffer'):
+            if filename.endswith('json') and filename.startswith('replay_buffer_u'):
                 if version is None:
                     with open(os.path.join(dirpath, filename), 'r') as f:
                         jsonstr = f.read()

@@ -338,7 +338,8 @@ def train(agent, msg_queue):
     agent.set_eval_mode()
 
     model_path = None
-    accepted = self_battle(agent_current, agent_new, use_mcts=False)
+    accepted = self_battle(agent_current, agent_new, use_mcts=True)
+    print(f'[{now_datetime()}] self battle result: accepted? {accepted}')
     if accepted:
         agent_new.update_version()
         model_path = agent_new.save_model()
