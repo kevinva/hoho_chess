@@ -24,7 +24,7 @@ LEARNING_RATE = 5e-5
 L2_REGULARIZATION = 1e-4
 
 # 训练的epoch数
-EPOCH_NUM = 100
+EPOCH_NUM = 60
 
 # 计算节点UCB的常数
 C_PUCT = 0.2
@@ -54,7 +54,7 @@ SELF_BATTLE_RESTRICT_ROUND_NUM = 200
 SELF_BATTLE_NUM = 400
 
 # 训练的网络与当前网络的自博弈，超过该阈值即替换当前网络
-SELF_BATTLE_WIN_RATE = 0.333  #0.55
+SELF_BATTLE_WIN_RATE = 0.25  #0.55
 
 # 控制某些日志是否打印
 DEBUG = True
