@@ -85,7 +85,7 @@ def ajax_(request_, response_, route_args_):
 			black_reward_u = hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_min_u, black_max_u = hoho_mcts.tree_u_score_bound()
 			black_next_state, black_z, _ = hoho_game.step(black_action, black_reward_u, black_max_u, black_min_u)
-			hoho_replay_buffer.add(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_z)  # 注意：这里要翻转为红方走子
+			hoho_replay_buffer.add(flip_board(black_state), flip_action_probas(black_pi).tolist(), -black_z)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。hoho_todo!
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
