@@ -314,6 +314,14 @@ class MCTS:
             pi = action_scores / total
             final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
+        if DEBUG:
+            c_node = self.root
+            deep_count = 0
+            while len(c_node.childrens) > 0:
+                deep_count += 1
+                c_node = self.root.childrens[0]
+            print(f'[{now_datetime()}]{LOG_TAG_MCTS} The tree deep: {deep_count}')
+
         # 替换为新的根节点
         final_action = INDEXS_2_ACTION[final_action_idx]
         u_score = 0.0
