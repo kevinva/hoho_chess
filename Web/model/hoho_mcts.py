@@ -204,15 +204,9 @@ class SearchThread(threading.Thread):
         else: 
             value = 0.0
             if game.winner == PLAYER_RED:
-                if current_node.player == PLAYER_BLACK:
-                    value = 1.0
-                elif current_node.player == PLAYER_RED:
-                    value = -1.0
+                value = 1.0
             elif game.winner == PLAYER_BLACK:
-                if current_node.player == PLAYER_RED:
-                    value = 1.0
-                elif current_node.player == PLAYER_BLACK:
-                    value = -1.0
+                value = -1.0
             
             self.lock.acquire()
             current_node.backup(value)
