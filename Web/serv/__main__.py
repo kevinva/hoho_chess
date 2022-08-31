@@ -127,9 +127,9 @@ def ajax_(request_, response_, route_args_):
 
 	# hoho_test，暂时不训练
 	# if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
-	if not agent_updating:
-		train_agent()
-		agent_updating = True
+	# if not agent_updating:
+	# 	train_agent()
+	# 	agent_updating = True
 			
 
 	return response_.write_response_JSON_OK_(json_)

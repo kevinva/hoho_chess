@@ -314,14 +314,6 @@ class MCTS:
             pi = action_scores / total
             final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
 
-        if DEBUG:
-            c_node = self.root
-            deep_count = 0
-            while len(c_node.childrens) > 0:
-                deep_count += 1
-                c_node = self.root.childrens[0]
-            print(f'[{now_datetime()}]{LOG_TAG_MCTS} The tree deep: {deep_count}')
-
         # 替换为新的根节点
         final_action = INDEXS_2_ACTION[final_action_idx]
         u_score = 0.0
@@ -331,6 +323,9 @@ class MCTS:
 
     def update_root_with_action(self, action):
         """让action对应的子节点成为新的根节点，返回该子节点的u值"""
+
+        # if DEBUG:
+        #     print(f'[{now_datetime()}]{LOG_TAG_MCTS} The tree deep: {MCTS.find_tree_deep(self.root)}, player:{self.root.player}')
 
         u_score = 0.0
         found_idx = -1
@@ -352,7 +347,7 @@ class MCTS:
             self.root.min_u = min_u
         else:
             print(f'[{now_datetime()}]{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
-        
+
         return u_score
 
     def is_current_root_expanded(self):
@@ -360,6 +355,16 @@ class MCTS:
 
     def tree_u_score_bound(self):
         return self.root.min_u, self.root.max_u
+
+    @staticmethod
+    def find_tree_deep(root_node):
+        if len(root_node.childrens) == 0:
+            return 0
+        else:
+            deep = 0
+            for node in root_node.childrens:
+                deep = max(deep, MCTS.find_tree_deep(node))
+            return deep + 1
 
 if __name__ == '__main__':
     myl = [11, 23, 3, 55, 23, 7, 20, 29]
