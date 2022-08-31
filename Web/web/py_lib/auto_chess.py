@@ -19,7 +19,7 @@ class Controller(chess.Controller):
 		x, y = ev.x.data(), ev.y.data()
 		i2, j2 = self.chess_board.plate.pixel_to_nearest_pos(x, y)
 		px, py = self.chess_board.plate.pos_to_pixel(i2, j2)
-		print(f'hoho: mouseup=({i2}, {j2}), x={x}, y={y}')
+		# print(f'hoho: mouseup=({i2}, {j2}), x={x}, y={y}')
 		near = chess._distance(x, y, px, py) < self.chess_board.setting.chess_size
 		succ = False
 		if near:
@@ -42,7 +42,7 @@ class Controller(chess.Controller):
 		self.chess_board.rotate_board()
 		move_dict = auto_move_remote(self.chess_board, self.round_count)
 		move_black = move_dict.get('Black')
-		print(f'hoho: Black move: {move_black}')
+		# print(f'hoho: Black move: {move_black}')
 		self.chess_board.rotate_board()
 		spinner.hide()
 		if move_black is None:
@@ -314,7 +314,7 @@ class BoardExplorer:
 		explored = 0
 		while True:
 			if (time.time()-start_time) > self.time_limit: 
-				print(f'hoho: time_limit!')
+				# print(f'hoho: time_limit!')
 				break
 			if len(board_explorer.heap)==0: 
 				print(f'explorer heap empty!')
@@ -368,7 +368,7 @@ def auto_move_remote(board, round_count):
 	done = False
 	res = None
 	def callback(data):
-		print(f'hoho: receive = {data}')
+		# print(f'hoho: receive = {data}')
 		nonlocal res
 		nonlocal done
 		if 'error' in data:
@@ -381,7 +381,7 @@ def auto_move_remote(board, round_count):
 
 		res = data
 		done = True
-	print(f'hoho: send = {board_key}')
+	# print(f'hoho: send = {board_key}')
 	ajax.send((board_key, round_count), callback)
 	while not done:
 		time.sleep(.1)

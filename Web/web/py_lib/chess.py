@@ -260,7 +260,7 @@ class Controller:
 	def onmousedown(self, ev):
 		x, y = ev.x.data(), ev.y.data()
 		i, j = self.chess_board.plate.pixel_to_nearest_pos(x, y)
-		print(f'hoho: mousedown=({i}, {j})')
+		# print(f'hoho: mousedown=({i}, {j})')
 		px, py = self.chess_board.plate.pos_to_pixel(i, j)
 		if _distance(x, y, px, py) > self.chess_board.setting.chess_size:
 			return
@@ -319,7 +319,7 @@ class Controller:
 			img.style.top = f'{y-size}px'
 			time.sleep(1/animation_frames)
 		assert x==px, (x,px)
-		print(f'hoho: move_chess_img: x={x}, y={y}')
+		# print(f'hoho: move_chess_img: x={x}, y={y}')
 		setattr(img.style, 'z-index', '0')
 		self.player = player
 		self.dragging_chess = dragging_chess
