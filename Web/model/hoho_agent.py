@@ -322,7 +322,11 @@ def train(agent, msg_queue):
     agent_current = deepcopy(agent)
     agent_new = deepcopy(agent)
 
-    agent.set_train_mode()
+    # agent_current = Player()
+    # agent_new = Player()
+    # agent_new.agent_net.load_state_dict(agent_current.agent_net.state_dict())
+
+    agent_new.set_train_mode()
     for epoch in range(EPOCH_NUM):
         start_time = time.time()
         train_loss = 0.0
@@ -335,10 +339,10 @@ def train(agent, msg_queue):
         print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapse: {(time.time() - start_time):.3f}s | loss: {(train_loss / train_batch_len):.6f}')
 
     msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_TRAIN_FINISH})
-    agent.set_eval_mode()
+    agent_new.set_eval_mode()
 
     model_path = None
-    accepted = self_battle(agent_current, agent_new, use_mcts=False)
+    accepted = self_battle(agent_current, agent_new, use_mcts=True)
     print(f'[{now_datetime()}] self battle result: accepted? {accepted}')
     if accepted:
         agent_new.update_version()

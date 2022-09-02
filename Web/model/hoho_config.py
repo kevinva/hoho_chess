@@ -36,10 +36,10 @@ NOISE_EPSILON = 0.25
 NOISE_ALPHA = 0.03   
 
 # 进行MCTS的线程数
-MCTS_THREAD_NUM = 16
+MCTS_THREAD_NUM = 8
 
 # 每次走子前的模拟次数
-MCTS_SIMULATION_NUM = 800 # 1600
+MCTS_SIMULATION_NUM = 400 # 1600
 
 # 计算策略时的temperature系数
 POLICY_TEMPERATURE = 1 #1e-3，设置数太小，小心计算inf

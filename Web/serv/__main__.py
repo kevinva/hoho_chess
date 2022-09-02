@@ -199,6 +199,9 @@ if __name__ == '__main__':
 	print(f'[{now_datetime()}]{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
 	start_server_(8000, 100)
 
+	# hoho_test
+	# train_agent()
+
 
 
 	
