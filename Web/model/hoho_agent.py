@@ -306,7 +306,13 @@ def self_battle(agent_current, agent_new, use_mcts=True):
             else:
                 draw_count += 1
 
-        print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | win rate (draw included) = {win_count / (match_count + 1)} | win rate (draw not included) = {win_count / (win_count + loss_count)} | elapse: {time.time() - start_time:.3f}s')
+        win_rate_included_draw = 0
+        win_rate_not_included_draw = 0
+        if (match_count + 1) > 0:
+            win_rate_included_draw = win_count / (match_count + 1)
+        if (win_count + loss_count) > 0:
+            win_rate_not_included_draw = win_count / (win_count + loss_count)
+        print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | win rate (draw included) = {win_rate_included_draw} | win rate (draw not included) = {win_rate_not_included_draw} | win = {win_count}, loss = {loss_count}, draw = {draw_count} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 
@@ -351,7 +357,7 @@ def train(agent, msg_queue):
     agent_new.set_eval_mode()
 
     model_path = None
-    accepted = self_battle(agent_current, agent_new, use_mcts=False)
+    accepted = self_battle(agent_current, agent_new, use_mcts=True)
     print(f'[{now_datetime()}] self battle result: accepted? {accepted}')
     if accepted:
         agent_new.update_version()
