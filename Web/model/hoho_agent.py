@@ -262,6 +262,8 @@ def self_battle(agent_current, agent_new, use_mcts=True):
 
     accepted = False
     win_count = 0
+    draw_count = 0
+    loss_count = 0
     for match_count in range(SELF_BATTLE_NUM):
         start_time = time.time()
 
@@ -293,13 +295,18 @@ def self_battle(agent_current, agent_new, use_mcts=True):
 
             round_count += 1
             if round_count > SELF_BATTLE_RESTRICT_ROUND_NUM:   # 超过步数，提前结束
+                done = True
                 break
        
         if done:
             if game.winner == PLAYER_RED:
                 win_count += 1
+            elif game.winner == PLAYER_BLACK:
+                loss_count += 1
+            else:
+                draw_count += 1
 
-        print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | current win rate = {win_count / (match_count + 1)} | elapse: {time.time() - start_time:.3f}s')
+        print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | win rate (draw included) = {win_count / (match_count + 1)} | win rate (draw not included) = {win_count / (win_count + loss_count)} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
 
@@ -319,12 +326,14 @@ def train(agent, msg_queue):
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     train_batch_len = len(train_dataloader)
     print(f'[{now_datetime()}]{LOG_TAG_AGENT} train batch len={train_batch_len}, total train data size={len(train_dataset)}')
-    agent_current = deepcopy(agent)
-    agent_new = deepcopy(agent)
+    # agent_current = deepcopy(agent)
+    # agent_new = deepcopy(agent)
 
-    # agent_current = Player()
-    # agent_new = Player()
-    # agent_new.agent_net.load_state_dict(agent_current.agent_net.state_dict())
+    agent_current = Player()
+    agent_new = Player()
+    agent_current.agent_net.load_state_dict(agent.agent_net.state_dict())
+    agent_new.agent_net.load_state_dict(agent.agent_net.state_dict())
+
 
     agent_new.set_train_mode()
     for epoch in range(EPOCH_NUM):
@@ -342,7 +351,7 @@ def train(agent, msg_queue):
     agent_new.set_eval_mode()
 
     model_path = None
-    accepted = self_battle(agent_current, agent_new, use_mcts=True)
+    accepted = self_battle(agent_current, agent_new, use_mcts=False)
     print(f'[{now_datetime()}] self battle result: accepted? {accepted}')
     if accepted:
         agent_new.update_version()
