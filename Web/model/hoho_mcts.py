@@ -271,8 +271,7 @@ class MCTS:
 
     def __init__(self, start_player=PLAYER_RED, start_state=INIT_BOARD_STATE):
         self.root = Node(to_state=start_state, player=start_player)
-
-        print(f'[{now_datetime()}]{LOG_TAG_MCTS} MCTS created!')
+        LOGGER.info('MCTS created!')
     
     def take_simulation(self, agent, game, update_root=True):
         condition_eval = threading.Condition()
@@ -308,8 +307,7 @@ class MCTS:
         total = np.sum(action_scores)
         if total == 0:
             final_action_idx = np.random.choice(action_scores.shape[0])
-            if DEBUG:
-                print(f'[{now_datetime()}]{LOG_TAG_MCTS} Total score is 0. The root children count: {len(self.root.childrens)}')
+            LOGGER.warning(f'Total score is 0. The root children count: {len(self.root.childrens)}')
         else:
             pi = action_scores / total
             final_action_idx = np.random.choice(action_scores.shape[0], p=pi)
@@ -323,9 +321,7 @@ class MCTS:
 
     def update_root_with_action(self, action):
         """让action对应的子节点成为新的根节点，返回该子节点的u值"""
-
-        # if DEBUG:
-        #     print(f'[{now_datetime()}]{LOG_TAG_MCTS} The tree deep: {MCTS.find_tree_deep(self.root)}, player:{self.root.player}')
+        LOGGER.info(f'The tree deep: {MCTS.find_tree_deep(self.root)}, player:{self.root.player}')
 
         u_score = 0.0
         found_idx = -1

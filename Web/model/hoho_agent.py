@@ -28,7 +28,7 @@ class Player:
         # self.agent_net.share_memory()
         self.version = 0
 
-        print(f'[{now_datetime()}]{LOG_TAG_AGENT} Player agent created!')
+        LOGGER.info('Player agent created!')
 
     def set_train_mode(self):
         self.agent_net.train()
@@ -81,7 +81,7 @@ class Player:
         self.version += 1
 
     def printModel(self):
-        print(f'[{now_datetime()}]{LOG_TAG_AGENT} {self.agent_net}')
+        LOGGER.info(f'{self.agent_net}')
 
 
 class AgentNet(nn.Module):
@@ -200,7 +200,7 @@ def self_battle(agent_current, agent_new, use_mcts=True, msg_queue=None):
         use_mcts: 是否使用MCTS进行策略生成。False则直接使用神经网络预测的走子策略。
     """
 
-    print(f'[{now_datetime()}]{LOG_TAG_AGENT} start self battle!!!')
+    LOGGER.info('start self battle!!!')
 
     def red_turn(last_black_action, mcts, agent, game, use_mcts=True):
         done = False
@@ -277,7 +277,8 @@ def self_battle(agent_current, agent_new, use_mcts=True, msg_queue=None):
         round_count = 0
         while not done:
             last_red_action, done = red_turn(last_black_action, red_mcts, agent_new, game, use_mcts)
-            print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | red turn: action={last_red_action}, state={game.state}')
+            LOGGER.info(f'[tid={threading.currentThread().ident}] Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | red turn: action={last_red_action}, state={game.state}')
+
             if done:
                 break
 
@@ -286,7 +287,8 @@ def self_battle(agent_current, agent_new, use_mcts=True, msg_queue=None):
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
             last_black_action, done = black_turn(last_red_action, black_mcts, agent_current, game, black_expanded, use_mcts)
-            print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | black turn: action={last_black_action}, state={game.state}')
+            LOGGER.info(f'[tid={threading.currentThread().ident}] Self battle! rounds: {round_count + 1} / matches: {match_count + 1} | black turn: action={last_black_action}, state={game.state}')
+           
             if done:
                 break
 
@@ -312,11 +314,12 @@ def self_battle(agent_current, agent_new, use_mcts=True, msg_queue=None):
             win_rate_included_draw = win_count / (match_count + 1)
         if (win_count + loss_count) > 0:
             win_rate_not_included_draw = win_count / (win_count + loss_count)
-        print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | win rate (draw included) = {win_rate_included_draw} | win rate (draw not included) = {win_rate_not_included_draw} | win = {win_count}, loss = {loss_count}, draw = {draw_count} | elapse: {time.time() - start_time:.3f}s')
+        LOGGER.info(f'[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | win rate (draw included) = {win_rate_included_draw} | win rate (draw not included) = {win_rate_not_included_draw} | win = {win_count}, loss = {loss_count}, draw = {draw_count} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
     model_path = None
-    print(f'[{now_datetime()}]{LOG_TAG_AGENT} self battle result: accepted? {accepted}')
+    LOGGER.info(f'self battle result: accepted? {accepted}')
+ 
     if accepted:
         agent_new.update_version()
         model_path = agent_new.save_model()
@@ -339,7 +342,8 @@ def train(agent):
     train_dataset = ChessDataset.load_from_dir(data_dir_path, version=agent.version)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     train_batch_len = len(train_dataloader)
-    print(f'[{now_datetime()}]{LOG_TAG_AGENT} train batch len={train_batch_len}, total train data size={len(train_dataset)}')
+    LOGGER.info(f'train batch len={train_batch_len}, total train data size={len(train_dataset)}')
+
     # agent_current = deepcopy(agent)
     # agent_new = deepcopy(agent)
 
@@ -358,7 +362,7 @@ def train(agent):
             loss = agent_new.update(batch_planes, batch_pis, batch_zs)
             train_loss += loss
 
-        print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapse: {(time.time() - start_time):.3f}s | loss: {(train_loss / train_batch_len):.6f}')
+        LOGGER.info(f'[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapse: {(time.time() - start_time):.3f}s | loss: {(train_loss / train_batch_len):.6f}')
 
     agent_new.set_eval_mode()
 

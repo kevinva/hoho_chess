@@ -22,7 +22,7 @@ class CChessGame:
         self.winner = winner
         self.current_player = current_player
 
-        print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} CChessGame created!')
+        LOGGER.info('CChessGame created!')
 
     def step(self, action, u_score=0.0, max_u=0.0, min_u=0.0):
         state_new = do_action_on_board(self.state, action)
@@ -41,7 +41,7 @@ class CChessGame:
             # 2. 以节点的u值作为游戏结束前每一步的reward
             if abs(min_u - 0.0) > 1e-6 or abs(max_u - 0.0) > 1e-6: # 防止分母为0
                 z = -1 + (u_score - min_u) * (1-(-1)) / (max_u - min_u)  # u_score作为中间reward，归一化到[-1,1]
-                print(f'[{now_datetime()}]{LOG_TAG_CCHESSGAME} z = {z}')
+                LOGGER.info(f'z = {z}')
 
         self.state = state_new
         return state_new, z, done

@@ -203,7 +203,7 @@ if __name__ == '__main__':
 		hoho_agent.load_model_from_path(model_path)
 
 	# hoho_step 1
-	# print(f'[{now_datetime()}]{LOG_TAG_SERV}[pid={os.getpid()}] start server!')
+	LOGGER.info(f'[pid={os.getpid()}] start server!')
 	# start_server_(8000, 100)
 
 	# hoho_test
