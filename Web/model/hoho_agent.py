@@ -192,7 +192,7 @@ class ValueNet(nn.Module):
         return win_score
 
 
-def self_battle(agent_current, agent_new, use_mcts=True):
+def self_battle(agent_current, agent_new, use_mcts=True, msg_queue=None):
     """
     新训练网络与当前网络自博弈
     
@@ -315,11 +315,19 @@ def self_battle(agent_current, agent_new, use_mcts=True):
         print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Self battle! win count: {win_count} | match count: {match_count + 1} | win rate (draw included) = {win_rate_included_draw} | win rate (draw not included) = {win_rate_not_included_draw} | win = {win_count}, loss = {loss_count}, draw = {draw_count} | elapse: {time.time() - start_time:.3f}s')
     
     accepted = ((win_count / SELF_BATTLE_NUM) >= SELF_BATTLE_WIN_RATE)
+    model_path = None
+    print(f'[{now_datetime()}]{LOG_TAG_AGENT} self battle result: accepted? {accepted}')
+    if accepted:
+        agent_new.update_version()
+        model_path = agent_new.save_model()
+        # hoho_todo: 通知主线程更新模型
+
+    msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_SELF_BATTLE_FINISH, KEY_AGENT_ACCEPT: accepted, KEY_MODEL_PATH: model_path})
 
     return accepted
 
 
-def train(agent, msg_queue):
+def train(agent):
     root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     data_dir_path = os.path.join(root_dir_path, 'output', 'data')
     if not os.path.exists(data_dir_path):
@@ -340,7 +348,6 @@ def train(agent, msg_queue):
     agent_current.agent_net.load_state_dict(agent.agent_net.state_dict())
     agent_new.agent_net.load_state_dict(agent.agent_net.state_dict())
 
-
     agent_new.set_train_mode()
     for epoch in range(EPOCH_NUM):
         start_time = time.time()
@@ -353,18 +360,9 @@ def train(agent, msg_queue):
 
         print(f'[{now_datetime()}]{LOG_TAG_AGENT}[tid={threading.currentThread().ident}] Training! epoch: {epoch + 1} | elapse: {(time.time() - start_time):.3f}s | loss: {(train_loss / train_batch_len):.6f}')
 
-    msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_TRAIN_FINISH})
     agent_new.set_eval_mode()
 
-    model_path = None
-    accepted = self_battle(agent_current, agent_new, use_mcts=True)
-    print(f'[{now_datetime()}] self battle result: accepted? {accepted}')
-    if accepted:
-        agent_new.update_version()
-        model_path = agent_new.save_model()
-        # hoho_todo: 通知主线程更新模型
-
-    msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_SELF_BATTLE_FINISH, KEY_AGENT_ACCEPT: accepted, KEY_MODEL_PATH: model_path})
+    return agent_new, agent_current
 
 
 if __name__ == '__main__':

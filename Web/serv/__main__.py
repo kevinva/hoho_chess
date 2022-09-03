@@ -128,7 +128,7 @@ def ajax_(request_, response_, route_args_):
 	# hoho_test，暂时不训练
 	# if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
 	# if not agent_updating:
-	# 	train_agent()
+	# 	update_agent()
 	# 	agent_updating = True
 
 	return response_.write_response_JSON_OK_(json_)
@@ -145,17 +145,24 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 
-def train_agent():
+def update_agent():
 	print(f'[{now_datetime()}]{LOG_TAG_SERV} Start training!')
 
-	train_thread = threading.Thread(target=train, args=(hoho_agent, message_queue), name='hoho_train_thread')
-	train_thread.start()
-	# train_thread.join()
+	# 模型训练
+	agent_new, agent_current = train(hoho_agent)
 
-	# mp.set_start_method('spawn')
-	# train_proc = mp.Process(target=train, args=(hoho_agent, rb))
+	# 自博弈
+	play_proc = mp.Process(target=self_battle, args=(agent_current, agent_new, message_queue, True))
+	play_proc.start()
+
+	# train_thread = threading.Thread(target=train, args=(hoho_agent, message_queue), name='hoho_train_thread')
+	# train_thread.start()
+	## train_thread.join()
+
+	## mp.set_start_method('spawn')
+	# train_proc = mp.Process(target=train, args=(hoho_agent, message_queue))
 	# train_proc.start()
-	# # train_proc.join()
+	## train_proc.join()
 
 
 def find_top_version_model_path():
@@ -181,7 +188,8 @@ if __name__ == '__main__':
 	win_count = 0
 	match_count = 0
 	last_update_finish_time = 0
-	message_queue = queue.Queue()
+	# message_queue = queue.Queue()
+	message_queue = mp.Queue()
 	agent_updating = False
 	agent_update_accepted = False
 	agent_update_path = None
@@ -199,7 +207,7 @@ if __name__ == '__main__':
 	# start_server_(8000, 100)
 
 	# hoho_test
-	train_agent()
+	update_agent()
 
 
 
