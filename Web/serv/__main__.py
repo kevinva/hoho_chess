@@ -40,8 +40,8 @@ def ajax_(request_, response_, route_args_):
 
 		if agent_update_accepted and (agent_update_path is not None):
 			hoho_agent.load_model_from_path(model_path)
-			print(f'[{now_datetime()}]{LOG_TAG_SERV} Agent updated! version={hoho_agent.version}')
-
+			LOGGER.info(f'Agent updated! version={hoho_agent.version}')
+			
 			agent_update_accepted = False
 			agent_update_path = None
 
@@ -60,7 +60,7 @@ def ajax_(request_, response_, route_args_):
 		hoho_replay_buffer.add(state, pi.tolist(), z)
 
 		move = convert_my_action_to_webgame_move(action)
-		print(f'[{now_datetime()}]{LOG_TAG_SERV} get red move={move}')
+		LOGGER.info(f' get red move={move}')
 
 		json_ = json.dumps(move)
 	else:
@@ -70,10 +70,10 @@ def ajax_(request_, response_, route_args_):
 		# print(f'hoho: [ajax_] board_key={board_key}')
 		board = auto_chess._board_from_key(board_key)
 		black_move = auto_chess.auto_move(board)
-		print(f'[{now_datetime()}]{LOG_TAG_SERV} get black move={black_move}')   # 注意这里黑方走法，是已经翻转了棋盘
+		LOGGER.info(f'get black move={black_move}')  # 注意这里黑方走法，已经翻转了棋盘
 		if black_move is None:
 			black_move = []
-			print(f'[{now_datetime()}]{LOG_TAG_SERV} [Error] black_move is None! ')
+			LOGGER.error('black_move is None!')
 		else:
 			black_state = hoho_game.state
 			black_action = convert_webgame_opponent_move_to_action(black_move)
@@ -91,15 +91,15 @@ def ajax_(request_, response_, route_args_):
 			red_state = hoho_game.state
 			red_pi, red_action, red_reward_u = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 			red_min_u, red_max_u = hoho_mcts.tree_u_score_bound()
-			print(f'[{now_datetime()}]{LOG_TAG_SERV} red_reward_u = {red_reward_u}')
+			LOGGER.info(f'red_reward_u = {red_reward_u}')
 			red_next_state, red_z, _ = hoho_game.step(red_action, red_reward_u, red_max_u, red_min_u)
 			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
 
-			print(f'[{now_datetime()}]{LOG_TAG_SERV} black_state={black_state}, with action={black_action}, to state={black_next_state}')
-			print(f'[{now_datetime()}]{LOG_TAG_SERV} red_state={red_state}, with action={red_action}, to state={red_next_state}')
+			LOGGER.info(f'black_state={black_state}, with action={black_action}, to state={black_next_state}')
+			LOGGER.info(f'red_state={red_state}, with action={red_action}, to state={red_next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
-			print(f'[{now_datetime()}]{LOG_TAG_SERV} get red move={red_move}')
+			LOGGER.info(f'get red move={red_move}')
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
@@ -107,16 +107,16 @@ def ajax_(request_, response_, route_args_):
 			hoho_replay_buffer.save({'model_version': hoho_agent.version})
 			hoho_replay_buffer.clear()
 
-		print(f'[{now_datetime()}]{LOG_TAG_SERV} replay buffer size: {hoho_replay_buffer.size()}')
-		print(f'[{now_datetime()}]{LOG_TAG_SERV} {round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
+		LOGGER.info(f'replay buffer size: {hoho_replay_buffer.size()}')
+		LOGGER.info(f'{round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
 
 		win_rate = (win_count / match_count) if match_count > 0 else 0
-		print(f'[{now_datetime()}]{LOG_TAG_SERV} model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
-		print('========================================================')
+		LOGGER.info(f'model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
+		LOGGER.info('========================================================')
 
 	if not message_queue.empty():
 		msg_info = message_queue.get()
-		print(f'[{now_datetime()}]{LOG_TAG_SERV} thread message: {msg_info}')
+		LOGGER.info(f'thread message: {msg_info}')
 		if msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_TRAIN_FINISH:
 			pass
 		elif msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_SELF_BATTLE_FINISH:
@@ -146,7 +146,7 @@ def start_server_(port_, max_threads_):
 
 
 def update_agent():
-	print(f'[{now_datetime()}]{LOG_TAG_SERV} Start training!')
+	LOGGER.info('Start training!')
 
 	# 模型训练
 	agent_new, agent_current = train(hoho_agent)

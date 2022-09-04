@@ -321,7 +321,7 @@ class MCTS:
 
     def update_root_with_action(self, action):
         """让action对应的子节点成为新的根节点，返回该子节点的u值"""
-        LOGGER.info(f'The tree deep: {MCTS.find_tree_deep(self.root)}, player:{self.root.player}')
+        # LOGGER.info(f'The tree deep: {MCTS.find_tree_deep(self.root)}, player:{self.root.player}')
 
         u_score = 0.0
         found_idx = -1
@@ -342,7 +342,7 @@ class MCTS:
             self.root.max_u = max_u
             self.root.min_u = min_u
         else:
-            print(f'[{now_datetime()}]{LOG_TAG_MCTS} Update tree root error! found_idx={found_idx}')
+            LOGGER.error(f'Update tree root error! found_idx={found_idx}')
 
         return u_score
 
