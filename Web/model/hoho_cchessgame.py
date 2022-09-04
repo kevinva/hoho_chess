@@ -41,7 +41,6 @@ class CChessGame:
             # 2. 以节点的u值作为游戏结束前每一步的reward
             if abs(min_u - 0.0) > 1e-6 or abs(max_u - 0.0) > 1e-6: # 防止分母为0
                 z = -1 + (u_score - min_u) * (1-(-1)) / (max_u - min_u)  # u_score作为中间reward，归一化到[-1,1]
-                LOGGER.info(f'z = {z}')
 
         self.state = state_new
         return state_new, z, done

@@ -1,0 +1,146 @@
+[2022-09-04 18:52:31,513][hoho_agent.py][line:31][INFO] Player agent created!
+[2022-09-04 18:52:32,920][__main__.py][line:205][INFO] [pid=74016] start server!
+[2022-09-04 18:54:07,378][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:54:07,378][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:54:12,912][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:54:16,645][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:54:16,648][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:20,350][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=f0e1, pi=0.8602941176470589, reward=-0.997636220754722, to state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:20,351][__main__.py][line:101][INFO] get red move=(5, 0, 4, 1)
+[2022-09-04 18:54:20,352][__main__.py][line:109][INFO] replay buffer size: 3
+[2022-09-04 18:54:20,352][__main__.py][line:110][INFO] 1 rounds / 1 matches | elapse: 6.710s
+[2022-09-04 18:54:20,352][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:54:20,353][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:54:24,622][__main__.py][line:73][INFO] get black move=(1, 9, 4, 9)
+[2022-09-04 18:54:24,626][__main__.py][line:89][INFO] black_state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h0e0, pi=1.0, reward=-1, to state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:25,013][__main__.py][line:98][INFO] red_state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=b0a2, pi=0.8801020408163265, reward=-1, to state=2BAc1B1R/R3A4/NC5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:25,014][__main__.py][line:101][INFO] get red move=(1, 0, 0, 2)
+[2022-09-04 18:54:25,015][__main__.py][line:109][INFO] replay buffer size: 5
+[2022-09-04 18:54:25,015][__main__.py][line:110][INFO] 2 rounds / 1 matches | elapse: 3.557s
+[2022-09-04 18:54:25,015][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:54:25,015][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:54:25,866][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:54:25,866][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:54:29,092][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:54:32,847][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:54:32,850][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:36,376][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=f0e1, pi=0.8602941176470589, reward=-0.997636220754722, to state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:36,377][__main__.py][line:101][INFO] get red move=(5, 0, 4, 1)
+[2022-09-04 18:54:36,378][__main__.py][line:109][INFO] replay buffer size: 8
+[2022-09-04 18:54:36,378][__main__.py][line:110][INFO] 1 rounds / 2 matches | elapse: 6.534s
+[2022-09-04 18:54:36,378][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:54:36,379][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:54:40,452][__main__.py][line:73][INFO] get black move=(1, 9, 4, 9)
+[2022-09-04 18:54:40,455][__main__.py][line:89][INFO] black_state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h0e0, pi=1.0, reward=-1, to state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:40,862][__main__.py][line:98][INFO] red_state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=b0a2, pi=0.8801020408163265, reward=-1, to state=2BAc1B1R/R3A4/NC5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:40,862][__main__.py][line:101][INFO] get red move=(1, 0, 0, 2)
+[2022-09-04 18:54:40,863][__main__.py][line:109][INFO] replay buffer size: 10
+[2022-09-04 18:54:40,863][__main__.py][line:110][INFO] 2 rounds / 2 matches | elapse: 3.412s
+[2022-09-04 18:54:40,863][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:54:40,864][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:54:41,657][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:54:41,657][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:54:45,136][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:54:48,875][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:54:48,878][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:52,511][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=f0e1, pi=0.8602941176470589, reward=-0.997636220754722, to state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:52,512][__main__.py][line:101][INFO] get red move=(5, 0, 4, 1)
+[2022-09-04 18:54:52,513][__main__.py][line:109][INFO] replay buffer size: 13
+[2022-09-04 18:54:52,513][__main__.py][line:110][INFO] 1 rounds / 3 matches | elapse: 6.644s
+[2022-09-04 18:54:52,513][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:54:52,513][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:54:56,575][__main__.py][line:73][INFO] get black move=(1, 9, 4, 9)
+[2022-09-04 18:54:56,579][__main__.py][line:89][INFO] black_state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h0e0, pi=1.0, reward=-1, to state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:56,957][__main__.py][line:98][INFO] red_state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=b0a2, pi=0.8801020408163265, reward=-1, to state=2BAc1B1R/R3A4/NC5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:54:56,958][__main__.py][line:101][INFO] get red move=(1, 0, 0, 2)
+[2022-09-04 18:54:56,959][__main__.py][line:109][INFO] replay buffer size: 15
+[2022-09-04 18:54:56,959][__main__.py][line:110][INFO] 2 rounds / 3 matches | elapse: 3.386s
+[2022-09-04 18:54:56,959][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:54:56,959][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:54:57,785][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:54:57,785][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:55:01,674][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:55:05,410][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:55:05,414][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:09,041][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=f0e1, pi=0.8602941176470589, reward=-0.997636220754722, to state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:09,041][__main__.py][line:101][INFO] get red move=(5, 0, 4, 1)
+[2022-09-04 18:55:09,043][__main__.py][line:109][INFO] replay buffer size: 18
+[2022-09-04 18:55:09,043][__main__.py][line:110][INFO] 1 rounds / 4 matches | elapse: 6.638s
+[2022-09-04 18:55:09,044][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:55:09,044][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:55:13,117][__main__.py][line:73][INFO] get black move=(1, 9, 4, 9)
+[2022-09-04 18:55:13,121][__main__.py][line:89][INFO] black_state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h0e0, pi=1.0, reward=-1, to state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:13,512][__main__.py][line:98][INFO] red_state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=b0a2, pi=0.8801020408163265, reward=-1, to state=2BAc1B1R/R3A4/NC5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:13,513][__main__.py][line:101][INFO] get red move=(1, 0, 0, 2)
+[2022-09-04 18:55:13,514][__main__.py][line:109][INFO] replay buffer size: 20
+[2022-09-04 18:55:13,514][__main__.py][line:110][INFO] 2 rounds / 4 matches | elapse: 3.401s
+[2022-09-04 18:55:13,514][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:55:13,515][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:55:14,316][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:55:14,316][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:55:17,635][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:55:21,408][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:55:21,411][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:24,902][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=f0e1, pi=0.8602941176470589, reward=-0.997636220754722, to state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:24,903][__main__.py][line:101][INFO] get red move=(5, 0, 4, 1)
+[2022-09-04 18:55:24,904][__main__.py][line:109][INFO] replay buffer size: 23
+[2022-09-04 18:55:24,904][__main__.py][line:110][INFO] 1 rounds / 5 matches | elapse: 6.501s
+[2022-09-04 18:55:24,904][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:55:24,904][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:55:29,014][__main__.py][line:73][INFO] get black move=(1, 9, 4, 9)
+[2022-09-04 18:55:29,017][__main__.py][line:89][INFO] black_state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h0e0, pi=1.0, reward=-1, to state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:29,403][__main__.py][line:98][INFO] red_state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=b0a2, pi=0.8801020408163265, reward=-1, to state=2BAc1B1R/R3A4/NC5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:29,403][__main__.py][line:101][INFO] get red move=(1, 0, 0, 2)
+[2022-09-04 18:55:29,404][__main__.py][line:109][INFO] replay buffer size: 25
+[2022-09-04 18:55:29,405][__main__.py][line:110][INFO] 2 rounds / 5 matches | elapse: 3.393s
+[2022-09-04 18:55:29,405][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:55:29,405][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:55:30,216][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:55:30,216][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:55:33,974][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:55:37,739][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:55:37,742][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:41,326][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=f0e1, pi=0.8602941176470589, reward=-0.997636220754722, to state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:41,326][__main__.py][line:101][INFO] get red move=(5, 0, 4, 1)
+[2022-09-04 18:55:41,328][__main__.py][line:109][INFO] replay buffer size: 28
+[2022-09-04 18:55:41,328][__main__.py][line:110][INFO] 1 rounds / 6 matches | elapse: 6.593s
+[2022-09-04 18:55:41,328][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:55:41,328][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:55:45,448][__main__.py][line:73][INFO] get black move=(1, 9, 4, 9)
+[2022-09-04 18:55:45,452][__main__.py][line:89][INFO] black_state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h0e0, pi=1.0, reward=-1, to state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:46,274][__main__.py][line:98][INFO] red_state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=b0a2, pi=0.8801020408163265, reward=-1, to state=2BAc1B1R/R3A4/NC5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:46,275][__main__.py][line:101][INFO] get red move=(1, 0, 0, 2)
+[2022-09-04 18:55:46,276][__main__.py][line:109][INFO] replay buffer size: 30
+[2022-09-04 18:55:46,276][__main__.py][line:110][INFO] 2 rounds / 6 matches | elapse: 3.831s
+[2022-09-04 18:55:46,276][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:55:46,276][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:55:47,063][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:55:47,063][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:55:50,700][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:55:54,510][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:55:54,513][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:58,223][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=f0e1, pi=0.8602941176470589, reward=-0.997636220754722, to state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:55:58,224][__main__.py][line:101][INFO] get red move=(5, 0, 4, 1)
+[2022-09-04 18:55:58,225][__main__.py][line:109][INFO] replay buffer size: 33
+[2022-09-04 18:55:58,225][__main__.py][line:110][INFO] 1 rounds / 7 matches | elapse: 6.721s
+[2022-09-04 18:55:58,225][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:55:58,225][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:56:02,319][__main__.py][line:73][INFO] get black move=(1, 9, 4, 9)
+[2022-09-04 18:56:02,323][__main__.py][line:89][INFO] black_state=1NBAK1BcR/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h0e0, pi=1.0, reward=-1, to state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:56:02,735][__main__.py][line:98][INFO] red_state=1NBAc1B1R/R3A4/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=b0a2, pi=0.8801020408163265, reward=-1, to state=2BAc1B1R/R3A4/NC5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:56:02,735][__main__.py][line:101][INFO] get red move=(1, 0, 0, 2)
+[2022-09-04 18:56:02,736][__main__.py][line:109][INFO] replay buffer size: 35
+[2022-09-04 18:56:02,737][__main__.py][line:110][INFO] 2 rounds / 7 matches | elapse: 3.420s
+[2022-09-04 18:56:02,737][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:56:02,737][__main__.py][line:114][INFO] ========================================================
+[2022-09-04 18:56:03,526][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 18:56:03,527][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 18:56:06,851][__main__.py][line:63][INFO]  get red move=(0, 0, 0, 1)
+[2022-09-04 18:56:10,689][__main__.py][line:73][INFO] get black move=(1, 2, 1, 9)
+[2022-09-04 18:56:10,692][__main__.py][line:89][INFO] black_state=1NBAKABNR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr, with action=h7h0, pi=1.0, reward=-0.45087482161308456, to state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:56:14,227][__main__.py][line:98][INFO] red_state=1NBAKABcR/R8/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr, with action=h2i2, pi=0.8602941176470589, reward=-0.5839748528310781, to state=1NBAKABcR/R8/1C6C/P1P1P1P1P/9/9/p1p1p1p1p/1c7/9/rnbakabnr
+[2022-09-04 18:56:14,227][__main__.py][line:101][INFO] get red move=(7, 2, 8, 2)
+[2022-09-04 18:56:14,228][__main__.py][line:109][INFO] replay buffer size: 38
+[2022-09-04 18:56:14,229][__main__.py][line:110][INFO] 1 rounds / 8 matches | elapse: 6.546s
+[2022-09-04 18:56:14,229][__main__.py][line:113][INFO] model version: 1 | win count: 0 | win rate: 0.0
+[2022-09-04 18:56:14,229][__main__.py][line:114][INFO] ========================================================
