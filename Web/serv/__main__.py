@@ -152,7 +152,7 @@ def update_agent():
 	agent_new, agent_current = train(hoho_agent)
 
 	# 自博弈
-	play_proc = mp.Process(target=self_battle, args=(agent_current, agent_new, message_queue, True))
+	play_proc = mp.Process(target=self_battle, args=(agent_current, agent_new, True, message_queue))
 	play_proc.start()
 
 	# train_thread = threading.Thread(target=train, args=(hoho_agent, message_queue), name='hoho_train_thread')
@@ -204,10 +204,10 @@ if __name__ == '__main__':
 
 	# hoho_step 1
 	LOGGER.info(f'[pid={os.getpid()}] start server!')
-	# start_server_(8000, 100)
+	start_server_(8000, 100)
 
 	# hoho_test
-	update_agent()
+	# update_agent()
 
 
 

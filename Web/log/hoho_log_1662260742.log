@@ -1,0 +1,39 @@
+[2022-09-04 11:05:43,174][hoho_agent.py][line:31][INFO] Player agent created!
+[2022-09-04 11:05:44,572][__main__.py][line:206][INFO] [pid=266060] start server!
+[2022-09-04 11:06:10,337][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 11:06:10,338][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 11:06:16,098][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:06:16,100][hoho_cchessgame.py][line:44][INFO] z = -1.0
+[2022-09-04 11:06:19,993][hoho_mcts.py][line:324][INFO] The tree deep: 3, player:b
+[2022-09-04 11:06:19,994][hoho_cchessgame.py][line:44][INFO] z = -0.45087482161308456
+[2022-09-04 11:06:23,611][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:06:23,613][hoho_cchessgame.py][line:44][INFO] z = -0.7226499018873853
+[2022-09-04 11:06:27,657][hoho_mcts.py][line:324][INFO] The tree deep: 2, player:b
+[2022-09-04 11:06:27,657][hoho_cchessgame.py][line:44][INFO] z = -0.6077677297236319
+[2022-09-04 11:06:31,083][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:06:31,085][hoho_cchessgame.py][line:44][INFO] z = -1.0
+[2022-09-04 11:06:35,155][hoho_mcts.py][line:324][INFO] The tree deep: 3, player:b
+[2022-09-04 11:06:35,156][hoho_cchessgame.py][line:44][INFO] z = -0.6339165477420563
+[2022-09-04 11:06:38,531][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:06:38,533][hoho_cchessgame.py][line:44][INFO] z = -0.9967159840401091
+[2022-09-04 11:06:42,650][hoho_mcts.py][line:324][INFO] The tree deep: 3, player:b
+[2022-09-04 11:06:43,036][hoho_mcts.py][line:324][INFO] The tree deep: 1, player:r
+[2022-09-04 11:06:43,851][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 11:06:43,851][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 11:06:47,353][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:06:47,354][hoho_cchessgame.py][line:44][INFO] z = -1.0
+[2022-09-04 11:06:51,123][hoho_mcts.py][line:324][INFO] The tree deep: 3, player:b
+[2022-09-04 11:06:51,123][hoho_cchessgame.py][line:44][INFO] z = -0.45087482161308456
+[2022-09-04 11:06:54,856][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:06:54,858][hoho_cchessgame.py][line:44][INFO] z = -0.997636220754722
+[2022-09-04 11:06:58,921][hoho_mcts.py][line:324][INFO] The tree deep: 3, player:b
+[2022-09-04 11:06:59,375][hoho_mcts.py][line:324][INFO] The tree deep: 1, player:r
+[2022-09-04 11:07:00,220][hoho_mcts.py][line:274][INFO] MCTS created!
+[2022-09-04 11:07:00,220][hoho_cchessgame.py][line:25][INFO] CChessGame created!
+[2022-09-04 11:07:03,674][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:07:03,675][hoho_cchessgame.py][line:44][INFO] z = -1.0
+[2022-09-04 11:07:07,679][hoho_mcts.py][line:324][INFO] The tree deep: 3, player:b
+[2022-09-04 11:07:07,679][hoho_cchessgame.py][line:44][INFO] z = -0.45087482161308456
+[2022-09-04 11:07:11,425][hoho_mcts.py][line:324][INFO] The tree deep: 4, player:r
+[2022-09-04 11:07:11,427][hoho_cchessgame.py][line:44][INFO] z = -0.997636220754722
+[2022-09-04 11:07:15,728][hoho_mcts.py][line:324][INFO] The tree deep: 3, player:b
