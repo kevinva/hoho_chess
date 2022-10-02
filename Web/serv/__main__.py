@@ -36,7 +36,7 @@ def ajax_(request_, response_, route_args_):
 	json_ = None
 
 	if data_board == 'Action!': # 开始！
-		global hoho_game, hoho_mcts, hoho_agent
+		global hoho_game, hoho_mcts, hoho_agent, hoho_round
 		global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
 
 		if agent_update_accepted and (agent_update_path is not None):
@@ -48,16 +48,29 @@ def ajax_(request_, response_, route_args_):
 
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
 		hoho_game = CChessGame()
+		
 
 		match_count += 1
 		win_player = data[2]
 		if win_player == 'Red':
 			win_count += 1
+			hoho_round.update_winner('Red')
+			hoho_replay_buffer.add_round(hoho_round)
+
+		elif win_player == 'Black':
+			hoho_round.update_winner('Black')
+			hoho_replay_buffer.add_round(hoho_round)
+
+		hoho_round = Round(int(time.time()))
+
+		if hoho_replay_buffer.size() >= 1000:
+			hoho_replay_buffer.save({'model_version': hoho_agent.version})
+			hoho_replay_buffer.clear()
 
 		state = hoho_game.state
 		pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 		_, z, _ = hoho_game.step(action)
-		hoho_replay_buffer.add(state, pi.tolist(), z)
+		hoho_round.add_red(state, pi.tolist())
 
 		move = convert_my_action_to_webgame_move(action)
 		LOGGER.info(f' get red move={move}')
@@ -84,15 +97,14 @@ def ajax_(request_, response_, route_args_):
 
 			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_next_state, black_z, _ = hoho_game.step(black_action)
-			hoho_replay_buffer.add(flip_board(black_state), flip_action_probas(black_pi).tolist(), -black_z)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。hoho_todo!
+			hoho_round.add_black(flip_board(black_state), flip_action_probas(black_pi).tolist())  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
 			LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, reward={black_z:.3f}, to state={black_next_state}')
-
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
 			red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 			red_next_state, red_z, _ = hoho_game.step(red_action)
-			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
+			hoho_round.add_red(red_state, red_pi.tolist())
 			LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, reward={red_z:.3f}, to state={red_next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
@@ -100,11 +112,7 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
-		if hoho_replay_buffer.size() >= 100:
-			hoho_replay_buffer.save({'model_version': hoho_agent.version})
-			hoho_replay_buffer.clear()
-
-		LOGGER.info(f'replay buffer size: {hoho_replay_buffer.size()}')
+		LOGGER.info(f'data size: replay buffer = {hoho_replay_buffer.size()} / round = {hoho_round.size()}')
 		LOGGER.info(f'{round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
 
 		win_rate = (win_count / match_count) if match_count > 0 else 0
@@ -191,7 +199,7 @@ def setup_seed(seed):
 
 if __name__ == '__main__':
 	setup_seed(2021)
-	
+
 	win_count = 0
 	match_count = 0
 	last_update_finish_time = 0
@@ -202,6 +210,7 @@ if __name__ == '__main__':
 	agent_update_path = None
 	hoho_mcts = None
 	hoho_game = None
+	hoho_round = None
 	hoho_replay_buffer = ReplayBuffer()
 
 	hoho_agent = Player()
@@ -209,7 +218,6 @@ if __name__ == '__main__':
 	if model_path is not None:
 		hoho_agent.load_model_from_path(model_path)
 
-	# hoho_step 1
 	LOGGER.info(f'[pid={os.getpid()}] start server!')
 	start_server_(8000, 100)
 

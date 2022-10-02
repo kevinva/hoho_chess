@@ -99,6 +99,32 @@ class ChessDataset(Dataset):
         return dataset
 
 
+class Round:
+
+    def __init__(self, round_id):
+        self.round_id = round_id
+        self.red_steps = list()
+        self.black_steps = list()
+
+    def add_red(self, state, pi):
+        self.red_steps.append((state, pi))
+    
+    def add_black(self, state, pi):
+        self.black_steps.append((state, pi))
+
+    def update_winner(self, winner):
+        reward = 0
+        if winner == 'Red':
+            reward = 1
+        elif winner == 'Black':
+            reward = -1
+
+        self.red_steps = [(x[0], x[1], reward) for x in self.red_steps]
+        self.black_steps = [(x[0], x[1], -reward) for x in self.black_steps]
+
+    def size(self):
+        return len(self.red_steps) + len(self.black_steps) 
+
 class ReplayBuffer:
     ''' 经验回放池 '''
     def __init__(self, capacity=10000, data_list=None):
@@ -108,8 +134,11 @@ class ReplayBuffer:
 
     def add(self, state, pi, z):  
         """将数据加入buffer"""
-        
         self.buffer.append((state, pi, z))
+
+    def add_round(self, round):
+        self.buffer.extend(round.red_steps)
+        self.buffer.extend(round.black_steps)
 
     def sample(self, batch_size):  
         """从buffer中采样数据,数量为batch_size"""
@@ -187,10 +216,20 @@ if __name__ == '__main__':
     # rb = ReplayBuffer.load(filepath)
     # print(rb.buffer)
 
-    dataset = ChessDataset.load_from_dir('../output/data', version=0)
-    print(len(dataset))
-    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
-    for i, (batch_states, batch_pis, batch_zs) in enumerate(dataloader):
-        print(len(batch_states), batch_pis.size(), batch_zs)
-        if i == 0:
-            break
+    # dataset = ChessDataset.load_from_dir('../output/data', version=0)
+    # print(len(dataset))
+    # dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    # for i, (batch_states, batch_pis, batch_zs) in enumerate(dataloader):
+    #     print(len(batch_states), batch_pis.size(), batch_zs)
+    #     if i == 0:
+    #         break
+
+
+    test_list = list()
+    test_list.append((1, '2'))
+    test_list.append((2, '7'))
+    test_list.append((3, '1'))
+    test_list.append((4, '3'))
+    test_list.append((5, '4'))
+    test_list2 = [(x[0], x[1], -1) for x in test_list]
+    print(test_list2)

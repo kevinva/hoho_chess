@@ -388,7 +388,6 @@ def auto_move_remote(board, round_count):
 
 
 def run_app():
-	# hoho_step 3
 	# print('hoho: auto_chess run_app()!') # 用javascript打印
 	chess_board = chess.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
