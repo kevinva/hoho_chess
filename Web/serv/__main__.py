@@ -5,6 +5,7 @@ from web.py_lib import auto_chess
 import torch
 import torch.multiprocessing as mp
 import queue
+import numpy as np
 
 from model.hoho_utils import *
 from model.hoho_agent import *
@@ -179,9 +180,18 @@ def find_top_version_model_path():
 				result_path = os.path.join(model_dir_path, filename)
           
 	return result_path
+	
 
+def setup_seed(seed):
+	torch.manual_seed(seed)
+	torch.cuda.manual_seed_all(seed)
+	np.random.seed(seed)
+	random.seed(seed)
+	torch.backends.cudnn.deterministic = True
 
 if __name__ == '__main__':
+	setup_seed(2021)
+	
 	win_count = 0
 	match_count = 0
 	last_update_finish_time = 0
@@ -201,10 +211,10 @@ if __name__ == '__main__':
 
 	# hoho_step 1
 	LOGGER.info(f'[pid={os.getpid()}] start server!')
-	# start_server_(8000, 100)
+	start_server_(8000, 100)
 
 	# hoho_test
-	update_agent()
+	# update_agent()
 
 
 

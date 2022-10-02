@@ -5,7 +5,7 @@ from . import spinner
 from . import ajax
 import heapq
 
-HOHO_RESTRICT_ROUND_NUM = 200  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
+HOHO_RESTRICT_ROUND_NUM = 120  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
 
 
 class Controller(chess.Controller):
@@ -37,6 +37,10 @@ class Controller(chess.Controller):
 
 	def blacks_turn(self):
 		self.round_count = self.round_count + 1
+		if self.round_count >= HOHO_RESTRICT_ROUND_NUM:
+			self.restart()
+			self.hoho_startup()
+			return
 
 		spinner.show()
 		self.chess_board.rotate_board()
@@ -71,11 +75,6 @@ class Controller(chess.Controller):
 
 
 	def hoho_red_turn(self, move):
-		if self.round_count >= HOHO_RESTRICT_ROUND_NUM:
-			self.restart()
-			self.hoho_startup()
-			return
-
 		if move is None:
 			# javascript.alert("黑方胜出!")
 			self.restart()
