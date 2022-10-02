@@ -24,7 +24,7 @@ class CChessGame:
 
         LOGGER.info('CChessGame created!')
 
-    def step(self, action, u_score=0.0, max_u=0.0, min_u=0.0):
+    def step(self, action):
         state_new = do_action_on_board(self.state, action)
         z = 0
         done = False
@@ -38,9 +38,7 @@ class CChessGame:
             self.winner = PLAYER_RED
         else:
             # hoho_todo: 增加restrict_count的逻辑
-            # 2. 以节点的u值作为游戏结束前每一步的reward
-            if abs(min_u - 0.0) > 1e-6 or abs(max_u - 0.0) > 1e-6: # 防止分母为0
-                z = -1 + (u_score - min_u) * (1-(-1)) / (max_u - min_u)  # u_score作为中间reward，归一化到[-1,1]
+            pass
 
         self.state = state_new
         return state_new, z, done
@@ -73,7 +71,7 @@ class ChessDataset(Dataset):
             
         all_data_list = list()
         for filename in os.listdir(dirpath):
-            if filename.endswith('json') and filename.startswith('replay_buffer_u'):
+            if filename.endswith('json') and filename.startswith(REPLAY_BUFFER_FILE_PREFIX):
                 if version is None:
                     with open(os.path.join(dirpath, filename), 'r') as f:
                         jsonstr = f.read()
@@ -136,7 +134,7 @@ class ReplayBuffer:
         model_version = 0
         if expand_data is not None:
             model_version = expand_data.get('model_version')
-        filename = 'replay_buffer_u_{}_{}.json'.format(int(time.time()), model_version)
+        filename = '{}_{}_{}.json'.format(REPLAY_BUFFER_FILE_PREFIX, int(time.time()), model_version)
         filepath = os.path.join(filedir, filename)
         
         with open(filepath, 'w') as f:
@@ -159,7 +157,7 @@ class ReplayBuffer:
             
         all_data_list = list()
         for filename in os.listdir(dirpath):
-            if filename.endswith('json') and filename.startswith('replay_buffer'):
+            if filename.endswith('json') and filename.startswith(REPLAY_BUFFER_FILE_PREFIX):
                 filepath = os.path.join(dirpath, filename)
                 with open(filepath, 'r') as f:
                     jsonstr = f.read()

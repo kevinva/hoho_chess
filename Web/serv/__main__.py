@@ -54,9 +54,8 @@ def ajax_(request_, response_, route_args_):
 			win_count += 1
 
 		state = hoho_game.state
-		pi, action, reward_u = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-		min_u, max_u = hoho_mcts.tree_u_score_bound()
-		_, z, _ = hoho_game.step(action, reward_u, max_u, min_u)
+		pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
+		_, z, _ = hoho_game.step(action)
 		hoho_replay_buffer.add(state, pi.tolist(), z)
 
 		move = convert_my_action_to_webgame_move(action)
@@ -82,18 +81,16 @@ def ajax_(request_, response_, route_args_):
 			black_pi = np.zeros((ACTION_DIM,))
 			black_pi[ACTIONS_2_INDEX[black_action]] = 1.0
 
-			black_reward_u = hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
-			black_min_u, black_max_u = hoho_mcts.tree_u_score_bound()
-			black_next_state, black_z, _ = hoho_game.step(black_action, black_reward_u, black_max_u, black_min_u)
+			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
+			black_next_state, black_z, _ = hoho_game.step(black_action)
 			hoho_replay_buffer.add(flip_board(black_state), flip_action_probas(black_pi).tolist(), -black_z)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。hoho_todo!
 			LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, reward={black_z:.3f}, to state={black_next_state}')
 
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
-			red_pi, red_action, red_reward_u = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-			red_min_u, red_max_u = hoho_mcts.tree_u_score_bound()
-			red_next_state, red_z, _ = hoho_game.step(red_action, red_reward_u, red_max_u, red_min_u)
+			red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
+			red_next_state, red_z, _ = hoho_game.step(red_action)
 			hoho_replay_buffer.add(red_state, red_pi.tolist(), red_z)
 			LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, reward={red_z:.3f}, to state={red_next_state}')
 
@@ -154,6 +151,7 @@ def update_agent():
 	play_proc = mp.Process(target=self_battle, args=(agent_current, agent_new, True, message_queue))
 	play_proc.start()
 
+
 	# train_thread = threading.Thread(target=train, args=(hoho_agent, message_queue), name='hoho_train_thread')
 	# train_thread.start()
 	## train_thread.join()
@@ -203,10 +201,10 @@ if __name__ == '__main__':
 
 	# hoho_step 1
 	LOGGER.info(f'[pid={os.getpid()}] start server!')
-	start_server_(8000, 100)
+	# start_server_(8000, 100)
 
 	# hoho_test
-	# update_agent()
+	update_agent()
 
 
 
