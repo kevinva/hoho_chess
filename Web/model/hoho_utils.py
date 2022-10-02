@@ -9,6 +9,7 @@ def config_logger():
     logger = logging.getLogger('hoho_logger')
     logger.setLevel(logging.DEBUG)
 
+    ## 将log写入文件
     # dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'log')
     # if not os.path.exists(dir_path):
     #     os.makedirs(dir_path)
