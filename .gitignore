@@ -2,3 +2,4 @@
 *.json
 *.pth
 hoho_agent.onnx
+*.log
