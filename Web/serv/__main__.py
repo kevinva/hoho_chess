@@ -51,16 +51,18 @@ def ajax_(request_, response_, route_args_):
 
 		match_count += 1
 		win_player = data[2]
-		if win_player == 'Red':
-			win_count += 1
-			hoho_round.update_winner('Red')
-		elif win_player == 'Black':
-			hoho_round.update_winner('Black')
-		else:
-			hoho_round.update_winner(None)
 
-		if (hoho_round is not None) and (hoho_round.size() > 0):
-			hoho_replay_buffer.add_round(hoho_round)
+		if hoho_round is not None:
+			if win_player == 'Red':
+				win_count += 1
+				hoho_round.update_winner('Red')
+			elif win_player == 'Black':
+				hoho_round.update_winner('Black')
+			else:
+				hoho_round.update_winner('')
+
+			if hoho_round.size() > 0:
+				hoho_replay_buffer.add_round(hoho_round)
 
 		hoho_round = Round(int(time.time()))
 

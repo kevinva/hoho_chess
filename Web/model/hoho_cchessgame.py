@@ -112,7 +112,7 @@ class Round:
     def add_black(self, state, pi):
         self.black_steps.append((state, pi))
 
-    def update_winner(self, winner):
+    def update_winner(self, winner=None):
         reward = 0
         if winner == 'Red':
             reward = 1
