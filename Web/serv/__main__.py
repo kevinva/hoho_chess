@@ -48,17 +48,18 @@ def ajax_(request_, response_, route_args_):
 
 		hoho_mcts = MCTS(start_player=PLAYER_RED)
 		hoho_game = CChessGame()
-		
 
 		match_count += 1
 		win_player = data[2]
 		if win_player == 'Red':
 			win_count += 1
 			hoho_round.update_winner('Red')
-			hoho_replay_buffer.add_round(hoho_round)
-
 		elif win_player == 'Black':
 			hoho_round.update_winner('Black')
+		else:
+			hoho_round.update_winner(None)
+
+		if (hoho_round is not None) and (hoho_round.size() > 0):
 			hoho_replay_buffer.add_round(hoho_round)
 
 		hoho_round = Round(int(time.time()))
@@ -98,14 +99,14 @@ def ajax_(request_, response_, route_args_):
 			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_next_state, black_z, _ = hoho_game.step(black_action)
 			hoho_round.add_black(flip_board(black_state), flip_action_probas(black_pi).tolist())  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
-			LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, reward={black_z:.3f}, to state={black_next_state}')
+			LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, to state={black_next_state}')
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
 			red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 			red_next_state, red_z, _ = hoho_game.step(red_action)
 			hoho_round.add_red(red_state, red_pi.tolist())
-			LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, reward={red_z:.3f}, to state={red_next_state}')
+			LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
 			LOGGER.info(f'get red move={red_move}')
