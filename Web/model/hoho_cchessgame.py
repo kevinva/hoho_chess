@@ -106,10 +106,10 @@ class Round:
         self.red_steps = list()
         self.black_steps = list()
 
-    def add_red(self, state, pi):
+    def add_red_step(self, state, pi):
         self.red_steps.append((state, pi))
     
-    def add_black(self, state, pi):
+    def add_black_step(self, state, pi):
         self.black_steps.append((state, pi))
 
     def update_winner(self, winner=None):
@@ -132,20 +132,20 @@ class ReplayBuffer:
         if data_list is not None:
             self.buffer.extend(data_list)
 
-    def add(self, state, pi, z):  
-        """将数据加入buffer"""
-        self.buffer.append((state, pi, z))
+    # def add(self, state, pi, z):  
+    #     """将数据加入buffer"""
+    #     self.buffer.append((state, pi, z))
 
     def add_round(self, round):
         self.buffer.extend(round.red_steps)
         self.buffer.extend(round.black_steps)
 
-    def sample(self, batch_size):  
-        """从buffer中采样数据,数量为batch_size"""
+    # def sample(self, batch_size):  
+    #     """从buffer中采样数据,数量为batch_size"""
 
-        transitions = random.sample(self.buffer, batch_size)
-        states, pis, zs = zip(*transitions)
-        return states, pis, zs
+    #     transitions = random.sample(self.buffer, batch_size)
+    #     states, pis, zs = zip(*transitions)
+    #     return states, pis, zs
 
     def size(self):  
         """当前buffer中数据的数量"""

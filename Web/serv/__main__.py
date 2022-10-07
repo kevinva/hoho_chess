@@ -73,7 +73,7 @@ def ajax_(request_, response_, route_args_):
 		state = hoho_game.state
 		pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 		_, z, _ = hoho_game.step(action)
-		hoho_round.add_red(state, pi.tolist())
+		hoho_round.add_red_step(state, pi.tolist())
 
 		move = convert_my_action_to_webgame_move(action)
 		LOGGER.info(f' get red move={move}')
@@ -93,6 +93,8 @@ def ajax_(request_, response_, route_args_):
 		else:
 			black_state = hoho_game.state
 			black_action = convert_webgame_opponent_move_to_action(black_move)
+
+			# hoho_todo: 再验证black_move, black_action的正确性
 		
 			# 模型只关心红方，这里强制造一个确定性黑方走子策略
 			black_pi = np.zeros((ACTION_DIM,))
@@ -100,14 +102,14 @@ def ajax_(request_, response_, route_args_):
 
 			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 			black_next_state, black_z, _ = hoho_game.step(black_action)
-			hoho_round.add_black(flip_board(black_state), flip_action_probas(black_pi).tolist())  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
+			hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist())  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
 			LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, to state={black_next_state}')
 
 			# 这里得到黑方的走子，就可以马上开始跑我方的模型
 			red_state = hoho_game.state
 			red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 			red_next_state, red_z, _ = hoho_game.step(red_action)
-			hoho_round.add_red(red_state, red_pi.tolist())
+			hoho_round.add_red_step(red_state, red_pi.tolist())
 			LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_next_state}')
 
 			red_move = convert_my_action_to_webgame_move(red_action)
