@@ -59,7 +59,7 @@ def ajax_(request_, response_, route_args_):
 			elif win_player == 'Black':
 				hoho_round.update_winner('Black')
 			else:
-				hoho_round.update_winner('')
+				hoho_round.update_winner()
 
 			if hoho_round.size() > 0:
 				hoho_replay_buffer.add_round(hoho_round)
