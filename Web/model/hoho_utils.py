@@ -2,8 +2,10 @@ import random
 import time
 import numpy as np
 import torch
+import torch.nn.functional as F
 import logging
 import os
+
 
 def config_logger():
     logger = logging.getLogger('hoho_logger')
@@ -788,22 +790,29 @@ def now_datetime():
     return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
 
-def check_capture(state1, state2):
-    """检测相邻两步被吃掉哪个棋子，如果没出现吃棋，则返回None"""
-    val1 = 0
-    val2 = 0
-    for c in state1:
-        if c.isalpha():
-            val1 += ord(c)
-    for c in state2:
-        if c.isalpha():
-            val2 += ord(c)
+def check_capture(state_from, state_to):
+    """检测从state_from到state_to被吃掉哪些棋子，如果没出现吃棋，则返回空数组"""
+    state_from_dict = dict()
+    for c in INDEXS_2_PIECES:
+        state_from_dict[c] = 0
+
+    state_to_dict = state_from_dict.copy()
+
+    for c in state_from:
+        if c in state_from_dict:
+            state_from_dict[c] += 1
+
+    for c in state_to:
+        if c in state_to_dict:
+            state_to_dict[c] += 1
     
-    delta = abs(val1 - val2)
-    if delta == 0:
-        return None
-    else:
-        return chr(delta)
+    capture_list = []
+    for key, count in state_from_dict.items():
+        if count > state_to_dict[key]:
+            capture_list.append(key)
+
+    return capture_list
+
 
 def chess_value_to_pawn(chess_str):
     """将棋力转换为相当的兵力，如1只车相当于27只兵(计算过程看草稿)"""
@@ -850,11 +859,18 @@ if __name__ == '__main__':
     # b = 'A'
     # print(f'{b.isalpha()}')
 
-    test_board_state1 = 'RNBAKABNR/9/9/P1P1P1P1P/9/9/p1p1p1pCp/1c5c1/9/rCbakabnr'
-    print(f'{check_capture(test_board_state, test_board_state1)}')  # 吃n
-    test_board_state2 = 'RNBAKABNR/9/9/P1P1P1P1P/9/9/p1p1p1pCp/4c2c1/9/rCbakabnr'
-    print(f'{check_capture(test_board_state1, test_board_state2)}') # 没吃
-    test_board_state3 = 'RNBAKABNR/9/9/P1P1P1P1P/9/9/p1p1p1pCp/4c2c1/9/r1bCkabnr'
-    print(f'{check_capture(test_board_state2, test_board_state3)}') # 吃a
-    test_board_state4 = 'RNBAKABNR/9/9/P1P1c1P1P/9/9/p1p1p1pCp/7c1/9/r1bCkabnr'
-    print(f'{check_capture(test_board_state3, test_board_state4)}') # 吃P
+    # test_board_state1 = 'RNBAKABNR/9/9/P1P1P1P1P/9/9/p1p1p1pCp/1c5c1/9/rCbakabnr'
+    # print(f'{check_capture(test_board_state, test_board_state1)}')  # 吃n
+    # test_board_state2 = 'RNBAKABNR/9/9/P1P1P1P1P/9/9/p1p1p1pCp/4c2c1/9/rCbakabnr'
+    # print(f'{check_capture(test_board_state1, test_board_state2)}') # 没吃
+    # test_board_state3 = 'RNBAKABNR/9/9/P1P1P1P1P/9/9/p1p1p1pCp/4c2c1/9/r1bCkabnr'
+    # print(f'{check_capture(test_board_state2, test_board_state3)}') # 吃a
+    # test_board_state4 = 'RNBAKABNR/9/9/P1P1c1P1P/9/9/p1p1p1pCp/7c1/9/r1bCkabnr'
+    # print(f'{check_capture(test_board_state3, test_board_state4)}') # 吃P
+    # test_board_state5 = 'RNBAKABNR/9/9/P1P1c1P1P/9/9/p1p1C1p1p/7c1/9/r1bk1abnr'
+    # print(f'{check_capture(test_board_state4, test_board_state5)}') # 吃p,C
+
+    t = torch.tensor([3, 4, -9, 1, 1], dtype = torch.float)
+    t_norm = F.softmax(t)
+    print(f'{t_norm}, {torch.sum(t_norm)}')
+

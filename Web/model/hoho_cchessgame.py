@@ -2,6 +2,7 @@ import collections
 import random
 import json
 import os
+import torch.nn.functional as F
 
 import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -113,17 +114,73 @@ class Round:
         self.black_steps.append((state, pi))
 
     def update_winner(self, winner=None):
-        reward = 0
-        if winner == 'Red':
-            reward = 1
-        elif winner == 'Black':
-            reward = -1
+        if winner is None: 
+            reward = 0
+            reward_list = list()
+            for index, step in enumerate(self.red_steps):
+                if index + 1 < len(self.red_steps):
+                    next_step = self.red_steps[index + 1]
+                    capture_list = check_capture(step[0], next_step[0])
+                    if len(capture_list) > 0:
+                        step_reward = 0
+                        for piece in capture_list:
+                            if piece.isupper():  # 红方子被吃
+                                step_reward -= chess_value_equal_to_pawn(piece)
+                            elif piece.islower():  # 黑方子被吃
+                                step_reward += chess_value_equal_to_pawn(piece)
 
-        self.red_steps = [(x[0], x[1], reward) for x in self.red_steps]
-        self.black_steps = [(x[0], x[1], -reward) for x in self.black_steps]
+                        reward_list.append(step_reward)
+                    else:
+                        reward_list.append(reward)
+            reward_list.append(reward)
+
+            assert len(rewards) == len(self.red_steps), f'rewards len {len(rewards)} not equal to red_steps len {len(self.red_steps)}'
+            
+            self.red_steps = [(x[0], x[1], reward_list[i]) for i, x in enumerate(self.red_steps)]
+
+        else:
+            reward = 1
+            if winner == 'Black':
+                reward = -1
+                
+            total_reward = len(self.red_steps) * reward
+            reward_list = list()
+            for index, step in enumerate(self.red_steps):
+                if index + 1 < len(self.red_steps):
+                    next_step = self.red_steps[index + 1]
+                    capture_list = check_capture(step[0], next_step[0])
+                    if len(capture_list) > 0:
+                        step_reward = 0
+                        for piece in capture_list:
+                            if piece.isupper():  # 红方子被吃
+                                step_reward -= chess_value_equal_to_pawn(piece)
+                            elif piece.islower():  # 黑方子被吃
+                                step_reward += chess_value_equal_to_pawn(piece)
+
+                        if winner  == 'Black':
+                            step_reward = -step_reward   # winner为黑方，中间的奖励一般为负（对于红方来说），先转为正数以方便计算softmax
+
+                        reward_list.append(step_reward)
+                    else:
+                        reward_list.append(reward)
+            
+            reward_tensor = torch.tensor(reward_list).float()
+            reward_ratios = F.softmax(reward_tensor)
+            rewards = (reward_ratios * total_reward).tolist()
+
+            if winner == 'Black':
+                rewards.append(reward)
+            else:
+                rewards.append(100.0)   # 红方赢，最后一步强制给100奖励
+
+            assert len(rewards) == len(self.red_steps), f'rewards len {len(rewards)} not equal to red_steps len {len(self.red_steps)}'
+            
+            self.red_steps = [(x[0], x[1], rewards[i]) for i, x in enumerate(self.red_steps)]
+            
 
     def size(self):
-        return len(self.red_steps) + len(self.black_steps) 
+        return len(self.red_steps)
+
 
 class ReplayBuffer:
     ''' 经验回放池 '''
@@ -138,7 +195,6 @@ class ReplayBuffer:
 
     def add_round(self, round):
         self.buffer.extend(round.red_steps)
-        self.buffer.extend(round.black_steps)
 
     # def sample(self, batch_size):  
     #     """从buffer中采样数据,数量为batch_size"""
@@ -225,11 +281,17 @@ if __name__ == '__main__':
     #         break
 
 
-    test_list = list()
-    test_list.append((1, '2'))
-    test_list.append((2, '7'))
-    test_list.append((3, '1'))
-    test_list.append((4, '3'))
-    test_list.append((5, '4'))
-    test_list2 = [(x[0], x[1], -1) for x in test_list]
-    print(test_list2)
+    # test_list = list()
+    # test_list.append((1, '2'))
+    # test_list.append((2, '7'))
+    # test_list.append((3, '1'))
+    # test_list.append((4, '3'))
+    # test_list.append((5, '4'))
+    # test_list2 = [(x[0], x[1], -1) for x in test_list]
+    # print(test_list2)
+
+    rs = [1, 2, 3, 1]
+    rt = torch.tensor(rs).float()
+    rs = F.softmax(rt) * 10
+
+    print(f'{rs.tolist()}')

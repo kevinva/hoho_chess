@@ -71,5 +71,5 @@ KEY_AGENT_ACCEPT = 'agent_accept'
 KEY_MODEL_PATH = 'model_path'
 AGENT_MSG_ID_TRAIN_FINISH = 1
 AGENT_MSG_ID_SELF_BATTLE_FINISH = 2
-REPLAY_BUFFER_FILE_PREFIX = 'replay_buffer_origin'
-MODEL_FILE_PREFIX = 'hoho_agent_origin'
+REPLAY_BUFFER_FILE_PREFIX = 'replay_buffer_ca1'
+MODEL_FILE_PREFIX = 'hoho_agent_ca1'
