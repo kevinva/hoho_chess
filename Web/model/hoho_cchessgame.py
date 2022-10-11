@@ -194,7 +194,7 @@ class ReplayBuffer:
     #     self.buffer.append((state, pi, z))
 
     def add_round(self, round):
-        self.buffer.extend(round.red_steps)
+        self.buffer.append(round.red_steps)
 
     # def sample(self, batch_size):  
     #     """从buffer中采样数据,数量为batch_size"""
@@ -206,7 +206,7 @@ class ReplayBuffer:
     def size(self):  
         """当前buffer中数据的数量"""
 
-        return len(self.buffer)
+        return sum([len(steps) for steps in self.buffer])
 
     def clear(self):
         self.buffer.clear()
