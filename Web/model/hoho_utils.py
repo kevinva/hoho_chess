@@ -814,7 +814,7 @@ def check_capture(state_from, state_to):
     return capture_list
 
 
-def chess_value_to_pawn(chess_str):
+def chess_value_equal_to_pawn(chess_str):
     """将棋力转换为相当的兵力，如1只车相当于27只兵(计算过程看草稿)"""
     if chess_str == 'K' or chess_str == 'k':
         return 4.92

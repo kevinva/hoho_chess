@@ -134,7 +134,7 @@ class Round:
                         reward_list.append(reward)
             reward_list.append(reward)
 
-            assert len(rewards) == len(self.red_steps), f'rewards len {len(rewards)} not equal to red_steps len {len(self.red_steps)}'
+            assert len(reward_list) == len(self.red_steps), f'rewards len {len(reward_list)} not equal to red_steps len {len(self.red_steps)}'
             
             self.red_steps = [(x[0], x[1], reward_list[i]) for i, x in enumerate(self.red_steps)]
 
