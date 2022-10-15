@@ -76,8 +76,9 @@ class ChessDataset(Dataset):
                 if version is None:
                     with open(os.path.join(dirpath, filename), 'r') as f:
                         jsonstr = f.read()
-                        data_list = json.loads(jsonstr)
-                        all_data_list.extend(data_list)
+                        trajectories = json.loads(jsonstr)
+                        for trajectory in trajectories:
+                            all_data_list.extend(trajectory)
                 else:
                     name = filename.split('.')[0]
                     items = name.split('_')
@@ -86,15 +87,17 @@ class ChessDataset(Dataset):
                         if version == check_version:
                             with open(os.path.join(dirpath, filename), 'r') as f:
                                 jsonstr = f.read()
-                                data_list = json.loads(jsonstr)
-                                all_data_list.extend(data_list)
+                                trajectories = json.loads(jsonstr)
+                                for trajectory in trajectories:
+                                    all_data_list.extend(trajectory)
                     elif len(items) < 4:
                         # 没有版本后缀的默认为version 0
                         if version == 0:
                             with open(os.path.join(dirpath, filename), 'r') as f:
                                 jsonstr = f.read()
-                                data_list = json.loads(jsonstr)
-                                all_data_list.extend(data_list)
+                                trajectories = json.loads(jsonstr)
+                                for trajectory in trajectories:
+                                    all_data_list.extend(trajectory)
 
         dataset = ChessDataset(all_data_list)
         return dataset

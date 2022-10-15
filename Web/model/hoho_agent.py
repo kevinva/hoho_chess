@@ -342,6 +342,7 @@ def train(agent):
     train_dataset = ChessDataset.load_from_dir(data_dir_path, version=agent.version)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     train_batch_len = len(train_dataloader)
+    
     LOGGER.info(f'train batch len={train_batch_len}, total train data size={len(train_dataset)}')
 
     # agent_current = deepcopy(agent)

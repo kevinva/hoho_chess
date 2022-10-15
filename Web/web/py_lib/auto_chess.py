@@ -5,7 +5,7 @@ from . import spinner
 from . import ajax
 import heapq
 
-HOHO_RESTRICT_ROUND_NUM = 120  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
+HOHO_RESTRICT_ROUND_NUM = 100  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
 
 
 class Controller(chess.Controller):
