@@ -66,7 +66,7 @@ def ajax_(request_, response_, route_args_):
 
 		hoho_round = Round(int(time.time()))
 
-		if hoho_replay_buffer.size() >= 1000:
+		if hoho_replay_buffer.size() >= 100:
 			hoho_replay_buffer.save({'model_version': hoho_agent.version})
 			hoho_replay_buffer.clear()
 
@@ -223,11 +223,11 @@ if __name__ == '__main__':
 	if model_path is not None:
 		hoho_agent.load_model_from_path(model_path)
 
-	# LOGGER.info(f'[pid={os.getpid()}] start server!')
-	# start_server_(8000, 100)
+	LOGGER.info(f'[pid={os.getpid()}] start server!')
+	start_server_(8000, 100)
 
 	#hoho_test
-	update_agent()
+	# update_agent()
 
 
 
