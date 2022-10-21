@@ -141,6 +141,7 @@ class SearchThread(threading.Thread):
                 self.condition_eval.wait()
 
             result = self.result_queue.pop(self.thread_id)
+            # print(f'{LOG_TAG_MCTS} Eval finish! tid={self.thread_id}, reuslt={result}\n')
             probas = np.array(result[0])
             
             # 因为之前对黑方进行棋盘翻转，所以网络输出的是红方视角的走子方式，要对该走子方式再翻转过来才是黑方真正的走子方式
@@ -165,7 +166,21 @@ class SearchThread(threading.Thread):
             
             self.lock.release()
 
-        else: 
+        else:
+            self.condition_search.acquire()
+            self.eval_queue[self.thread_id] = SEARCH_THREAD_GAME_DONE
+            self.condition_search.notify()
+            self.condition_search.release()
+
+            self.condition_eval.acquire()
+            while self.thread_id not in self.result_queue.keys():
+                self.condition_eval.wait()
+            self.condition_eval.release()
+
+            del self.result_queue[self.thread_id]   # 清除自己的结果，避免下一次搜索时被误用
+
+            # print(f'{LOG_TAG_MCTS} {SEARCH_THREAD_GAME_DONE}, tid={self.thread_id} \n')
+
             value = 0.0
             if game.winner == PLAYER_RED:
                 value = 1.0
@@ -175,13 +190,6 @@ class SearchThread(threading.Thread):
             self.lock.acquire()
             current_node.backup(value)
             self.lock.release()
-
-            self.condition_search.acquire()
-            self.eval_queue[self.thread_id] = SEARCH_THREAD_GAME_DONE
-            self.condition_search.notify()
-            self.condition_search.release()
-
-            # print(f'{LOG_TAG_MCTS} {SEARCH_THREAD_GAME_DONE}')
 
 
 class EvaluateThread(threading.Thread):
@@ -197,11 +205,13 @@ class EvaluateThread(threading.Thread):
 
     def run(self):
         for simulation in range(MCTS_SIMULATION_NUM // MCTS_THREAD_NUM):
-            # print(f'evaluate thread: {simulation}')
             self.condition_search.acquire()
             while len(self.eval_queue) < MCTS_THREAD_NUM:   # 需等同一批搜索线程都入队列，才开始下一步
                 self.condition_search.wait()
+                # print(f'[{threading.currentThread().ident}] blocked by search thread, len(self.eval_queue): {len(self.eval_queue)}')
             self.condition_search.release()
+
+            # print(f'[{threading.currentThread().ident}] simulation: {simulation}, finsh search!')
 
             self.condition_eval.acquire()
             batch_result_count = MCTS_THREAD_NUM
@@ -217,9 +227,13 @@ class EvaluateThread(threading.Thread):
                         planes.append(plane)
                         eval_thread_ids.append(tid)
                     else:
+                        self.result_queue[tid] = SEARCH_THREAD_GAME_DONE   # 随便赋一个值，反正这种情况下返回给SearchThread不会用到
                         del self.eval_queue[tid]
                         batch_result_count = batch_result_count - 1
+                        # print(f'[{threading.currentThread().ident}] game done, batch_result_count: {batch_result_count}, len(self.eval_queue): {len(self.eval_queue)}')
                 
+                # print(f'[{threading.currentThread().ident}] len(planes): {len(planes)}, len(self.eval_queue): {len(self.eval_queue)}')
+
                 if len(planes) > 0:
                     batch_states = torch.stack(planes, dim=0).to(DEVICE)
                     batch_probas, batch_values = self.agent.predict(batch_states)
@@ -227,7 +241,11 @@ class EvaluateThread(threading.Thread):
                     for idx, tid in enumerate(eval_thread_ids):
                         self.result_queue[tid] = (batch_probas[idx].to(torch.device('cpu')).detach().numpy(), batch_values[idx])
                         del self.eval_queue[tid]
-                    self.condition_eval.notifyAll()
+                        # print(f'[{threading.currentThread().ident}] eval thread: {tid} done!')
+                self.condition_eval.notifyAll()
+
+                # print(f'[{threading.currentThread().ident}] len(self.result_queue): {len(self.result_queue)}, len(self.eval_queue): {len(self.eval_queue)}, batch_result_count: {batch_result_count}, len(eval_thread_ids): {len(eval_thread_ids)}')
+
             self.condition_eval.release()
 
 
@@ -316,5 +334,19 @@ class MCTS:
 
 
 if __name__ == '__main__':
-    myl = [11, 23, 3, 55, 23, 7, 20, 29]
-    print(np.random.choice(len(myl)))
+    # myl = [11, 23, 3, 55, 23, 7, 20, 29]
+    # print(np.random.choice(len(myl)))
+
+    # for i in range(100):
+    #     t = random.random()
+    #     print(t)
+    #     time.sleep(t)
+
+    q1 = OrderedDict()
+    q1['2'] = 2
+    q1['1'] = 1
+    q1['3'] = 3
+    print(f'{len(q1)}')
+    # del q1['2']
+    q1.pop('2')
+    print(f'{len(q1)}')

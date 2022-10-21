@@ -282,7 +282,7 @@ def self_battle(agent_current, agent_new, use_mcts=True, msg_queue=None):
             if done:
                 break
 
-            time.sleep(random.randint(0, 3))  # 随机让线程睡眠几秒，让其他线程有机会执行
+            time.sleep(random.random() * 2)  # 随机让线程睡眠几秒，让其他线程有机会执行
 
             if black_mcts is None:
                 black_mcts = MCTS(start_player=PLAYER_BLACK, start_state=game.state)
