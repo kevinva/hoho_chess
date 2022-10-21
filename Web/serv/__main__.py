@@ -66,7 +66,7 @@ def ajax_(request_, response_, route_args_):
 
 		hoho_round = Round(int(time.time()))
 
-		if hoho_replay_buffer.size() >= 100:
+		if hoho_replay_buffer.size() >= 1000:
 			hoho_replay_buffer.save({'model_version': hoho_agent.version})
 			hoho_replay_buffer.clear()
 
