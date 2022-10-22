@@ -223,11 +223,11 @@ if __name__ == '__main__':
 	if model_path is not None:
 		hoho_agent.load_model_from_path(model_path)
 
-	LOGGER.info(f'[pid={os.getpid()}] start server!')
-	start_server_(8000, 100)
+	# LOGGER.info(f'[pid={os.getpid()}] start server!')
+	# start_server_(8000, 100)
 
 	#hoho_test
-	# update_agent()
+	update_agent()
 
 
 
