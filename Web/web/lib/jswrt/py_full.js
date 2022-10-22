@@ -1,4 +1,4 @@
-// copyright cse.sysu.edu.cn
+
 function create_jswrt() {
 function _copy_span_info(to, from) {
 	to.original = from
@@ -874,7 +874,13 @@ function _tx_def_id_param(span) {
 				exps.push(p.children[2])
 	_tx_simplify_exps(exps)
 }
+function _tx_def_id_param_comma(span) {
+	_tx_def_id_param(span)
+}
 function _tx_def_id_param_id(span) {
+	_tx_def_id_param(span)
+}
+function _tx_def_id_param_id_comma(span) {
 	_tx_def_id_param(span)
 }
 function _tx_if_exp(span) {
@@ -1298,17 +1304,26 @@ function _tx_item_exp_factor_exp(span) {
 function _tx_attribute_factor_id(span) {
 	_tx_simplify_factor(span.children[0])
 }
-function _tx_with(span) {
+function _tx_with_exp(span) {
+	return _tx_with_1(span)
+}
+function _tx_with_exp_as_id(span) {
+	return _tx_with_1(span)
+}
+function _tx_with_1(span) {
 	let r = _get_temp_id()
-	let id_ = span.children[3].get_text()
+	let id_ = _get_temp_id()
+	if (span.children.length==5)
+		id_ = span.children[3].get_text()
 	_add_assign_before(span, r, span.children[1])
 	let enter = parse_lines(id_+'='+r+'.__enter__()', span)[0]
-	_add_first_child(span, enter)
-	let ex_ = _get_temp_id()
-	let except_ = parse_lines('except BaseException as '+ex_+':', span)[0]
+	_add_line_before(span, enter)
+	let except_ = parse_lines('except:', span)[0]
 	_add_line_after(span, except_)
-	let exit_1 = parse_lines(r+'.__exit__(type('+ex_+'), '+ex_+', None)', span)[0]
+	let exit_1 = parse_lines('if '+r+'.__exit__(*__rt_exc_info()) is not True:', span)[0]
 	_add_first_child(except_, exit_1)
+	let exit_raise = parse_lines('raise', span)[0]
+	_add_first_child(exit_1, exit_raise)
 	convert(exit_1)
 	let else_ = parse_lines('else:', span)[0]
 	_add_line_after(except_, else_)
@@ -1465,7 +1480,7 @@ class _Scope
 	enter_block(line) {
 		++ this.block_level
 		if (runtime.cur_thread.resume_val == null)
-			this.block_info.push({'next_line':0,'else_val':false})
+			this.block_info.push({'next_line':0,'else_val':false,'ex_val':null})
 		if (this.block_level>this.block_info.length) {
 			__raise_exception(undefined, __new_obj('RuntimeError', 'Wrong block_level('+this.block_level+'>'+this.block_info.length+')'))
 		}
@@ -1528,6 +1543,7 @@ class _Thread
 		this.cur_scope.loc = 'thread #'+this.thread_id
 		this.cur_scope.module_scope = this.cur_scope
 		this.exit_val = null
+		this.cur_ex = null
 		this.resume_val = null
 		this.return_val = null
 	}
@@ -1537,7 +1553,7 @@ class _Thread
 			let ex = this.exit_val.value
 			let ex_type = _type_name(ex)
 			if (ex_type != 'SystemExit') {
-				runtime.__stacktrace(ex)
+				runtime.__print_stacktrace(ex)
 			}
 			return null
 		}
@@ -1570,15 +1586,14 @@ class _Thread
 			if (this.exit_val != null) {
 				if (! (type == 'except' || (prev_type == 'except' && type == 'else') || type == 'finally')) break
 			}
-			let expected_scope = this.cur_scope
+			this.cur_scope.cur_block().next_line = line_count
+			let cur_scope = this.cur_scope
 			action(cur_line)
-			if (expected_scope !== this.cur_scope) {
+			if (cur_scope !== this.cur_scope) {
 				console.log('*** Scope mixed up\n')
 			}
 			if (this.exit_val != null && this.exit_val.type != 'exception') break
 			line_count += 1
-			if (this.exit_val == null)
-				this.cur_scope.cur_block().next_line = line_count
 		}
 	}
 	run_block(parent) {
@@ -1822,22 +1837,23 @@ class _Thread
 			return this.run_method(span, _type(obj), '__setattr__', [obj, __new_obj('str', attr), exp])
 		obj.attr.set(attr, exp)
 	}
-	__getattr_1(span, obj, type, attr) {
-		let cls_attr = this.__get_class_attr_1(span, type, attr)
-		if (cls_attr != null) {
-			let type_name = _type_name(cls_attr)
+	__getattr_1(span, obj, type, attr_name) {
+		let attr = this.__get_class_attr_1(span, type, attr_name)
+		if (attr != null) {
+			let type_name = _type_name(attr)
 			if (! (type_name == 'function' || type_name == 'builtin_function_or_method'))
-				return cls_attr
-			let m_obj = __new_obj('method', attr)
+				return attr
+			let m_obj = __new_obj('method', attr_name)
 			m_obj.obj = obj
-			m_obj.method = cls_attr
+			m_obj.method = attr
 			return m_obj
 		}
 		let __getattr__ = this.__get_class_attr_1(span, type, '__getattr__')
 		if (__getattr__!==null) {
-			let res = this.__run_method_2(span, __getattr__, [obj, __new_obj('str', attr)])
+			let attr = this.__run_method_2(span, __getattr__, [obj, __new_obj('str', attr_name)])
 			if (this.exit_val===null) {
-				if (res!==undefined && res!==null) return res
+				if (attr!==undefined && attr!==null)
+					return attr
 			}
 			else
 				this.exit_val = null 
@@ -1845,7 +1861,7 @@ class _Thread
 		if (type.attr.get('__name__').value == 'object') return null
 		let __super__ = this.__get_super_classes(type)
 		for (let t of __super__) {
-			let m = this.__getattr_1(span, obj, t, attr)
+			let m = this.__getattr_1(span, obj, t, attr_name)
 			if (m != null) return m
 		}
 		return null
@@ -1870,26 +1886,33 @@ class _Thread
 		if (res!==null) return res
 		__raise_exception(span, __new_obj('AttributeError', "'"+_type_name(obj)+"' object has no attribute '"+attr+"'"))
 	}
-	__hasattr_1(span, obj, type, attr) {
-		let cls_attr = this.__get_class_attr_1(span, type, attr)
-		if (cls_attr != null) return true
+	__hasattr_1(span, obj, type, attr_name) {
+		let attr = this.__get_class_attr_1(span, type, attr_name)
+		if (attr != null)
+			return true
 		let __getattr__ = this.__get_class_attr_1(span, type, '__getattr__')
-		if (__getattr__ == null) return false
-		_t()
-		let res = this.__run_method_2(span, __getattr__, [obj, __new_obj('str', attr)])
-		if (this.exit_val===null) {
-			if (res!==undefined && res!=null) return true
+		if (__getattr__!==null) {
+			let attr = this.__run_method_2(span, __getattr__, [obj, __new_obj('str', attr_name)])
+			if (this.exit_val===null) {
+				if (attr!==undefined && attr!==null)
+					return true
+			}
+			else
+				this.exit_val = null 
 		}
-		else
-			this.exit_val = null 
 		if (type.attr.get('__name__').value == 'object') return null
 		let __super__ = this.__get_super_classes(type)
-		for (let t of __super__)
-			if (this.__hasattr_1(span, obj, t, attr)) return true
+		for (let t of __super__) {
+			if (this.__hasattr_1(span, obj, t, attr_name))
+				return true
+		}
 		return false
 	}
 	hasattr(span, obj, attr) {
-		if (obj.attr.has(attr)) return true
+		if (obj.attr.has(attr))
+			return true
+		if (attr == '__class__')
+			return true
 		let type = _type(obj)
 		return this.__hasattr_1(span, obj, _type(obj), attr)
 	}
@@ -1983,7 +2006,7 @@ class Runtime
 	__final_action(_done) {
 		let succ = true
 		if (this.cur_thread!==null && this.cur_thread.exit_val!==null) {
-			this.__stacktrace(this.cur_thread.exit_val.value)
+			this.__print_stacktrace(this.cur_thread.exit_val.value)
 			succ = false
 		}
 		if (_done!==undefined && _done!==null)
@@ -2085,7 +2108,7 @@ class Runtime
 			if (this.cur_thread.exit_val != null) {
 				let ex = this.cur_thread.exit_val.value
 				this.cur_thread.exit_val = null 
-				runtime.__stacktrace(ex)
+				runtime.__print_stacktrace(ex)
 				if (_done!==undefined && _done!==null)
 					_done(null)
 				return
@@ -2166,14 +2189,15 @@ class Runtime
 					let delay_time = interrupt.timeout*1000
 					__timeout(interrupt.span, delay_time)
 					if (this.cur_thread.exit_val!==null) {
-						this.__stacktrace(this.cur_thread.exit_val.value)
+						this.__print_stacktrace(this.cur_thread.exit_val.value)
 					}
 					else {
 						setTimeout(()=>interrupt.runtime._interrupt_done(interrupt, false), delay_time)
 					}
 				}
-				if ('action' in interrupt && interrupt.action != null)
+				if ('action' in interrupt && interrupt.action != null) {
 					interrupt.action(interrupt) 
+				}
 			}
 		}
 		else { 
@@ -2358,7 +2382,7 @@ class Runtime
 		}
 		return line
 	}
-	__stacktrace(ex) {
+	__format_exc(ex) {
 		let cur_ex = this.cur_thread===null ? null : this.cur_thread.exit_val
 		let prev_thread = this.cur_thread
 		if (this.cur_thread===null) {
@@ -2368,7 +2392,7 @@ class Runtime
 		this.cur_thread.exit_val = null
 		let err_msg = ''
 		if ('prev_exit_val' in ex) {
-			this.__stacktrace(ex.prev_exit_val)
+			this.__print_stacktrace(ex.prev_exit_val)
 			err_msg += '\nDuring handling of the above exception, another exception occurred:\n\n'
 		}
 		function span_info(s) {
@@ -2387,15 +2411,36 @@ class Runtime
 			err_msg += '\n'+span_info(ex.span)
 		let ex_msg = __repr(ex.span, ex).value
 		err_msg += '\n'+_type_name(ex)+(ex_msg.length>0?': '+ex_msg:'')+'\n\n'
-		this.stderr(err_msg)
 		this.cur_thread = prev_thread
 		if (this.cur_thread!==null)
 			this.cur_thread.exit_val = cur_ex
+		return err_msg
 	}
-	print_stacktrace() {
+	__print_stacktrace(ex) {
+		let err_msg = this.__format_exc(ex)
+		this.stderr(err_msg)
+	}
+	__cur_ex() {
+		let t = this.cur_thread
+		let ex = null
+		if (t!==null) {
+			if (t.exit_val!==null && t.exit_val.type=='exception')
+				ex = t.exit_val.value
+			else if (t.cur_ex!==null)
+				ex = t.cur_ex
+		}
+		return ex
+	}
+	format_exc() {
+		let ex = this.__cur_ex()
+		if (ex===null)
+			return 'NoneType: None\n'
+		return this.__format_exc(ex)
+	}
+	__print_stacktrace_2() {
 		let ex = __new_obj('RuntimeError', '')
-		ex.stack = runtime.cur_thread.call_stack.slice(0)
-		this.__stacktrace(ex)
+		ex.stack = this.cur_thread.call_stack.slice(0)
+		this.__print_stacktrace(ex)
 	}
 	_prepare_thread_for_call(modname_or_pyobj, func_or_name, argv) {
 		let span = null
@@ -2468,7 +2513,7 @@ class Runtime
 	call_from_js(modname_or_pyobj, func_or_name, argv) {
 		let cur_thread = this._prepare_thread_for_call(modname_or_pyobj, func_or_name, argv)
 		if (cur_thread.exit_val!==null) {
-			this.__stacktrace(cur_thread.exit_val.value)
+			this.__print_stacktrace(cur_thread.exit_val.value)
 			return null
 		}
 		let prev_thread_yield_interval = this.thread_yield_interval
@@ -2477,7 +2522,7 @@ class Runtime
 		this.thread_yield_interval = -1
 		let ret_val = cur_thread.call(null, cur_thread.func, cur_thread.args)
 		if (cur_thread.exit_val != null) {
-			this.__stacktrace(cur_thread.exit_val.value)
+			this.__print_stacktrace(cur_thread.exit_val.value)
 			this.cur_thread = prev_thread
 			if (this.cur_thread==null)
 				this._loop()
@@ -2485,7 +2530,7 @@ class Runtime
 		}
 		ret_val = __py2js(null, ret_val)
 		if (cur_thread.exit_val != null) {
-			this.__stacktrace(cur_thread.exit_val.value)
+			this.__print_stacktrace(cur_thread.exit_val.value)
 			this.cur_thread = prev_thread
 			if (this.cur_thread==null)
 				this._loop()
@@ -2593,6 +2638,9 @@ function match_lex_text(line, start) {
 		else {
 			if (line[i] == delimitor) {
 				return i + 1 - start
+			}
+			if (line[i] == '\n') {
+				return 0
 			}
 			if (line[i] == '\\') {
 				if (i + 1 == line.length) return 0
@@ -2761,24 +2809,26 @@ function _act_tree_if(line) {
 }
 function _act_tree_else(line) {
 	if (runtime.cur_thread.cur_scope.cur_block().else_val) {
+		runtime.cur_thread.cur_ex = runtime.cur_thread.cur_scope.cur_block().ex_val
 		runtime.cur_thread.exit_val = null
 		runtime.cur_thread.run_block(line)
-		if (runtime.cur_thread.exit_val == null)
+		if (runtime.cur_thread.exit_val == null) {
 			runtime.cur_thread.cur_scope.cur_block().else_val = false
+		}
 	}
 }
 function _act_tree_try(line) {
 	runtime.cur_thread.run_block(line)
 	let has_ex = (runtime.cur_thread.exit_val != null && runtime.cur_thread.exit_val.type == 'exception')
-	runtime.cur_thread.cur_scope.cur_block().else_val = ! has_ex
-	if (has_ex)
-		runtime.cur_thread.cur_scope.cur_block().ex = runtime.cur_thread.exit_val.value
+	if (has_ex) {
+		runtime.cur_thread.cur_scope.cur_block().else_val = true
+		runtime.cur_thread.cur_scope.cur_block().ex_val = runtime.cur_thread.exit_val.value
+	}
 }
 function _act_tree_except(line) {
-	if (runtime.cur_thread.exit_val==null) return
-	if (runtime.cur_thread.exit_val.type!='exception') return
-	if (runtime.cur_thread.exit_val.value!==runtime.cur_thread.cur_scope.cur_block().ex) return
-	let ex_type = _type(runtime.cur_thread.exit_val.value)
+	let ex_val  = runtime.cur_thread.cur_scope.cur_block().ex_val
+	if (ex_val===null) return
+	let ex_type = _type(ex_val)
 	if (line.span.children.length >= 3) { 
 		let children = line.span.children[1].children
 		let ex_types = []
@@ -2786,6 +2836,7 @@ function _act_tree_except(line) {
 		let base_ex = runtime.cur_thread.__get_class(line.span, 'BaseException')
 		for (let c of children) {
 			let catch_type = runtime.cur_thread.__get_class(c, c.get_text())
+			let base_ex = runtime.cur_thread.__get_class(c, 'BaseException')
 			if (! runtime.cur_thread.__issubclass(line.span, catch_type, base_ex)) {
 				__raise_exception(line.span, __new_obj('TypeError', 'catching classes that do not inherit from BaseException is not allowed'))
 				return
@@ -2794,19 +2845,24 @@ function _act_tree_except(line) {
 				catched = true
 		}
 		if (! catched) return
-		if (line.span.children.length == 5)
-			runtime.cur_thread.cur_scope.set(line.span, line.span.children[3].get_text(), runtime.cur_thread.exit_val.value)
+		if (line.span.children.length == 5) {
+			runtime.cur_thread.cur_scope.set(line.span, line.span.children[3].get_text(), ex_val)
+		}
 	}
-	runtime.cur_thread.cur_scope.cur_block().ex = null
+	runtime.cur_thread.cur_ex = ex_val
 	runtime.cur_thread.exit_val = null
 	runtime.cur_thread.run_block(line)
+	if (runtime.cur_thread.exit_val===null || runtime.cur_thread.exit_val.type!='interrupt') {
+		runtime.cur_thread.cur_scope.cur_block().else_val = false
+	}
 }
 function _act_tree_finally(line) {
-	let exit_val = runtime.cur_thread.exit_val
+	let ex_val = runtime.cur_thread.cur_scope.cur_block().ex_val
+	runtime.cur_thread.cur_ex = ex_val
 	runtime.cur_thread.exit_val = null
 	runtime.cur_thread.run_block(line)
 	if (runtime.cur_thread.exit_val == null)
-		runtime.cur_thread.exit_val = exit_val
+		runtime.cur_thread.exit_val = ex_val
 }
 function __loop_condition() {
 	if (runtime.cur_thread.exit_val == null) return true
@@ -2873,16 +2929,22 @@ function _act_tree_class(line) {
 			}
 			super_classes.push(cls)
 		}
-	let cls = __new_obj('type')
-	cls.name = class_name
-	runtime.cur_thread.cur_scope.set(line.span, class_name, cls)
-	cls.attr.set('__name__',__new_obj('str',class_name))
-	cls.__super__ = super_classes
-	cls.module_scope = new _Scope(runtime.cur_thread.cur_scope.module_scope, __get_outer_scope())
-	cls.module_scope.class_scope = true
-	cls.module_scope.loc = 'class '+class_name
-	cls.module_scope.vars = cls.attr
-	cls.line = line
+	let cls = null
+	if (runtime.cur_thread.resume_val == null) {
+		cls = __new_obj('type')
+		cls.name = class_name
+		runtime.cur_thread.cur_scope.set(line.span, class_name, cls)
+		cls.attr.set('__name__',__new_obj('str',class_name))
+		cls.__super__ = super_classes
+		cls.module_scope = new _Scope(runtime.cur_thread.cur_scope.module_scope, __get_outer_scope())
+		cls.module_scope.class_scope = true
+		cls.module_scope.loc = 'class '+class_name
+		cls.module_scope.vars = cls.attr
+		cls.line = line
+	}
+	else {
+		cls = runtime.cur_thread.cur_scope.get(class_name)
+	}
 	runtime.cur_thread.__run_function(line.span, cls, null)
 	for (let [k,v] of cls.attr) {
 		if (_type_name(v) == 'function')
@@ -3012,7 +3074,7 @@ function _act_assert_assert_exp(span) {
 	if (_type_name(cond) != 'bool')
 		__raise_exception(span.children[1], __new_obj('TypeError', 'bool condition is required'))
 	if (cond.value == false)
-		__raise_exception(span.children[1], __new_obj('AssertionError', ''))
+		__raise_exception(span, __new_obj('AssertionError', ''))
 }
 function _act_assert_assert_exp_exp(span) {
 	let cond = action(span.children[1])
@@ -3067,7 +3129,11 @@ function _act_raise_exp(span) {
 		__raise_exception(span, res)
 }
 function _act_raise(span) {
-	__raise_exception(span, __new_obj('RuntimeError', 'No active exception to reraise'))
+	let ex = runtime.__cur_ex()
+	if (ex!==null)
+		runtime.cur_thread.exit_val = {'type':'exception','value':ex}
+	else
+		__raise_exception(span, __new_obj('RuntimeError', 'No active exception to reraise'))
 }
 function _act_break(span) {
 	runtime.cur_thread.exit_val = {'type':'break','span':span}
@@ -3255,8 +3321,9 @@ function __action_fun_call__handle_args_2(span, func, argv, kwargs) {
 		args[arg_pos] = v
 		arg_pos += 1
 	}
+	let kwargs_dict = null
 	if (kwargs_name != null) {
-		let kwargs_dict = __new_obj('dict', new Map())
+		kwargs_dict = __new_obj('dict', new Map())
 		args.push(kwargs_dict)
 	}
 	for (let [k,v] of kwargs) {
@@ -3273,6 +3340,7 @@ function __action_fun_call__handle_args_2(span, func, argv, kwargs) {
 				__raise_exception(span, __new_obj('TypeError', func_name+"() got an unexpected keyword argument '"+k+"'"))
 				return
 			}
+			k = __new_obj('str', k)
 			runtime.cur_thread.run_method(span, 'dict', '__setitem__', [kwargs_dict, k, v])
 		}
 	}
@@ -3475,16 +3543,20 @@ class _Type {
 	}
 	__getattr__(span, objs, kwargs) {
 		if (__assert_num_args(span,'type.__getattr__()', objs, [2])) return
-		let type_obj = objs[0]
-		if (type_obj.attr.get('__name__').value == 'object') return null
-		let attr = objs[1].value
+		let attr_name = objs[1].value
 		let t = runtime.cur_thread
-		let __super__ = t.__get_super_classes(type_obj)
-		for (let super_obj of __super__) {
-			let m = t.__getattr_2(span, super_obj, attr)
-			if (m != null) return m
+		function getattr_in_super(type_obj) {
+			let __super__ = t.__get_super_classes(type_obj)
+			for (let super_obj of __super__) {
+				if (super_obj.attr.get('__name__').value == 'object') return null
+				if (super_obj.attr.has(attr_name))
+					return super_obj.attr.get(attr_name)
+				let res = getattr_in_super(super_obj)
+				if (res!==null) return res
+			}
+			return null
 		}
-		return null
+		return getattr_in_super(objs[0])
 	}
 }
 class __rt_object {}
@@ -3621,7 +3693,7 @@ class _FileNotFoundError { __super__=['BaseException'] }
 class _FileExistsError { __super__=['BaseException'] }
 class _UnsupportedOperation { __super__=['BaseException'] }
 class _EOFError { __super__=['BaseException'] }
-class _Timeout { __super__=['BaseException'] }
+class _TimeoutError { __super__=['BaseException'] }
 class _NoneType
 {
 	__repr__(span, objs) {
@@ -3899,8 +3971,27 @@ class _Bool
 			return __new_obj('bool', true)
 		return __new_obj('bool', objs[0].value!=objs[1].value)
 	}
+	__lt__(span, objs) {
+		if (__assert_bool(span, objs[1])) return
+		return __new_obj('bool', objs[0].value<objs[1].value)
+	}
+	__gt__(span, objs) {
+		if (__assert_bool(span, objs[1])) return
+		return __new_obj('bool', objs[0].value>objs[1].value)
+	}
+	__le__(span, objs) {
+		if (__assert_bool(span, objs[1])) return
+		return __new_obj('bool', objs[0].value<=objs[1].value)
+	}
+	__ge__(span, objs) {
+		if (__assert_bool(span, objs[1])) return
+		return __new_obj('bool', objs[0].value>=objs[1].value)
+	}
 	__repr__(span, objs) {
 		return __new_obj('str', objs[0].value?'True':'False')
+	}
+	__is__(span, objs) {
+		return __new_obj('bool', objs[0].value === objs[1].value)
 	}
 }
 function __ispyobj(obj) {
@@ -4031,6 +4122,10 @@ class _JSObject
 			}
 		}
 		obj = obj.value
+		if (obj===null) {
+			__raise_exception(span, __new_obj('ValueError', 'Accessing attributes of JSObject "null"'))
+			return
+		}
 		if (obj.constructor===String || obj.constructor===Number || obj.constructor===Boolean) {
 			__raise_exception(span, __new_obj('ValueError', 'Accessing attributes in basic types is not supported'))
 			return
@@ -4053,6 +4148,12 @@ class _JSObject
 		}
 		obj[attr] = __py2js(span, objs[2])
 		return __none
+	}
+	__getitem__(span, objs) {
+		return new _JSObject().__getattr__(span, objs)
+	}
+	__setitem__(span, objs) {
+		return new _JSObject().__setattr__(span, objs)
 	}
 	new(span, objs, kwargs) {
 		return __call(span, objs, true)
@@ -4148,6 +4249,8 @@ function __slice_data(size,slice) {
 		if (step>0) return [start,size,step]
 		return [start,-1,step]
 	}
+	if (start<0) start = size+start
+	if (stop<0) stop = size+stop
 	return [start,stop,step]
 }
 function __slice_indexes(start,stop,step) {
@@ -4304,6 +4407,13 @@ class _Str
 		let obj2 = objs[1]
 		if (__assert_type(span, obj2, 'str', 'str.__contains__()')) return
 		return __new_obj('bool', obj.value.indexOf(obj2.value)!=-1)
+	}
+	index(span, objs) {
+		if (__assert_num_args(span,'str.index()', objs, [2])) return
+		let obj = objs[0]
+		let obj2 = objs[1]
+		if (__assert_type(span, obj2, 'str', 'str.index()')) return
+		return __new_obj('int', obj.value.indexOf(obj2.value))
 	}
 	__hash__(span, objs) {
 		let v = objs[0].value
@@ -4476,7 +4586,7 @@ class _Str
 	endswith(span, objs, kwargs) {
 		if (__assert_num_args(span,'str.endswith()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'str', 'str.endswith()')) return
-		return __new_obj('bool', objs[1].value.endsWith(objs[1].value))
+		return __new_obj('bool', objs[0].value.endsWith(objs[1].value))
 	}
 }
 function text_constant_to_text(text) {
@@ -4609,6 +4719,14 @@ function __assert_num(span, obj) {
 	}
 	return false
 }
+function __assert_bool(span, obj) {
+	let type_name = _type_name(obj)
+	if (type_name!='bool') {
+		__raise_exception(span, __new_obj('TypeError', "cannot apply a boolean function on a '"+type_name+"'"))
+		return true
+	}
+	return false
+}
 function __assert_num_args(span, func_name, objs, nums) {
 	if (nums.indexOf(objs.length) == -1) {
 		__raise_exception(span, __new_obj('TypeError', func_name+" takes "+nums.join(' or ')+" positional arguments but "+objs.length+" were given"))
@@ -4643,6 +4761,7 @@ function __builtin_print(span, args, kwargs) {
 			if (line != '') line += ' '
 			if (_type_name(x) != 'str')
 				x = __repr(span, x)
+			if (x===null) return
 			line += x.value;
 		}
 		runtime.stdout(line)
@@ -4875,6 +4994,10 @@ class _Range
 			if (a[0] < a[1]) a = [a[0], a[1], 1]
 			else a = [a[0], a[1], -1]
 		}
+		if (a[2]==0) {
+			__raise_exception(span, __new_obj('ValueError', 'range() arg 3 must not be zero'))
+			return
+		}
 		obj.value = a
 	}
 	__iter__(span, args) {
@@ -4882,7 +5005,7 @@ class _Range
 	}
 	__next__(span, args) {
 		let a = args[0].value
-		if (a[0] == a[1]) {
+		if ((a[2]>0 && a[0]>=a[1]) || (a[2]<0 && a[0]<=a[1])) {
 			__raise_exception(span, __new_obj('StopIteration', ''))
 			return
 		}
@@ -5000,6 +5123,16 @@ function __rt_argv(span, args, kwargs) {
 	let href = l.href.substring(origin.length)
 	return __new_obj('list', [__new_obj('str', origin), __new_obj('str', href)])
 }
+function __rt_format_exc(span, args, kwargs) {
+	return __new_obj('str', runtime.format_exc())
+}
+function __rt_exc_info(span, args, kwargs) {
+	let ex = runtime.__cur_ex()
+	let ex_type = null
+	if (ex!==null)
+		ex_type = _type(ex)
+	return __new_obj('tuple', [ex_type, ex, __none])
+}
 function __app123_event(span, args, kwargs) {
 	function before(interrupt) {
 		if (__assert_num_args(span,'app123_event()', args, [1])) return
@@ -5007,7 +5140,17 @@ function __app123_event(span, args, kwargs) {
 	}
 	function action(interrupt) {
 		let _action = args[0].value
-		data_hub.onevent(_action, '', '', _data=>{
+		if (kwargs.constructor===Map) {
+			let m = kwargs
+			kwargs = {}
+			for (let [k,v] of m) {
+				if (v.constructor===__rt_object) {
+					v = __py2js(span, v)
+				}
+				kwargs[k] = v
+			}
+		}
+		data_hub.onevent(_action, '', kwargs, _data=>{
 			if (_data===null) _data=__none
 			interrupt.runtime._interrupt_done(interrupt, _data) 
 		})
@@ -5176,7 +5319,7 @@ class _List
 				return
 			}
 			obj.value.splice(i,1)
-			return
+			return __none
 		}
 		slice = __slice_data(obj.value.length,slice)
 		let indexes = __slice_indexes(slice[0],slice[1],slice[2])
@@ -5255,13 +5398,16 @@ class _List
 		return __none
 	}
 	append(span, objs) {
+		if (__assert_num_args(span, 'list.append()', objs, [2])) return
 		objs[0].value.push(objs[1])
 	}
 	insert(span, objs) {
+		if (__assert_num_args(span, 'list.insert()', objs, [3])) return
 		let index = __check_bound(span, objs, 'insert')
-		objs[0].value.splice(index, 0, objs[1])
+		objs[0].value.splice(index, 0, objs[2])
 	}
 	extend(span, objs) {
+		if (__assert_num_args(span, 'list.extend()', objs, [2])) return
 		let list2 = __new_obj('list', [])
 		__values_from_iter(span, 'list.extend()', [list2, objs[1]])
 		objs[0].value = objs[0].value.concat(list2.value)
@@ -5483,6 +5629,10 @@ class _Dict
 	__init__(span, objs, kwargs) {
 		if (__assert_num_args(span, 'dict.__init__()', objs, [1])) return
 		objs[0].value = new Map()
+		let cls = new _Dict()
+		let obj = objs[0]
+		for (let [k,o] of kwargs)
+			cls.__setitem__(span, [obj, __new_obj('str',k), o])
 	}
 	clear(span, objs) {
 		if (__assert_num_args(span, 'dict.clear()', objs, [1])) return
@@ -5890,9 +6040,10 @@ class _Set
 	}
 }
 runtime.fetch_text_cache.set("py_lib/time.py", "\nimport _thread\n\ndef sleep(timeout):\n\tlock = _thread.allocate_lock()\n\tlock.acquire()\n\tlock.acquire(timeout=timeout)\n\ndef time():\n\treturn __rt_time()\n")
-runtime.fetch_text_cache.set("py_lib/textwrap.py", "\ndef dedent(text):\n\treturn '\\n'.join([l.lstrip() for l in text.split()])\n\n")
-runtime.fetch_text_cache.set("py_lib/_stdlib.py", "\ndef sum(list):\n\ts = 0\n\tfor x in list:\n\t\ts = s + x\n\treturn s\n\ndef enumerate(list):\n\ti = 0\n\tfor x in list:\n\t\tyield i,x\n\t\ti = i + 1\n\ndef zip(list1, list2):\n\tit1 = iter(list1)\n\tit2 = iter(list2)\n\twhile True:\n\t\tx1 = next(it1)\n\t\tx2 = next(it2)\n\t\tyield x1, x2\n\ndef max(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m<e:\n\t\t\tm = e\n\treturn m\n\ndef min(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m>e:\n\t\t\tm = e\n\treturn m\n")
+runtime.fetch_text_cache.set("py_lib/textwrap.py", "\ndef dedent(text):\n\treturn '\\n'.join([l.lstrip() for l in text.split('\\n')])\n\n")
+runtime.fetch_text_cache.set("py_lib/_stdlib.py", "\ndef sum(list):\n\ts = 0\n\tfor x in list:\n\t\ts = s + x\n\treturn s\n\ndef enumerate(list):\n\ti = 0\n\tfor x in list:\n\t\tyield i,x\n\t\ti = i + 1\n\ndef zip(*lis):\n\tassert len(lis)>0\n\tits = []\n\tfor li in lis:\n\t\tits.append(iter(li))\n\twhile True:\n\t\tres = [next(it) for it in its]\n\t\tif len(res)<len(its):\n\t\t\traise StopIteration()\n\t\tyield res\n\ndef max(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m<e:\n\t\t\tm = e\n\treturn m\n\ndef min(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m>e:\n\t\t\tm = e\n\treturn m\n")
 runtime.fetch_text_cache.set("py_lib/_io.py", "\nclass TextIOWrapper:\n\tdef __init__(self,filename,mode,text):\n\t\tself.mode = mode\n\t\tself.filename = filename\n\t\tself.text = text if text is not None else ''\n\t\tif mode == 'r':\n\t\t\tif text is None:\n\t\t\t\traise FileNotFoundError(f\"[Errno 2] No such file or directory: '{filename}'\")\n\t\t\tself._rp = 0\n\t\t\tself._wp = None\n\t\telif mode == 'w':\n\t\t\tself.text = ''\n\t\t\tself._rp = None\n\t\t\tself._wp = 0\n\t\telif mode == 'x':\n\t\t\tif self.text is not None:\n\t\t\t\traise FileExistsError(f\"[Errno 17] File exists: '{filename}'\")\n\t\t\tself.text = ''\n\t\t\tself._rp = None\n\t\t\tself._wp = 0\n\t\telif mode in ('r+', '+', 'w+'):\n\t\t\tif self.text is None:\n\t\t\t\tself.text = ''\n\t\t\tself._rp = 0\n\t\t\tself._wp = 0\n\t\telif mode in ('a', 'a+'):\n\t\t\tself.text = text\n\t\t\tself._rp = 0\n\t\t\tself._wp = len(text)\n\t\telse:\n\t\t\traise ValueError(f\"Unsupported mode: '{mode}'\")\n\tdef __enter__(self):\n\t\treturn self\n\tdef __exit__(self,ex_type,ex_value,ex_stack):\n\t\tself.close()\n\tdef read(self):\n\t\tif self._rp is None:\n\t\t\traise UnsupportedOperation('not readable')\n\t\tif self._rp > 0:\n\t\t\treturn self.text[self._rp:]\n\t\treturn self.text\n\tdef readline(self):\n\t\tif self._rp is None:\n\t\t\traise UnsupportedOperation('not readable')\n\t\tif self._rp == len(self.text):\n\t\t\treturn None\n\t\trp = self._rp\n\t\twhile (rp < len(self.text)):\n\t\t\tif self.text[rp] == '\\n': break\n\t\t\trp = rp + 1\n\t\ttext = self.text[self._rp:rp]\n\t\tself._rp = rp if rp == len(self.text) else rp+1\n\t\treturn text\n\tdef readlines(self):\n\t\twhile True:\n\t\t\tline = self.readline()\n\t\t\tif line is None: break\n\t\t\tyield line\n\tdef truncate(self):\n\t\tif self._wp is None:\n\t\t\traise UnsupportedOperation('not writable')\n\t\tself.text = ''\n\t\tself._wp = 0\n\tdef write(self,text):\n\t\tif self._wp is None:\n\t\t\traise UnsupportedOperation('not writable')\n\t\ttail = ''\n\t\tif len(self.text) > (self._wp+len(text)):\n\t\t\ttail = self.text[self._wp+len(text):]\n\t\tself.text = (self.text[:self._wp] + text) + tail\n\t\tself._wp = self._wp + len(text)\n\tdef seek(self, p):\n\t\tif self._rp is not None:\n\t\t\tself._rp = p\n\t\tif self._wp is not None:\n\t\t\tself._wp = p\n\tdef close(self):\n\t\tif self.mode != 'r':\n\t\t\t__rt_save_file(self.filename, self.text)\n")
+runtime.fetch_text_cache.set("py_lib/traceback.py", "\ndef format_exc():\n\treturn __rt_format_exc()")
 runtime.fetch_text_cache.set("py_lib/urllib/request.py", "\ndef urlopen(url):\n\treturn open(url)")
 runtime.fetch_text_cache.set("py_lib/random.py", "\ndef random():\n\treturn javascript.Math.random().data()\n\ndef randint(min, max):\n\treturn min + int(random() * ((max+1)-min))\n\ndef choice(list):\n\ti = randint(0,len(list)-1)\n\treturn list[i]\n\ndef choices(a,k,weights=None,cum_weights=None):\n\tif weights is None:\n\t\tweights = [1 for i in range(len(a))]\n\ts = 0\n\tif cum_weights is None:\n\t\tcum_weights = []\n\t\tfor w in weights:\n\t\t\ts = s + w\n\t\t\tcum_weights.append(s)\n\tif s != 0:\n\t\tcum_weights = [w/s for w in cum_weights]\n\tres = []\n\tfor i in range(k):\n\t\tr = random()\n\t\tfor w,x in zip(cum_weights,a):\n\t\t\tif r < w:\n\t\t\t\tres.append(x)\n\t\t\t\tbreak\n\treturn res\n\ndef shuffle(list):\n\tl = len(list)-1\n\tfor i in range(l):\n\t\tr = randint(0,(l-1)-i)\n\t\tt = list[l-i]\n\t\tlist[l-i] = list[r]\n\t\tlist[r] = t\n\ndef sample(l, k):\n\tif (k<0) or (k>len(l)):\n\t\traise ValueError('Sample larger than population or is negative')\n\tidx = [i for i in range(len(l))]\n\tshuffle(idx)\n\tidx = idx[:k]\n\treturn [l[i] for i in idx]\n\n")
 runtime.fetch_text_cache.set("py_lib/threading.py", "import _thread\n\nclass Thread:\n    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):\n        self.target = target\n        self.args = args\n        self.kwargs = {} if kwargs is None else kwargs\n\n    def start(self):\n        _thread.start_new_thread(self.run, ())\n\n    def run(self):\n        self.target(*self.args, **self.kwargs)")
@@ -5900,7 +6051,7 @@ runtime.fetch_text_cache.set("py_lib/os/path.py", "\ndef exists(path):\n\tl = li
 runtime.fetch_text_cache.set("py_lib/math.py", "\n\npi = 3.141592653589793\ne = 2.718281828459045\ntau = 6.283185307179586\ninf = javascript.Infinity.data()\nnan = javascript.Number.NaN.data()\n\ndef ceil(x):\n\treturn javascript.Math.ceil(x).data()\n\ndef floor(x):\n\treturn javascript.Math.floor(x).data()\n\ndef abs(x):\n\treturn javascript.Math.abs(x).data()\n\ndef fabs(x):\n\treturn float(javascript.Math.abs(x).data())\n\ndef factorial(x):\n\tf = 1\n\tfor i in range(2, x+1):\n\t\tf = f * i\n\treturn f\n\ndef exp(x):\n\treturn float(javascript.Math.exp(x).data())\n\t\ndef log(x):\n\treturn float(javascript.Math.log(x).data())\n\t\ndef log2(x):\n\treturn float(javascript.Math.log2(x).data())\n\t\ndef log10(x):\n\treturn float(javascript.Math.log10(x).data())\n\t\ndef pow(x,y):\n\treturn float(javascript.Math.pow(x,y).data())\n\t\ndef sqrt(x):\n\treturn float(javascript.Math.sqrt(x).data())\n\t\ndef acos(x):\n\treturn float(javascript.Math.acos(x).data())\n\t\ndef asin(x):\n\treturn float(javascript.Math.asin(x).data())\n\t\ndef atan(x):\n\treturn float(javascript.Math.atan(x).data())\n\t\t\ndef cos(x):\n\treturn float(javascript.Math.cos(x).data())\n\t\ndef sin(x):\n\treturn float(javascript.Math.sin(x).data())\n\t\ndef tan(x):\n\treturn float(javascript.Math.tan(x).data())\n\t\ndef hypot(x):\n\treturn float(javascript.Math.hypot(x).data())\n\t\n")
 runtime.fetch_text_cache.set("py_lib/_thread.py", "\ndef start_new_thread(func, argv, **kwargs):\n\tif not callable(func):\n\t\traise TypeError('First arg must be callable')\n\tif not isinstance(argv, tuple):\n\t\traise('2nd arg must be a tuple')\n\treturn __rt_start_new_thread(func, argv, **kwargs) # builtin\ndef allocate_lock():\n\treturn lock()\n\ndef exit():\n\traise SystemExit()\n\ndef get_ident():\n\treturn __rt_get_ident() # builtin\n\nclass lock:\n\tdef __init__(self):\n\t\tself.__locked = False\n\tdef __repr__(self):\n\t\treturn f\"<{'locked' if self.__locked else 'unlocked'} _thread.lock object>\"\n\tdef acquire(self, waitflag=1, timeout=-1):\n\t\tif not self.__locked:\n\t\t\tself.__locked = True\n\t\t\treturn True\n\t\tif (waitflag == 0):\n\t\t\treturn False\n\t\treturn __rt_acquire_lock(self, timeout) # builtin\n\tdef release(self):\n\t\tif not self.__locked:\n\t\t\traise RuntimeError('release unlocked lock')\n\t\tself.__locked = False\n\t\t__rt_release_lock(self) # builtin\n\tdef locked(self):\n\t\treturn self.__locked\n")
 runtime.fetch_text_cache.set("py_lib/json.py", "\ndef dumps(obj):\n\treturn javascript.JSON.stringify(obj).data()\n\ndef loads(text):\n\treturn javascript.JSON.parse(text).data()\n\ndef dump(obj, fp):\n\ttext = javascript.JSON.stringify(obj).data()\n\tfp.write(text)\n\ndef load(fp):\n\ttext = fp.read()\n\treturn loads(text)\n\n")
-runtime.fetch_text_cache.set("py_lib/sys.py", "\nargv = __rt_argv()\n\ndef exit(code=0):\n\traise SystemExit()\n")
+runtime.fetch_text_cache.set("py_lib/sys.py", "\nargv = __rt_argv()\n\ndef exit(code=0):\n\traise SystemExit()\n\ndef exc_info():\n\treturn __rt_exc_info()\n")
 let lex = null
 let parser = null
 let tree = null
@@ -5971,7 +6122,9 @@ function jswrt_init() {
 	parser.add_rule(new Rule(_tx_class_id_exp, "#class", "<-", ["'class'", "$id", "'('", "exp+,", "')'", "':'"]))
 	parser.add_rule(new Rule(null, "#def", "<-", ["'def'", "$id", "'('", "')'", "':'"]))
 	parser.add_rule(new Rule(_tx_def_id_param, "#def", "<-", ["'def'", "$id", "'('", "param+,", "')'", "':'"]))
+	parser.add_rule(new Rule(_tx_def_id_param_comma, "#def", "<-", ["'def'", "$id", "'('", "param+,", "','", "')'", "':'"]))
 	parser.add_rule(new Rule(_tx_def_id_param_id, "#def", "<-", ["'def'", "$id", "'('", "param+,", "','", "'**'", "$id", "')'", "':'"]))
+	parser.add_rule(new Rule(_tx_def_id_param_id_comma, "#def", "<-", ["'def'", "$id", "'('", "param+,", "','", "'**'", "$id", "','", "')'", "':'"]))
 	parser.add_rule(new Rule(null, "param", "<-", ["$id"]))
 	parser.add_rule(new Rule(null, "param", "<-", ["'*'", "$id"]))
 	parser.add_rule(new Rule(null, "param", "<-", ["$id", "'='", "exp"]))
@@ -6079,7 +6232,8 @@ function jswrt_init() {
 	parser.add_rule(new Rule(null, "#import", "<-", ["'import'", "$id"]))
 	parser.add_rule(new Rule(null, "#import", "<-", ["'from'", "'.'", "'import'", "$id"]))
 	parser.add_rule(new Rule(null, "#import", "<-", ["'from'", "$id", "'import'", "$id"]))
-	parser.add_rule(new Rule(_tx_with, "#with", "<-", ["'with'", "exp", "'as'", "$id", "':'"]))
+	parser.add_rule(new Rule(_tx_with_exp, "#with", "<-", ["'with'", "exp", "':'"]))
+	parser.add_rule(new Rule(_tx_with_exp_as_id, "#with", "<-", ["'with'", "exp", "'as'", "$id", "':'"]))
 	parser.add_rule(new Rule(_act_global, "#bind", "->", ["'global'", "$id+,"]))
 	parser.add_rule(new Rule(_act_nonlocal, "#bind", "->", ["'nonlocal'", "$id+,"]))
 	parser.add_rule(new Rule(null, "#comment", "->", ["$multitext"]))
@@ -6184,7 +6338,7 @@ function jswrt_init() {
 	__builtins.set("FileExistsError", __make_builtin_class(_FileExistsError, "FileExistsError"))
 	__builtins.set("UnsupportedOperation", __make_builtin_class(_UnsupportedOperation, "UnsupportedOperation"))
 	__builtins.set("EOFError", __make_builtin_class(_EOFError, "EOFError"))
-	__builtins.set("Timeout", __make_builtin_class(_Timeout, "Timeout"))
+	__builtins.set("TimeoutError", __make_builtin_class(_TimeoutError, "TimeoutError"))
 	__builtins.set("NoneType", __make_builtin_class(_NoneType, "NoneType"))
 	__builtins.set("generator", __make_builtin_class(_Generator, "generator"))
 	__builtins.set("int", __make_builtin_class(_Int, "int"))
@@ -6226,6 +6380,8 @@ function jswrt_init() {
 	__builtins.set("dir", __make_builtin_function(__builtin_dir, "dir"))
 	__builtins.set("vars", __make_builtin_function(__builtin_vars, "vars"))
 	__builtins.set("__rt_argv", __make_builtin_function(__rt_argv, "__rt_argv"))
+	__builtins.set("__rt_format_exc", __make_builtin_function(__rt_format_exc, "__rt_format_exc"))
+	__builtins.set("__rt_exc_info", __make_builtin_function(__rt_exc_info, "__rt_exc_info"))
 	__builtins.set("app123_event", __make_builtin_function(__app123_event, "app123_event"))
 }
 

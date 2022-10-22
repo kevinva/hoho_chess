@@ -1,0 +1,19 @@
+
+- 编译和运行信息会显示在浏览器的控制台
+	- 打开控制台的方法: 用google chrome的话可以点击：设置/更多工具/开发者工具
+- 这个的简单python执行环境不包含所有python的功能
+	- 没有定义任何的操作符优先级
+		- x+y+z 必须写成 (x+y)+z
+		- x is not None and x>0 必须写成 (x is not None) and (x>0)
+		- x<y<z 必须写成 (x<y) and (y<z)
+	- 没有定义大部分的魔法函数
+		- 注意: 不支持 __del__
+	- 只能使用以下魔法函数(magic function)
+		- 算数相关的魔法函数
+		- __init__, __repr__, __hash__, __setattr__, __getattr__
+		- __iter__, __next__
+		- __enter__, __exit__
+		- __setitem__, __getitem__
+	- 只实现了部分builtin库和函数
+		- 可以查看控制台报错找出实现了的部分
+		- 需要自行编序并添加库可以把写好的文件放入 web/py_lib/

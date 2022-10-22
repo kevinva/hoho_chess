@@ -1,48 +1,4 @@
 
-import math
-
-def html(tag, attrs=None, style=None):
-	elt = javascript.document.createElement(tag)
-	if attrs is not None:
-		for k,v in attrs.items():
-			elt.setAttribute(k,v)
-	if style is not None:
-		style = ';'.join([f'{k}:{v}' for k,v in style.items()])
-		elt.setAttribute('style',style)
-	return elt
-
-class SettingLarge:
-	offset_x = 29
-	offset_y = 29-3
-	grid_size_x = 59
-	grid_size_y = 61
-	plate_size = 535
-	chess_size = 55
-
-def _distance(x1, y1, x2, y2):
-	return math.sqrt(((x1-x2)**2) + ((y1-y2)**2))
-
-class Plate:
-	def __init__(self, setting):
-		self.setting = setting
-		style = {'opacity':0.65, 'width':setting.plate_size,
-				'position':'absolute','left':'0px','top':'0px'}
-		self.elt = html('img', {'src':'chess-img/plate.png', 'draggable':'false'}, style=style)
-	def pos_to_pixel(self, i, j):
-		x = self.setting.offset_x + (i * self.setting.grid_size_x)
-		y = self.setting.offset_y + ((9 - j) * self.setting.grid_size_y)
-		return x, y	
-	def pixel_to_nearest_pos(self, x, y):
-		index = None
-		min_dis = None
-		for i in range(9):
-			for j in range(10):
-				px, py = self.pos_to_pixel(i, j)
-				dis = _distance(x, y, px, py)
-				if (index is None) or (dis < min_dis):
-					index, min_dis = (i,j), dis
-		return index
-
 class ChessMan:
 	pos_range=(0,0,8,9)
 	def __init__(self, board, player, type, x, y):
@@ -71,7 +27,7 @@ class ChessMan:
 class King(ChessMan):
 	def __init__(self, board, player, x, y):
 		super(King, self).__init__(board, player, 'King', x, y)
-		self.allowed_moves=((-1,0),(1,0),(0,-1),(0,1))  # 允许走的步长坐标
+		self.allowed_moves=((-1,0),(1,0),(0,-1),(0,1))
 		self.pos_range=(3,0,5,2)
 	def can_move_to(self, x, y):
 		if super(King, self).can_move_to(x, y):
@@ -157,12 +113,30 @@ class Pawn(ChessMan):
 		return (self.y>=5) or (x==self.x)
 
 class ChessBoard:
-	def __init__(self, setting=None):
-		if setting is None:
-			setting = SettingLarge()
-		self.setting = setting
-		self._elt = None
-		self._init_board()
+	def __init__(self):
+		self.init_board()
+	def init_board(self):
+		self.board_map = {}
+		def init_red():
+			cs = []
+			cs.append(((0,0),Rock))
+			cs.append(((1,0),Knight))
+			cs.append(((2,0),Bishop))
+			cs.append(((3,0),Guard))
+			cs.append(((4,0),King))
+			cs.append(((5,0),Guard))
+			cs.append(((6,0),Bishop))
+			cs.append(((7,0),Knight))
+			cs.append(((8,0),Rock))
+			cs.append(((1,2),Cannon))
+			cs.append(((7,2),Cannon))
+			for i in range(5):
+				cs.append(((i*2,3),Pawn))
+			for (x,y),cm_type in cs:
+				self.board_map[(x,y)] = cm_type(self, 'Red', x, y)
+		init_red()
+		self.rotate_board()
+		init_red()
 
 	def rotate_board(self):
 		board_map = [((i,j),chess) for (i,j),chess in self.board_map.items()]
@@ -187,29 +161,6 @@ class ChessBoard:
 			text[9-j][i] = name[f'{chess.player}-{chess.type}']
 		return '\n'.join([''.join([c for c in l]) for l in text])
 
-	def _init_board(self):
-		self.board_map = {}
-		def init_red():
-			cs = []
-			cs.append(((0,0),Rock))
-			cs.append(((1,0),Knight))
-			cs.append(((2,0),Bishop))
-			cs.append(((3,0),Guard))
-			cs.append(((4,0),King))
-			cs.append(((5,0),Guard))
-			cs.append(((6,0),Bishop))
-			cs.append(((7,0),Knight))
-			cs.append(((8,0),Rock))
-			cs.append(((1,2),Cannon))
-			cs.append(((7,2),Cannon))
-			for i in range(5):
-				cs.append(((i*2,3),Pawn))
-			for (x,y),t in cs:
-				self.board_map[(x,y)] = t(self, 'Red', x, y)
-		init_red()
-		self.rotate_board()
-		init_red()
-
 	def _chesses_between(self, x1, y1, x2, y2):
 		if (x1!=x2) and (y1!=y2):
 			return 0
@@ -221,137 +172,83 @@ class ChessBoard:
 				for x in (range(x1+1,x2) if x1<x2 else range(x2+1,x1))]
 		return len([c for c in cs if c is not None])
 
-	def _refresh_elt(self):
-		while self._elt.lastChild.data() is not None:
-			self._elt.removeChild(self._elt.lastChild)
-		self.plate = Plate(self.setting)
-		self._elt.appendChild(self.plate.elt)
-		self.img_map = {}
-		size = (self.setting.chess_size / 2)
-		for (i,j), chess in self.board_map.items():
-			x,y = self.plate.pos_to_pixel(i,j)
-			style = {'position':'absolute','left':f'{x-size}px','top':f'{y-size}px','width':f'{self.setting.chess_size}px','opacity':0.95, 'z-index':'0'}
-			img = html('img', {'src':f'chess-img/{chess.player}_{chess.type.lower()}.png','draggable':'false'}, style)
-			self._elt.appendChild(img)
-			self.img_map[(i,j)]=img
 
-	def elt(self):
-		if self._elt is None:
-			self._elt = html('div')
-			self._refresh_elt()
-		return self._elt
+def _chess_moves(chess):
+	moves = []
+	if chess.type=='Rock':
+		for x in range(chess.x+1,9):
+			if chess.can_move_to(x, chess.y):
+				moves.append((x, chess.y))
+			else:
+				break
+		for x in range(chess.x-1,-1,-1):
+			if chess.can_move_to(x, chess.y):
+				moves.append((x, chess.y))
+			else:
+				break
+		for y in range(chess.y+1, 10):
+			if chess.can_move_to(chess.x, y):
+				moves.append((chess.x, y))
+			else:
+				break
+		for y in range(chess.y-1, -1, -1):
+			if chess.can_move_to(chess.x, y):
+				moves.append((chess.x, y))
+			else:
+				break
+	elif chess.type=='Cannon':
+		for x in range(0, 9):
+			if chess.can_move_to(x, chess.y):
+				moves.append((x, chess.y))
+		for y in range(0, 10):
+			if chess.can_move_to(chess.x, y):
+				moves.append((chess.x, y))
+	elif chess.type in ('Knight','Guard','Bishop','Pawn','King'):
+		for dx,dy in chess.allowed_moves:
+			if chess.can_move_to(chess.x+dx, chess.y+dy):
+				moves.append((chess.x+dx, chess.y+dy))
+		if chess.type=='King':
+			for y in (7,8,9):
+				if chess.can_move_to(chess.x, y):
+					moves.append((chess.x, y))
+	else:
+		raise
+	return moves
 
-class Controller:
-	def __init__(self, chess_board):
-		self.chess_board = chess_board
-		elt = chess_board.elt()
-		elt.bind('mouseup', self.onmouseup)
-		elt.bind('mousedown', self.onmousedown)
-		elt.bind('mousemove', self.onmousemove)
-		self.restart()
+def get_next_moves(board):
+	chesses = [chess for _, chess in board.board_map.items()]
+	move_to_board = {}
+	for chess in chesses:
+		if chess.player=='Black': continue
+		for x, y in _chess_moves(chess):
+			board_key = []
+			for c in chesses:
+				if c is chess:
+					board_key.append((c.player, c.type, x, y))
+				elif (c.x==x) and (c.y==y):
+					pass
+				else:
+					board_key.append((c.player, c.type, c.x, c.y))
+			board_key.sort()
+			move_key = (chess.player, chess.type, chess.x, chess.y, x, y)
+			move_to_board[move_key] = tuple(board_key)
+	return move_to_board
 
-	def restart(self):
-		self.dragging_chess = None
-		self.player = 'Red'
-		self.chess_board._init_board()
-		self.chess_board._refresh_elt()
-		self.round_count = 0
+def reverse_boardkey(board_key):
+	reversed = [('Red' if p=='Black' else 'Black', t, 8-x, 9-y) for p,t,x,y in board_key]
+	reversed.sort()
+	return tuple(reversed)
 
-	def onmousedown(self, ev):
-		x, y = ev.x.data(), ev.y.data()
-		i, j = self.chess_board.plate.pixel_to_nearest_pos(x, y)
-		# print(f'hoho: mousedown=({i}, {j})')
-		px, py = self.chess_board.plate.pos_to_pixel(i, j)
-		if _distance(x, y, px, py) > self.chess_board.setting.chess_size:
-			return
-		if (i,j) not in self.chess_board.board_map:
-			return
-		chess = self.chess_board.board_map[(i,j)]
-		if chess.player!=self.player:
-			return False
-		self.dragging_chess = chess
-		img = self.chess_board.img_map[(i,j)]
-		setattr(img.style, 'z-index', '1')
+def board_from_key(board_key):
+	board = ChessBoard()
+	board.board_map = {}
+	types = {'Rock':Rock, 'Knight':Knight, 'Bishop':Bishop, 
+				'Guard':Guard, 'King':King, 'Cannon':Cannon, 'Pawn':Pawn}
+	for player, type, x, y in board_key:
+		board.board_map[(x,y)] = types[type](board, player, x, y)
+	return board
 
-	def _can_move_chess_to(self, chess, i2, j2):
-		if self.player=='Black':
-			i2,j2 = 8-i2, 9-j2
-			self.chess_board.rotate_board()
-		succ = chess.can_move_to(i2,j2)
-		if self.player=='Black':
-			self.chess_board.rotate_board()
-		return succ
-
-	def _move_chess_to(self, chess, i2, j2):
-		if not self._can_move_chess_to(chess, i2, j2):
-			return False, None
-		i1, j1 = chess.x, chess.y
-		chess.x, chess.y = i2, j2
-		img = self.chess_board.img_map[(i1,j1)]
-		del self.chess_board.board_map[(i1,j1)]
-		del self.chess_board.img_map[(i1,j1)]
-		chess0 = None
-		if (i2,j2) in self.chess_board.board_map:
-			chess0 = self.chess_board.board_map[(i2,j2)]
-			del self.chess_board.board_map[(i2,j2)]
-			img0 = self.chess_board.img_map[(i2,j2)]
-			del self.chess_board.img_map[(i2,j2)]
-			self.chess_board.elt().removeChild(img0)
-		self.chess_board.board_map[(i2,j2)] = chess
-		self.chess_board.img_map[(i2,j2)] = img
-		return True, chess0
-
-	def _move_chess_img(self, chess, x0, y0, animation_time=.3, animation_frames=25):
-		i, j = chess.x, chess.y
-		img = self.chess_board.img_map[(i,j)]
-		px, py = self.chess_board.plate.pos_to_pixel(i, j)
-		size = self.chess_board.setting.chess_size/2
-		player = self.player
-		dragging_chess = self.dragging_chess
-		self.player = None
-		self.dragging_chess = None
-		import time
-		frames = int(animation_frames*animation_time)
-		for i in range(frames):
-			x = x0+((px-x0)*((i+1)/frames))
-			y = y0+((py-y0)*((i+1)/frames))
-			img.style.left = f'{x-size}px'
-			img.style.top = f'{y-size}px'
-			time.sleep(1/animation_frames)
-		assert x==px, (x,px)
-		# print(f'hoho: move_chess_img: x={x}, y={y}')
-		setattr(img.style, 'z-index', '0')
-		self.player = player
-		self.dragging_chess = dragging_chess
-
-	def onmouseup(self, ev):
-		if self.dragging_chess is None: return
-		x, y = ev.x.data(), ev.y.data()
-		i2, j2 = self.chess_board.plate.pixel_to_nearest_pos(x, y)
-		px, py = self.chess_board.plate.pos_to_pixel(i2, j2)
-		near = _distance(x, y, px, py) < self.chess_board.setting.chess_size
-		if near:
-			succ, eaten = self._move_chess_to(self.dragging_chess, i2, j2)
-			if succ:
-				if (eaten is not None) and (eaten.type=='King'):
-					javascript.alert(f"{'红' if self.player=='Red' else '黑'}方胜出!")
-					self.restart()
-					return
-				self.player = 'Red' if self.player=='Black' else 'Black'
-		self._move_chess_img(self.dragging_chess, x, y)
-		self.dragging_chess = None
-
-	def onmousemove(self, ev):
-		if self.dragging_chess is None: return
-		i,j = self.dragging_chess.x, self.dragging_chess.y
-		img = self.chess_board.img_map[(i,j)]
-		size = self.chess_board.setting.chess_size/2
-		img.style.left = f'{ev.x.data()-size}px'
-		img.style.top = f'{ev.y.data()-size}px'
-
-
-def run_app():
-	chess_board = ChessBoard()
-	javascript.document.body.appendChild(chess_board.elt())
-	Controller(chess_board)
-	
+def board_key(board):
+	key = [(c.player, c.type, c.x, c.y) for _, c in board.board_map.items()]
+	key.sort()
+	return tuple(key)
