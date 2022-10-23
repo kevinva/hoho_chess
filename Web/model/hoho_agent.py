@@ -350,6 +350,8 @@ def train(agent):
 
     agent_current = Player()
     agent_new = Player()
+    agent_current.version = agent.version
+    agent_new.version = agent.version
     agent_current.agent_net.load_state_dict(agent.agent_net.state_dict())
     agent_new.agent_net.load_state_dict(agent.agent_net.state_dict())
 
