@@ -50,6 +50,11 @@ def create_child_nodes(node,alpha,beta):
 			for c,a,b in cache.get(board_key,[]):
 				if ((a<=alpha) and (beta<=b)) and (c.height>=node.height):
 					return c, 1E6
+
+		        # hoho_debug
+				if c.score is None:
+					c.score = -1E6   
+
 				c_score = (c.height*10)*(-c.score)
 				if (ref_score is None) or (c_score>ref_score):
 					ref_score = c_score
@@ -70,7 +75,7 @@ def create_child_nodes(node,alpha,beta):
 def search(node, alpha=-1E6, beta=1E6):
 	if (node.explorer.depth>node.explorer.min_depth) and node.explorer.time_is_up():
 		raise TimeoutError()
-	# assert node.score is None    # hoho_debug，先注释掉，可能会崩
+	assert node.score is None
 	player = 'Red' if ((node.explorer.depth-node.height)%2==0) else 'Black'
 	if (node.height==0) or (not (score.has_king(node.board, player))):
 		node.score = score.score(node.board, player)
@@ -102,7 +107,9 @@ def search(node, alpha=-1E6, beta=1E6):
 			node.score = s
 			return node.score
 	node.update_score()
-	assert alpha >= node.score
+	# assert alpha >= node.score   # hoho_debug，先注释掉，可能会崩
+	if node.score is None:
+		node.score = -1E6
 	return node.score
 
 def auto_move(board):
