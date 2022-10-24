@@ -40,7 +40,7 @@ def ajax_(request_, response_, route_args_):
 		global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
 
 		if agent_update_accepted and (agent_update_path is not None):
-			hoho_agent.load_model_from_path(model_path)
+			hoho_agent.load_model_from_path(agent_update_path)
 			LOGGER.info(f'Agent updated! version={hoho_agent.version}')
 			
 			agent_update_accepted = False
