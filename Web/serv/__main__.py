@@ -1,17 +1,100 @@
 
 import json, os
 import time
-from web.py_lib import auto_chess
+import queue
+
 import torch
 import torch.multiprocessing as mp
-import queue
 import numpy as np
+
+from web.py_lib import chess, auto_chess
+from .lib.http_ import Http_
 
 from model.hoho_utils import *
 from model.hoho_agent import *
 from model.hoho_mcts import *
 from model.hoho_cchessgame import *
 from model.hoho_config import *
+
+
+def go_to_new_round(argv):
+	global hoho_game, hoho_mcts, hoho_agent, hoho_round
+	global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
+
+	if agent_update_accepted and (agent_update_path is not None):
+		hoho_agent.load_model_from_path(model_path)
+		LOGGER.info(f'Agent updated! version={hoho_agent.version}')
+		
+		agent_update_accepted = False
+		agent_update_path = None
+
+	hoho_mcts = MCTS(start_player=PLAYER_RED)
+	hoho_game = CChessGame()
+
+	match_count += 1
+	win_player = argv[2]
+
+	if hoho_round is not None:
+		if win_player == 'Red':
+			win_count += 1
+			hoho_round.update_winner('Red')
+		elif win_player == 'Black':
+			hoho_round.update_winner('Black')
+		else:
+			hoho_round.update_winner()
+
+		if hoho_round.size() > 0:
+			hoho_replay_buffer.add_round(hoho_round)
+
+	hoho_round = Round(int(time.time()))
+
+	if hoho_replay_buffer.size() >= 1000:
+		hoho_replay_buffer.save({'model_version': hoho_agent.version})
+		hoho_replay_buffer.clear()
+
+	state = hoho_game.state
+	pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
+	_, z, _ = hoho_game.step(action)
+	hoho_round.add_red_step(state, pi.tolist())
+
+	move = convert_my_action_to_webgame_move(action)
+	LOGGER.info(f'get red move={move}')
+
+	return move
+
+def go_on_gaming(func_name, argv):
+	global hoho_game, hoho_mcts, hoho_agent, hoho_round
+	global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
+
+	black_move = rpc_registry[func_name](*argv)
+	LOGGER.info(f'get black move={black_move}')  # 注意这里黑方走法，已经翻转了棋盘
+	if black_move is None:
+		black_move = []
+		LOGGER.error('black_move is None!')
+	else:
+		black_state = hoho_game.state
+		black_action = convert_webgame_opponent_move_to_action(black_move)
+	
+		# 模型只关心红方，这里强制造一个确定性黑方走子策略
+		black_pi = np.zeros((ACTION_DIM,))
+		black_pi[ACTIONS_2_INDEX[black_action]] = 1.0
+
+		hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
+		black_next_state, black_z, _ = hoho_game.step(black_action)
+		hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist())  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
+		LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, to state={black_next_state}')
+
+		# 这里得到黑方的走子，就可以马上开始跑我方（红方）的模型
+		red_state = hoho_game.state
+		red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
+		red_next_state, red_z, _ = hoho_game.step(red_action)
+		hoho_round.add_red_step(red_state, red_pi.tolist())
+		LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_next_state}')
+
+		red_move = convert_my_action_to_webgame_move(red_action)
+		LOGGER.info(f'get red move={red_move}')
+
+	return black_move, red_move
 
 
 def __dir__(request_, response_, route_args_):
@@ -27,93 +110,30 @@ def home(request_, response_, route_args_):
 	content = '<script>location.href="web/index.html"</script>'
 	return response_.write_response_OK_(content_type_='text/html', content_=content, charset_='UTF-8')
 
+
 def ajax_(request_, response_, route_args_):
+	global rpc_registry
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
+
 	data = json.loads(params_['data'])
-	data_board = data[0]
-	round_count = data[1]
+	assert 'func_name' in data, "'func_name' should be included in data"
+	assert 'argv' in data, "'argv' should be included in data"
+
+	func_name = data['func_name']
+	assert func_name in rpc_registry, f'服务中没有登记函数 {func_name}, 所有函数: {", ".join(rpc_registry.keys())}'
+
+	argv = data['argv']
+	data_board = argv[0]
+	round_count = argv[1]
 	json_ = None
 
 	if data_board == 'Action!': # 开始！
-		global hoho_game, hoho_mcts, hoho_agent, hoho_round
-		global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
-
-		if agent_update_accepted and (agent_update_path is not None):
-			hoho_agent.load_model_from_path(model_path)
-			LOGGER.info(f'Agent updated! version={hoho_agent.version}')
-			
-			agent_update_accepted = False
-			agent_update_path = None
-
-		hoho_mcts = MCTS(start_player=PLAYER_RED)
-		hoho_game = CChessGame()
-
-		match_count += 1
-		win_player = data[2]
-
-		if hoho_round is not None:
-			if win_player == 'Red':
-				win_count += 1
-				hoho_round.update_winner('Red')
-			elif win_player == 'Black':
-				hoho_round.update_winner('Black')
-			else:
-				hoho_round.update_winner()
-
-			if hoho_round.size() > 0:
-				hoho_replay_buffer.add_round(hoho_round)
-
-		hoho_round = Round(int(time.time()))
-
-		if hoho_replay_buffer.size() >= 1000:
-			hoho_replay_buffer.save({'model_version': hoho_agent.version})
-			hoho_replay_buffer.clear()
-
-		state = hoho_game.state
-		pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-		_, z, _ = hoho_game.step(action)
-		hoho_round.add_red_step(state, pi.tolist())
-
-		move = convert_my_action_to_webgame_move(action)
-		LOGGER.info(f' get red move={move}')
-
-		json_ = json.dumps(move)
+		red_move = go_to_new_round(argv)
+		json_ = json.dumps(red_move)
 	else:
 		start_time = time.time()
-
-		board_key = data_board
-		# print(f'hoho: [ajax_] board_key={board_key}')
-		board = auto_chess._board_from_key(board_key)
-		black_move = auto_chess.auto_move(board)
-		LOGGER.info(f'get black move={black_move}')  # 注意这里黑方走法，已经翻转了棋盘
-		if black_move is None:
-			black_move = []
-			LOGGER.error('black_move is None!')
-		else:
-			black_state = hoho_game.state
-			black_action = convert_webgame_opponent_move_to_action(black_move)
-
-			# hoho_todo: 再验证black_move, black_action的正确性
-		
-			# 模型只关心红方，这里强制造一个确定性黑方走子策略
-			black_pi = np.zeros((ACTION_DIM,))
-			black_pi[ACTIONS_2_INDEX[black_action]] = 1.0
-
-			hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
-			black_next_state, black_z, _ = hoho_game.step(black_action)
-			hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist())  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
-			LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, to state={black_next_state}')
-
-			# 这里得到黑方的走子，就可以马上开始跑我方的模型
-			red_state = hoho_game.state
-			red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-			red_next_state, red_z, _ = hoho_game.step(red_action)
-			hoho_round.add_red_step(red_state, red_pi.tolist())
-			LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_next_state}')
-
-			red_move = convert_my_action_to_webgame_move(red_action)
-			LOGGER.info(f'get red move={red_move}')
+		black_move, red_move = go_on_gaming(func_name, argv)
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 
@@ -145,7 +165,6 @@ def ajax_(request_, response_, route_args_):
 
 
 def start_server_(port_, max_threads_):
-	from .lib.http_ import Http_
 	http_ = Http_(ip_='0.0.0.0', port_=port_, web_path_='web', max_threads_=max_threads_)
 	http_.add_route_('/ajax', ajax_, 'GET')
 	http_.add_route_('/ajax', ajax_, 'POST')
@@ -201,6 +220,14 @@ def setup_seed(seed):
 	np.random.seed(seed)
 	random.seed(seed)
 	torch.backends.cudnn.deterministic = True
+
+def rpc_auto_move(board_key):
+	board = chess.board_from_key(board_key)
+	return auto_chess.auto_move(board)
+
+rpc_registry = {}
+# 登记函数 RPC auto_move
+rpc_registry['rpc_auto_move'] = rpc_auto_move
 
 if __name__ == '__main__':
 	setup_seed(2021)

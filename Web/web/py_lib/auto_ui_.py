@@ -113,6 +113,7 @@ class Controller(ui_.Controller):
 		red_move = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
 		self.hoho_red_turn(self, red_move)
 
+
 def run_app():
 	chess_board = ui_.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
