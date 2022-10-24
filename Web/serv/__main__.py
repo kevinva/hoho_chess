@@ -62,11 +62,11 @@ def go_to_new_round(argv):
 
 	return move
 
-def go_on_gaming(func_name, argv):
+def go_on_gaming(func_name, data_board):
 	global hoho_game, hoho_mcts, hoho_agent, hoho_round
 	global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
 
-	black_move = rpc_registry[func_name](*argv)
+	black_move = rpc_registry[func_name](*data_board)
 	LOGGER.info(f'get black move={black_move}')  # 注意这里黑方走法，已经翻转了棋盘
 	if black_move is None:
 		black_move = []
@@ -133,7 +133,7 @@ def ajax_(request_, response_, route_args_):
 		json_ = json.dumps(red_move)
 	else:
 		start_time = time.time()
-		black_move, red_move = go_on_gaming(func_name, argv)
+		black_move, red_move = go_on_gaming(func_name, [data_board])   # data_board需要重新包一下
 		json_data = {'Black': list(black_move), 'Red': list(red_move)}
 		json_ = json.dumps(json_data)
 

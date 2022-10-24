@@ -8,7 +8,7 @@ def auto_move(board):
 		return min_max.auto_move(board)
 	elif sys.argv[1]=='alpha_beta':
 		from . import alpha_beta
-		print(f'argv: {sys.argv}')
+		# print(f'argv: {sys.argv}')
 		return alpha_beta.auto_move(board)
 	else:
 		print(f'正在调用 {sys.argv[1]}')

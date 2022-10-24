@@ -106,7 +106,7 @@ def search(node, alpha=-1E6, beta=1E6):
 	return node.score
 
 def auto_move(board):
-	print(f'alpha_beta: {board.__dict__}')
+	# print(f'alpha_beta: {board.__dict__}')
 	_, best_move = BoardExplorer(3, 10).run(board) # 搜索深度，搜索秒数
 	print(best_move)
 	return None if best_move is None else best_move[2:]

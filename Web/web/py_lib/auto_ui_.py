@@ -1,8 +1,8 @@
 import time
-from Web.serv.__main__ import ajax_
 from . import ui_
 from . import spinner_
 from . import chess
+from . import ajax_
 
 HOHO_RESTRICT_ROUND_NUM = 100  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
 
@@ -48,7 +48,6 @@ class Controller(ui_.Controller):
 		self.chess_board.rotate_board()
 		# move = auto_move(self.chess_board)
 		try:
-			from . import ajax_
 			board_key = chess.board_key(self.chess_board) # board_key 可变为 JSON
 			move_dict = ajax_.rpc.rpc_auto_move(board_key, self.round_count)
 			move_black = move_dict.get('Black')
@@ -61,7 +60,7 @@ class Controller(ui_.Controller):
 		if move_black is None:
 			# javascript.alert("红方胜出!")
 			self.restart()
-			self.hoho_red_turn(winner = 'Red')
+			self.hoho_reset(winner = 'Red')
 			return
 
 		# print(f'blacks_ture: {move_black}')
@@ -76,12 +75,13 @@ class Controller(ui_.Controller):
 		if (captured is not None) and (captured.type=='King'):
 			# javascript.alert("黑方胜出!")
 			self.restart()
-			self.hoho_red_turn(winner = 'Black')
+			self.hoho_reset(winner = 'Black')
 			return
 
 		self.player = 'Red'
 		move_red = move_dict.get('Red')
 		self.hoho_red_turn(move_red)
+
 
 	def hoho_red_turn(self, move):
 		if move is None:
@@ -101,7 +101,7 @@ class Controller(ui_.Controller):
 		if (captured is not None) and (captured.type=='King'):
 			# javascript.alert("红方胜出!")
 			self.restart()
-			self.hoho_red_turn(winner = '')
+			self.hoho_reset(winner = '')
 			return
 
 		self.player = 'Black'
@@ -111,7 +111,7 @@ class Controller(ui_.Controller):
 	def hoho_reset(self, winner = None):
 		self.round_count = 0
 		red_move = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
-		self.hoho_red_turn(self, red_move)
+		self.hoho_red_turn(red_move)
 
 
 def run_app():
