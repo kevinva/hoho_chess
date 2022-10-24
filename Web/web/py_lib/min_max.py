@@ -10,7 +10,7 @@ class BoardNode:
 		self.height = height
 		self.children = {}
 		self.parents = []
-		self.score = None
+		self.score = -1E6 # None   # hoho_debug
 		self.best_move = None
 
 	def update_score(self):
@@ -67,7 +67,7 @@ def create_child_nodes(node):
 		child.parents.append(node)
 
 def search(node):
-	assert node.score is None
+	# assert node.score is None   # hoho_debug
 	player = 'Red' if ((node.explorer.depth-node.height)%2==0) else 'Black'
 	if (node.height==0) or (not (score.has_king(node.board, player))):
 		node.score = score.score(node.board, player)
