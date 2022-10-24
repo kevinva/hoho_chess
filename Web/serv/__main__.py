@@ -206,9 +206,9 @@ def find_top_version_model_path():
 	for filename in os.listdir(model_dir_path):
 		name = filename.split('.')[0]
 		items = name.split('_')
-		if len(items) == 5:
-			if int(items[4]) > top_version:
-				top_version = int(items[4])
+		if len(items) == 3:
+			if int(items[2]) > top_version:
+				top_version = int(items[2])
 				result_path = os.path.join(model_dir_path, filename)
           
 	return result_path
@@ -250,11 +250,11 @@ if __name__ == '__main__':
 	if model_path is not None:
 		hoho_agent.load_model_from_path(model_path)
 
-	# LOGGER.info(f'[pid={os.getpid()}] start server!')
-	# start_server_(8000, 100)
+	LOGGER.info(f'[pid={os.getpid()}] start server!')
+	start_server_(8000, 100)
 
 	#hoho_test
-	update_agent()
+	# update_agent()
 
 
 

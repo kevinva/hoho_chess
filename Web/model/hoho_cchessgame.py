@@ -81,9 +81,9 @@ class ChessDataset(Dataset):
                             all_data_list.extend(trajectory)
                 else:
                     name = filename.split('.')[0]
-                    items = name.split('_')
-                    if len(items) == 5:
-                        check_version = int(items[4])
+                    items = name.split('_')  
+                    if len(items) == 3:
+                        check_version = int(items[2])
                         if version == check_version:
                             with open(os.path.join(dirpath, filename), 'r') as f:
                                 jsonstr = f.read()

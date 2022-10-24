@@ -68,10 +68,13 @@ class Player:
 
     def load_model_from_path(self, model_path):
         filename = os.path.basename(model_path)
+        if not filename.startswith(MODEL_FILE_PREFIX):
+            return
+
         filename = filename.split('.')[0]
         items = filename.split('_')
-        if len(items) == 5:
-            self.version = int(items[4])
+        if len(items) == 3:
+            self.version = int(items[2])
 
         checkpoint = torch.load(model_path)
         self.agent_net.load_state_dict(checkpoint)
