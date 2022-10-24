@@ -10,7 +10,7 @@ class BoardNode:
 		self.height = height
 		self.children = {}
 		self.parents = []
-		self.score = None
+		self.score = -1E6 # None    # 赋值None，可能会崩
 		self.best_move = None
 
 	def update_score(self):
