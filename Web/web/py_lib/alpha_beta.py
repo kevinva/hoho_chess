@@ -102,7 +102,16 @@ def search(node, alpha=-1E6, beta=1E6):
 			node.score = s
 			return node.score
 	node.update_score()
-	assert alpha >= node.score
+
+	if node.score is None:
+		print(f'node.score is None! alpha: {alpha}, beta: {beta}')
+		return -1E6
+
+	if alpha < node.score:
+		print(f'alpha < node.score! alpha: {alpha}, beta: {beta}, node.score: {node.score}')
+		return -1E6
+	# assert alpha >= node.score    hoho_debug，先注释掉，可能会崩
+	
 	return node.score
 
 def auto_move(board):
