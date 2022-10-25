@@ -129,7 +129,7 @@ class Controller(ui_.Controller):
 
 	def hoho_reset(self, winner = None):
 		global match_count
-		math_count = match_count + 1
+		match_count = match_count + 1
 		self.round_count = 0
 		red_move = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
 		self.hoho_red_turn(red_move)
