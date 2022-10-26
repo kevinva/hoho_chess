@@ -6,13 +6,13 @@ from . import ajax
 import heapq
 
 HOHO_RESTRICT_ROUND_NUM = 100  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
-
+match_count = 0
 
 class Controller(chess.Controller):
 	
-	def __init__(self, board):
+	def __init__(self, board, history_winner = None):
 		super(Controller, self).__init__(board)
-		self.hoho_startup()
+		self.hoho_startup(win_player = history_winner)
 
 	def onmouseup(self, ev):
 		if self.dragging_chess is None: return
@@ -38,8 +38,11 @@ class Controller(chess.Controller):
 	def blacks_turn(self):
 		self.round_count = self.round_count + 1
 		if self.round_count >= HOHO_RESTRICT_ROUND_NUM:
-			self.restart()
-			self.hoho_startup()
+			if should_restart(match_count):
+				restart_app()
+			else:
+				self.restart()
+				self.hoho_startup()
 			return
 
 		spinner.show()
@@ -51,8 +54,11 @@ class Controller(chess.Controller):
 		spinner.hide()
 		if move_black is None:
 			# javascript.alert("红方胜出!")
-			self.restart()
-			self.hoho_startup('Red')
+			if should_restart(match_count):
+				restart_app(winner = 'Red')
+			else:
+				self.restart()
+				self.hoho_startup('Red')
 			return
 
 		i1,j1,i2,j2 = move_black
@@ -65,8 +71,11 @@ class Controller(chess.Controller):
 		self._move_chess_img(chess, px, py)
 		if (eaten is not None) and (eaten.type=='King'):
 			# javascript.alert("黑方胜出!")
-			self.restart()
-			self.hoho_startup('Black')
+			if should_restart(match_count):
+				restart_app(winner = 'Black')
+			else:
+				self.restart()
+				self.hoho_startup('Black')
 			return
 
 		self.player = 'Red'
@@ -77,8 +86,11 @@ class Controller(chess.Controller):
 	def hoho_red_turn(self, move):
 		if move is None:
 			# javascript.alert("黑方胜出!")
-			self.restart()
-			self.hoho_startup('Black')
+			if should_restart(match_count):
+				restart_app(winner = 'Black')
+			else:
+				self.restart()
+				self.hoho_startup('Black')
 			return
 
 		time.sleep(0.1)
@@ -91,8 +103,11 @@ class Controller(chess.Controller):
 		self._move_chess_img(chess, px, py)
 		if (eaten is not None) and (eaten.type == 'King'):
 			# javascript.alert('红方胜出！')
-			self.restart()
-			self.hoho_startup('Red')
+			if should_restart(match_count):
+				restart_app(winner = 'Red')
+			else:
+				self.restart()
+				self.hoho_startup('Red')
 			return
 
 		self.player = 'Black'
@@ -100,6 +115,9 @@ class Controller(chess.Controller):
 
 
 	def hoho_startup(self, win_player=None):
+		global match_count
+		match_count = match_count + 1
+
 		time.sleep(0.1)
 
 		done = False
@@ -205,6 +223,9 @@ def _board_key(board):
 	board_key = [(c.player, c.type, c.x, c.y) for _, c in board.board_map.items()]
 	board_key.sort()
 	return tuple(board_key)
+
+def should_restart(match_count):
+	return match_count > 10
 
 
 class BoardNode:
@@ -394,3 +415,11 @@ def run_app():
 	controller = Controller(chess_board)
 
 
+# 为避免嵌套调用太深，适时将重新创建整个Controller
+def restart_app(winner = None):
+	print(f'hoho: restart_app!')
+
+	chess_board = chess.ChessBoard()
+	javascript.document.body.removeChild(javascript.document.getElementById("hoho_board"))
+	javascript.document.body.insertBefore(chess_board.elt(), javascript.document.body.lastChild)
+	Controller(chess_board, history_winner = winner)
