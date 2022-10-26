@@ -82,15 +82,15 @@ class ChessDataset(Dataset):
                 else:
                     name = filename.split('.')[0]
                     items = name.split('_')
-                    if len(items) == 5:
-                        check_version = int(items[4])
+                    if len(items) == 3:
+                        check_version = int(items[2])
                         if version == check_version:
                             with open(os.path.join(dirpath, filename), 'r') as f:
                                 jsonstr = f.read()
                                 trajectories = json.loads(jsonstr)
                                 for trajectory in trajectories:
                                     all_data_list.extend(trajectory)
-                    elif len(items) < 4:
+                    elif len(items) < 3:
                         # 没有版本后缀的默认为version 0
                         if version == 0:
                             with open(os.path.join(dirpath, filename), 'r') as f:

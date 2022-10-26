@@ -186,11 +186,16 @@ def find_top_version_model_path():
 	top_version = 0
 	for filename in os.listdir(model_dir_path):
 		name = filename.split('.')[0]
+		if not name.startswith(MODEL_FILE_PREFIX):
+			continue
+
 		items = name.split('_')
-		if len(items) == 5:
-			if int(items[4]) > top_version:
-				top_version = int(items[4])
-				result_path = os.path.join(model_dir_path, filename)
+		if len(items) != 3:
+			continue
+
+		if int(items[2]) > top_version:
+			top_version = int(items[2])
+			result_path = os.path.join(model_dir_path, filename)
           
 	return result_path
 	

@@ -69,10 +69,14 @@ class Player:
     def load_model_from_path(self, model_path):
         filename = os.path.basename(model_path)
         filename = filename.split('.')[0]
+        if not filename.startswith(MODEL_FILE_PREFIX):
+            return
+            
         items = filename.split('_')
-        if len(items) == 5:
-            self.version = int(items[4])
+        if len(items) != 3:
+            return
 
+        self.version = int(items[2])
         checkpoint = torch.load(model_path)
         self.agent_net.load_state_dict(checkpoint)
         self.optimizer = optim.Adam(self.agent_net.parameters(), lr=LEARNING_RATE, weight_decay=L2_REGULARIZATION)
