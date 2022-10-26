@@ -138,7 +138,7 @@ class Controller(ui_.Controller):
 
 
 def should_restart(match_count):
-	return match_count % 20 == 0
+	return (match_count%20)==0
 
 def run_app():
 	chess_board = ui_.ChessBoard()
