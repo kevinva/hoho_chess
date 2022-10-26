@@ -168,7 +168,7 @@ class Round:
                         reward_list.append(reward)
             
             reward_tensor = torch.tensor(reward_list).float()
-            reward_ratios = F.softmax(reward_tensor)
+            reward_ratios = F.softmax(reward_tensor, dim = 0)
             rewards = (reward_ratios * total_reward).tolist()
 
             if winner == 'Black':
