@@ -138,19 +138,14 @@ class Controller(ui_.Controller):
 
 
 def should_restart(match_count):
-	return match_count > 99999
+	return match_count % 20 == 0
 
 def run_app():
 	chess_board = ui_.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
 	Controller(chess_board)
 
-# 为避免嵌套调用太深，适时将重新创建整个Controller
+# 为避免嵌套调用太深，适时将刷新整个网页
 def restart_app(winner = None):
-	print(f'hoho: restart_app!')
-
-	chess_board = ui_.ChessBoard()
-	javascript.document.body.removeChild(javascript.document.getElementById("hoho_board"))
-	javascript.document.body.insertBefore(chess_board.elt(), javascript.document.body.lastChild)
-	Controller(chess_board, history_winner = winner)
+	javascript.location.reload()  
 
