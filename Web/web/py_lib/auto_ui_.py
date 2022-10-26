@@ -40,8 +40,9 @@ class Controller(ui_.Controller):
 
 
 	def blacks_turn(self):
+		global match_count
 		if self.round_count >= HOHO_RESTRICT_ROUND_NUM:
-			if match_count > 10:
+			if should_restart(match_count):
 				restart_app()
 			else:
 				self.restart()
@@ -65,7 +66,7 @@ class Controller(ui_.Controller):
 		spinner_.hide()
 		if move_black is None:
 			# javascript.alert("红方胜出!")
-			if match_count > 10:
+			if should_restart(match_count):
 				restart_app(winner = 'Red')
 			else:
 				self.restart()
@@ -83,7 +84,7 @@ class Controller(ui_.Controller):
 		self._move_chess_img(chess1, px, py)
 		if (captured is not None) and (captured.type=='King'):
 			# javascript.alert("黑方胜出!")
-			if match_count > 10:
+			if should_restart(match_count):
 				restart_app(winner = 'Black')
 			else:
 				self.restart()
@@ -97,9 +98,10 @@ class Controller(ui_.Controller):
 
 
 	def hoho_red_turn(self, move):
+		global match_count
 		if move is None:
 			# javascript.alert("黑方胜出!")
-			if match_count > 10:
+			if should_restart(match_count):
 				restart_app(winner = 'Black')
 			else:
 				self.restart()
@@ -116,7 +118,7 @@ class Controller(ui_.Controller):
 		self._move_chess_img(chess1, px, py)
 		if (captured is not None) and (captured.type=='King'):
 			# javascript.alert("红方胜出!")
-			if match_count > 10:
+			if should_restart(match_count):
 				restart_app(winner = 'Red')
 			else:
 				self.restart()
@@ -134,6 +136,9 @@ class Controller(ui_.Controller):
 		red_move = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
 		self.hoho_red_turn(red_move)
 
+
+def should_restart(match_count):
+	return match_count > 99999
 
 def run_app():
 	chess_board = ui_.ChessBoard()
