@@ -1,6 +1,5 @@
 import math
 import time
-import datetime
 from . import ui_
 from . import spinner_
 from . import chess
