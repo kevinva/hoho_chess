@@ -133,7 +133,7 @@ def ajax_(request_, response_, route_args_):
 	if data_board == 'Action!': # 开始！
 		red_move = go_to_new_round(argv)
 		json_data = {'Red': list(red_move), 'expand:':{'agent_updating': agent_updating}}
-		json_ = json.dumps(red_move)
+		json_ = json.dumps(json_data)
 	else:
 		start_time = time.time()
 		black_move, red_move = go_on_gaming(func_name, [data_board])   # data_board需要重新包一下
@@ -184,7 +184,7 @@ def should_update_agent(model_version):
 		return False
 
 	train_dataset = ChessDataset.load_from_dir(data_dir_path, version=model_version)
-	if len(train_dataset) < 10000:
+	if len(train_dataset) < 25000:
 		return False
 
 	return True 
