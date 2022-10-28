@@ -26,6 +26,7 @@ def go_to_new_round(argv):
 		hoho_agent.load_model_from_path(agent_update_path)
 		LOGGER.info(f'Agent updated! version={hoho_agent.version}')
 		
+		agent_updating = False
 		agent_update_accepted = False
 		agent_update_path = None
 
@@ -155,7 +156,7 @@ def ajax_(request_, response_, route_args_):
 		elif msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_SELF_BATTLE_FINISH:
 			agent_update_accepted = msg_info.get(KEY_AGENT_ACCEPT)
 			agent_update_path = msg_info.get(KEY_MODEL_PATH)
-			agent_updating = False
+			
 			LOGGER.info(f'Agent self-battle finish! update accepted: {agent_update_accepted}, model updated path: {agent_update_path}')
 
 	if (not agent_updating) and should_update_agent(hoho_agent.version):
