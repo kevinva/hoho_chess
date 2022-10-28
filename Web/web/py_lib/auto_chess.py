@@ -225,7 +225,7 @@ def _board_key(board):
 	return tuple(board_key)
 
 def should_restart(match_count):
-	return match_count > 100
+	return (match_count%20)==0
 
 
 class BoardNode:
