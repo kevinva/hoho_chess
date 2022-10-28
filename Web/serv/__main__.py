@@ -181,6 +181,7 @@ def update_agent():
 	agent_new, agent_current = train(hoho_agent)
 
 	# 自博弈
+	# mp.set_start_method('spawn')   # Unix上跑要打开这句
 	play_proc = mp.Process(target=self_battle, args=(agent_current, agent_new, True, message_queue))
 	play_proc.start()
 
