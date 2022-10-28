@@ -326,7 +326,6 @@ def self_battle(agent_current, agent_new, use_mcts=True, msg_queue=None):
     if accepted:
         agent_new.update_version()
         model_path = agent_new.save_model()
-        # hoho_todo: 通知主线程更新模型
 
     msg_queue.put({KEY_MSG_ID: AGENT_MSG_ID_SELF_BATTLE_FINISH, KEY_AGENT_ACCEPT: accepted, KEY_MODEL_PATH: model_path})
 

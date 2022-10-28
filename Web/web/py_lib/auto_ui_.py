@@ -1,5 +1,6 @@
 import math
 import time
+import datetime
 from . import ui_
 from . import spinner_
 from . import chess
@@ -89,8 +90,13 @@ class Controller(ui_.Controller):
 			else:
 				self.restart()
 				self.hoho_reset(winner = 'Black')
-
 			return
+
+		# expand_info = move_dict.get('expand')
+		# agent_updating = expand_info.get('agent_updating')
+		# if (agent_updating is not None) and agent_updating:
+		# 	print(f'{datetime.date.today()} Agent updating!')
+		# 	return
 
 		self.player = 'Red'
 		move_red = move_dict.get('Red')
@@ -133,7 +139,14 @@ class Controller(ui_.Controller):
 		global match_count
 		match_count = match_count + 1
 		self.round_count = 0
-		red_move = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
+		move_dict = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
+		red_move = move_dict.get('Red')
+		# expand_info = move_dict.get('expand')
+		# agent_updating = expand_info.get('agent_updating')
+		# if (agent_updating is not None) and agent_updating:
+		# 	print(f'{datetime.date.today()} Agent updating!')
+		# 	return
+
 		self.hoho_red_turn(red_move)
 
 

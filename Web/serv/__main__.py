@@ -19,9 +19,10 @@ from model.hoho_config import *
 
 def go_to_new_round(argv):
 	global hoho_game, hoho_mcts, hoho_agent, hoho_round
-	global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
+	global match_count, agent_updating, agent_update_accepted, agent_update_path, win_count
 
 	if agent_update_accepted and (agent_update_path is not None):
+		hoho_agent = Player()
 		hoho_agent.load_model_from_path(agent_update_path)
 		LOGGER.info(f'Agent updated! version={hoho_agent.version}')
 		
@@ -64,7 +65,7 @@ def go_to_new_round(argv):
 
 def go_on_gaming(func_name, data_board):
 	global hoho_game, hoho_mcts, hoho_agent, hoho_round
-	global match_count, agent_updating, agent_update_accepted, agent_update_path, last_update_finish_time, win_count
+	global match_count, agent_updating, agent_update_accepted, agent_update_path, win_count
 
 	black_move = rpc_registry[func_name](*data_board)
 	LOGGER.info(f'get black move={black_move}')  # 注意这里黑方走法，已经翻转了棋盘
@@ -112,7 +113,8 @@ def home(request_, response_, route_args_):
 
 
 def ajax_(request_, response_, route_args_):
-	global rpc_registry
+	global rpc_registry, agent_updating
+	global hoho_agent, hoho_replay_buffer, hoho_round
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
 
@@ -130,11 +132,12 @@ def ajax_(request_, response_, route_args_):
 
 	if data_board == 'Action!': # 开始！
 		red_move = go_to_new_round(argv)
+		json_data = {'Red': list(red_move), 'expand:':{'agent_updating': agent_updating}}
 		json_ = json.dumps(red_move)
 	else:
 		start_time = time.time()
 		black_move, red_move = go_on_gaming(func_name, [data_board])   # data_board需要重新包一下
-		json_data = {'Black': list(black_move), 'Red': list(red_move)}
+		json_data = {'Black': list(black_move), 'Red': list(red_move), 'expand': {'agent_updating': agent_updating}}
 		json_ = json.dumps(json_data)
 
 		LOGGER.info(f'data size: replay buffer = {hoho_replay_buffer.size()} / round = {hoho_round.size()}')
@@ -148,18 +151,16 @@ def ajax_(request_, response_, route_args_):
 		msg_info = message_queue.get()
 		LOGGER.info(f'thread message: {msg_info}')
 		if msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_TRAIN_FINISH:
-			pass
+			LOGGER.info(f'Agent training finish!')
 		elif msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_SELF_BATTLE_FINISH:
 			agent_update_accepted = msg_info.get(KEY_AGENT_ACCEPT)
 			agent_update_path = msg_info.get(KEY_MODEL_PATH)
 			agent_updating = False
-			last_update_finish_time = time.time()
+			LOGGER.info(f'Agent self-battle finish! update accepted: {agent_update_accepted}, model updated path: {agent_update_path}')
 
-	# hoho_test，暂时不训练
-	# if (not agent_updating) and ((time.time() - last_update_finish_time) > 3600):
-	# if not agent_updating:
-	# 	update_agent()
-	# 	agent_updating = True
+	if (not agent_updating) and should_update_agent(hoho_agent.version):
+		update_agent()
+		agent_updating = True
 
 	return response_.write_response_JSON_OK_(json_)
 
@@ -173,8 +174,23 @@ def start_server_(port_, max_threads_):
 	http_.add_route_('/', home, 'GET')
 	http_.start_()
 
+def should_update_agent(model_version):
+	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
+	if not os.path.exists(data_dir_path):
+		return False
+    
+	if len(os.listdir(data_dir_path)) < 5:
+		return False
+
+	train_dataset = ChessDataset.load_from_dir(data_dir_path, version=model_version)
+	if len(train_dataset) < 10000:
+		return False
+
+	return True 
 
 def update_agent():
+	global hoho_agent, message_queue
 	LOGGER.info('Start training!')
 
 	# 模型训练
@@ -236,7 +252,6 @@ if __name__ == '__main__':
 
 	win_count = 0
 	match_count = 0
-	last_update_finish_time = 0
 	# message_queue = queue.Queue()
 	message_queue = mp.Queue()
 	agent_updating = False
