@@ -181,7 +181,6 @@ def update_agent():
 	agent_new, agent_current = train(hoho_agent)
 
 	# 自博弈
-	# mp.set_start_method('spawn')   # Unix上跑要打开这句
 	play_proc = mp.Process(target=self_battle, args=(agent_current, agent_new, True, message_queue))
 	play_proc.start()
 
@@ -232,6 +231,8 @@ rpc_registry['rpc_auto_move'] = rpc_auto_move
 
 if __name__ == '__main__':
 	setup_seed(2021)
+
+	mp.set_start_method('spawn')   # Unix上跑要打开这句！要写在所有执行多线程代码之前！
 
 	win_count = 0
 	match_count = 0
