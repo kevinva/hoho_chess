@@ -148,6 +148,11 @@ def ajax_(request_, response_, route_args_):
 		LOGGER.info(f'model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
 		LOGGER.info('========================================================')
 
+
+	if (not agent_updating) and should_update_agent(hoho_agent.version):
+		update_agent()
+		agent_updating = True
+
 	if not message_queue.empty():
 		msg_info = message_queue.get()
 		LOGGER.info(f'thread message: {msg_info}')
@@ -155,13 +160,9 @@ def ajax_(request_, response_, route_args_):
 			LOGGER.info(f'Agent training finish!')
 		elif msg_info.get(KEY_MSG_ID) == AGENT_MSG_ID_SELF_BATTLE_FINISH:
 			agent_update_accepted = msg_info.get(KEY_AGENT_ACCEPT)
-			agent_update_path = msg_info.get(KEY_MODEL_PATH)
+			agent_update_path = msg_info.get(KEY_MODEL_PATH)  # 等待开启新一局时再去update agent
 			
 			LOGGER.info(f'Agent self-battle finish! update accepted: {agent_update_accepted}, model updated path: {agent_update_path}')
-
-	if (not agent_updating) and should_update_agent(hoho_agent.version):
-		update_agent()
-		agent_updating = True
 
 	return response_.write_response_JSON_OK_(json_)
 
@@ -180,12 +181,9 @@ def should_update_agent(model_version):
 	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
 	if not os.path.exists(data_dir_path):
 		return False
-    
-	if len(os.listdir(data_dir_path)) < 5:
-		return False
 
 	train_dataset = ChessDataset.load_from_dir(data_dir_path, version=model_version)
-	if len(train_dataset) < 25000:
+	if len(train_dataset) < 25000:   # 少于多少条数据就不update了
 		return False
 
 	return True 

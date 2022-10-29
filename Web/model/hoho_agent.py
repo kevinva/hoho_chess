@@ -337,9 +337,6 @@ def train(agent):
     data_dir_path = os.path.join(root_dir_path, 'output', 'data')
     if not os.path.exists(data_dir_path):
         return
-    
-    if len(os.listdir(data_dir_path)) < 5:
-        return
 
     train_dataset = ChessDataset.load_from_dir(data_dir_path, version=agent.version)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
