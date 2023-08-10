@@ -29,9 +29,9 @@ class Node:
         self.childrens = []
         self.parent = parent
         self.player = player # 当前的玩家
-        self.P = proba   # 访问节点的概率，由policy net输出
-        self.N = 0       # 节点访问次数
-        self.W = 0       # 总行为价值，由value net输出累加, 
+        self.P = proba   # 该节点的访问概率，由policy net输出
+        self.N = 0       # 该节点的访问次数
+        self.W = 0       # 该节点多、的累计行为价值，由value net输出累加, 
         self.Q = 0       # 平均价值 w/n
 
     def get_u_score(self):
