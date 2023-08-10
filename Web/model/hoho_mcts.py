@@ -90,7 +90,7 @@ class Node:
         return node_info
 
 
-
+# 进行模拟走子
 class SearchThread(threading.Thread):
 
     def __init__(self, root_node, game, eval_queue, result_queue, thread_id, lock, condition_search, condition_eval):
@@ -128,7 +128,7 @@ class SearchThread(threading.Thread):
         if not done:  # 找到叶节点但游戏还没结束
             self.condition_search.acquire()
             if current_node.player == PLAYER_BLACK:
-                # 如果当前节点是黑方待下棋，则将棋盘翻转，让黑方以红方的视角走子（self play）
+                # 如果当前节点是黑方待下棋，则将棋盘翻转，让黑方以红方的视角走子（即站在对方的角度观测到棋盘上多格局）
                 # print('flip the board!')
                 state = flip_board(state)
             self.eval_queue[self.thread_id] = state   # hoho_todo: 按paper，这里可考虑增加一个dihedral transformation
