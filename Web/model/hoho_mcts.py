@@ -162,7 +162,7 @@ class SearchThread(threading.Thread):
             current_node.expand(probas, legal_actions)
 
             # 从叶节点backup
-            current_node.backup(-value)  # 注意这里value要变成相反数，因为神经网络输出的是当前状态的价值，即当前玩家在当前棋局下的胜负价值，而当前节点的W值是上一轮玩家进行动作后的价值，自然是相反了
+            current_node.backup(-value)  # 注意这里value要变成相反数，因为策略网络输出的是当前状态的价值，即当前玩家在当前棋局下的胜负价值，而当前节点的W值是上一轮玩家进行动作后的价值，自然是相反了
             
             self.lock.release()
 
