@@ -31,7 +31,7 @@ class Node:
         self.player = player # 当前的玩家
         self.P = proba   # 该节点的访问概率，由policy net输出
         self.N = 0       # 该节点的访问次数
-        self.W = 0       # 该节点多、的累计行为价值，由value net输出累加, 
+        self.W = 0       # 该节点的累计行为价值，由value net输出累加, 
         self.Q = 0       # 平均价值 w/n
 
     def get_u_score(self):
