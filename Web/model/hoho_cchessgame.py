@@ -110,23 +110,27 @@ class Round:
         self.red_steps = list()
         self.black_steps = list()
 
-    def add_red_step(self, state, pi):
-        self.red_steps.append((state, pi))
+    def add_red_step(self, current_state, pi, action_taken):
+        self.red_steps.append((current_state, pi, action_taken))
     
-    def add_black_step(self, state, pi):
-        self.black_steps.append((state, pi))
+    def add_black_step(self, current_state, pi, action_taken):
+        self.black_steps.append((current_state, pi, action_taken))
 
+    # 检查每步吃子的情况，更新reward
     def update_winner(self, winner=None):
         if winner is None: 
             reward = 0
             reward_list = list()
+            capture_list = list()
             for index, step in enumerate(self.red_steps):
                 if index + 1 < len(self.red_steps):
                     next_step = self.red_steps[index + 1]
-                    capture_list = check_capture(step[0], next_step[0])
-                    if len(capture_list) > 0:
+                    step_captures = check_capture(step[0], next_step[0])  # 计算当前棋局下，走当前步后多吃子情况
+                    capture_list.append(step_captures)
+
+                    if len(step_captures) > 0:  # 吃子数据是个列表是因为对于其中一方多steps列表，每个step之间是包含红方一步和黑方一步的，所以step之间最多可以有两步吃子
                         step_reward = 0
-                        for piece in capture_list:
+                        for piece in step_captures:
                             if piece.isupper():  # 红方子被吃
                                 step_reward -= chess_value_equal_to_pawn(piece)
                             elif piece.islower():  # 黑方子被吃
@@ -136,10 +140,12 @@ class Round:
                     else:
                         reward_list.append(reward)
             reward_list.append(reward)
+            capture_list.append(list())  # 最后加个空数组以便对齐处理
 
-            assert len(reward_list) == len(self.red_steps), f'rewards len {len(reward_list)} not equal to red_steps len {len(self.red_steps)}'
-            
-            self.red_steps = [(x[0], x[1], reward_list[i]) for i, x in enumerate(self.red_steps)]
+            assert len(reward_list) == len(self.red_steps), f"rewards len '{len(reward_list)}' not equal to red_steps len '{len(self.red_steps)}'"
+            assert len(capture_list) == len(self.red_steps), f"capture_list len '{len(capture_list)}' should be equal to red_steps len '{len(self.red_steps)}'"
+
+            self.red_steps = [(x[0], x[1], x[2], capture_list[i], reward_list[i]) for i, x in enumerate(self.red_steps)]
 
         else:
             reward = 1
@@ -148,13 +154,16 @@ class Round:
                 
             total_reward = len(self.red_steps) * reward
             reward_list = list()
+            capture_list = list()
             for index, step in enumerate(self.red_steps):
                 if index + 1 < len(self.red_steps):
                     next_step = self.red_steps[index + 1]
-                    capture_list = check_capture(step[0], next_step[0])
-                    if len(capture_list) > 0:
+                    step_captures = check_capture(step[0], next_step[0])
+                    capture_list.append(step_captures)
+
+                    if len(step_captures) > 0:
                         step_reward = 0
-                        for piece in capture_list:
+                        for piece in step_captures:
                             if piece.isupper():  # 红方子被吃
                                 step_reward -= chess_value_equal_to_pawn(piece)
                             elif piece.islower():  # 黑方子被吃
@@ -169,16 +178,19 @@ class Round:
             
             reward_tensor = torch.tensor(reward_list).float()
             reward_ratios = F.softmax(reward_tensor, dim=0)
-            rewards = (reward_ratios * total_reward).tolist()
+            rewards = (reward_ratios * total_reward).tolist()  # 将每步所吃子多棋力归一化
 
             if winner == 'Black':
                 rewards.append(reward)
             else:
                 rewards.append(100.0)   # 红方赢，最后一步强制给100奖励
 
+            capture_list.append(list())
+
             assert len(rewards) == len(self.red_steps), f'rewards len {len(rewards)} not equal to red_steps len {len(self.red_steps)}'
-            
-            self.red_steps = [(x[0], x[1], rewards[i]) for i, x in enumerate(self.red_steps)]
+            assert len(capture_list) == len(self.red_steps), f"capture_list len '{len(capture_list)}' should be equal to red_steps len '{len(self.red_steps)}'"
+
+            self.red_steps = [(x[0], x[1], x[2], capture_list[i], rewards[i]) for i, x in enumerate(self.red_steps)]
             
 
     def size(self):

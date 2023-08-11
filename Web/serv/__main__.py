@@ -50,14 +50,14 @@ def go_to_new_round(argv):
 
 	hoho_round = Round(int(time.time()))
 
-	if hoho_replay_buffer.size() >= 200:
+	if hoho_replay_buffer.size() >= 100:
 		hoho_replay_buffer.save({'model_version': hoho_agent.version})
 		hoho_replay_buffer.clear()
 
 	state = hoho_game.state
 	pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 	_, z, _ = hoho_game.step(action)
-	hoho_round.add_red_step(state, pi.tolist())
+	hoho_round.add_red_step(state, pi.tolist(), action)
 
 	move = convert_my_action_to_webgame_move(action)
 	LOGGER.info(f'get red move={move}')
@@ -83,14 +83,14 @@ def go_on_gaming(func_name, data_board):
 
 		hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 		black_next_state, black_z, _ = hoho_game.step(black_action)
-		hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist())  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
+		hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_action)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
 		LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, to state={black_next_state}')
 
 		# 这里得到黑方的走子，就可以马上开始跑我方（红方）的模型
 		red_state = hoho_game.state
 		red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 		red_next_state, red_z, _ = hoho_game.step(red_action)
-		hoho_round.add_red_step(red_state, red_pi.tolist())
+		hoho_round.add_red_step(red_state, red_pi.tolist(), red_action)
 		LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_next_state}')
 
 		red_move = convert_my_action_to_webgame_move(red_action)
