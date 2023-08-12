@@ -263,6 +263,8 @@ if __name__ == '__main__':
 
 	hoho_agent = Player()
 	model_path = find_top_version_model_path()
+	LOGGER.info(f"model_path: {model_path}")
+	
 	if model_path is not None:
 		hoho_agent.load_model_from_path(model_path)
 
