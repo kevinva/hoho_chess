@@ -178,7 +178,7 @@ class Round:
             
             reward_tensor = torch.tensor(reward_list).float()
             reward_ratios = F.softmax(reward_tensor, dim=0)
-            rewards = (reward_ratios * total_reward).tolist()  # 将每步所吃子多棋力归一化
+            rewards = (reward_ratios * total_reward).tolist()  # 将每步所吃子的棋力归一化
 
             if winner == 'Black':
                 rewards.append(reward)
@@ -219,7 +219,7 @@ class ReplayBuffer:
     #     return states, pis, zs
 
     def size(self):  
-        """当前buffer中数据的数量"""
+        """当前buffer中每局的回合的数量之和（有胜负结果多为一局，每一局有多个回合）"""
 
         return sum([len(steps) for steps in self.buffer])
 

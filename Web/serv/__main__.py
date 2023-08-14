@@ -71,7 +71,7 @@ def go_on_gaming(func_name, data_board):
 	black_move = rpc_registry[func_name](*data_board)
 	LOGGER.info(f'get black move={black_move}')  # 注意这里黑方走法，已经翻转了棋盘
 	if black_move is None:
-		black_move = []
+		black_move = ()
 		LOGGER.error('black_move is None!')
 	else:
 		black_state = hoho_game.state
@@ -82,19 +82,26 @@ def go_on_gaming(func_name, data_board):
 		black_pi[ACTIONS_2_INDEX[black_action]] = 1.0
 
 		hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
-		black_next_state, black_z, _ = hoho_game.step(black_action)
+		black_next_state, black_z, black_done = hoho_game.step(black_action)
 		hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_action)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
 		LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, to state={black_next_state}')
+
+		if black_done:  # 黑方赢了，红方就不需要再走了
+			LOGGER.info(f'black win!')
+			return black_move, ()
 
 		# 这里得到黑方的走子，就可以马上开始跑我方（红方）的模型
 		red_state = hoho_game.state
 		red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-		red_next_state, red_z, _ = hoho_game.step(red_action)
+		red_next_state, red_z, red_done = hoho_game.step(red_action)
 		hoho_round.add_red_step(red_state, red_pi.tolist(), red_action)
 		LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_next_state}')
 
 		red_move = convert_my_action_to_webgame_move(red_action)
 		LOGGER.info(f'get red move={red_move}')
+
+		if red_done:
+			LOGGER.info(f'red win!')
 
 	return black_move, red_move
 
@@ -177,6 +184,9 @@ def start_server_(port_, max_threads_):
 	http_.start_()
 
 def should_update_agent(model_version):
+	return False # hoho_debug
+
+
 	root_dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 	data_dir_path = os.path.join(root_dir_path, 'output', 'data')
 	if not os.path.exists(data_dir_path):
