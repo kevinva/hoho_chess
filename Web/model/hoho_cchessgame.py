@@ -118,6 +118,9 @@ class Round:
 
     # 检查每步吃子的情况，更新reward，每到局终时需要调一下
     def update_winner(self, winner = None):
+
+        # LOGGER.info(f"winner: {winner}, black: {len(self.black_steps)}, red: {len(self.red_steps)}")
+
         reward_list = list()
         capture_list = list()
         for index, step in enumerate(self.red_steps):
@@ -140,7 +143,7 @@ class Round:
 
         current_state = None
         final_state = None
-        if len(self.red_steps) >= len(self.black_steps):  # 最终步结束于红方
+        if len(self.red_steps) > len(self.black_steps):  # 最终步结束于红方
             red_last_step = self.red_steps[-1]
             current_state = red_last_step[0]
             final_state = red_last_step[3]
@@ -151,6 +154,8 @@ class Round:
 
         step_captures = check_capture(current_state, final_state)
         capture_list.append(step_captures)
+
+        # LOGGER.info(f"current_state: {current_state}, final_state: {final_state}， step_captures: {step_captures}")
 
         if len(step_captures) > 0:  # 吃子数据是个列表是因为对于其中一方多steps列表，每个step之间是包含红方一步和黑方一步的，所以step之间最多可以有两步吃子
             step_reward = 0
