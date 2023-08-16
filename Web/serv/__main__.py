@@ -42,7 +42,7 @@ def go_to_new_round(argv):
 			hoho_round.update_winner('Red')
 		elif win_player == 'Black':
 			hoho_round.update_winner('Black')
-		else:
+		else: # 平局
 			hoho_round.update_winner()
 
 		if hoho_round.size() > 0:
@@ -56,8 +56,8 @@ def go_to_new_round(argv):
 
 	state = hoho_game.state
 	pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
-	_, z, _ = hoho_game.step(action)
-	hoho_round.add_red_step(state, pi.tolist(), action)
+	next_state, z, done = hoho_game.step(action)
+	hoho_round.add_red_step(state, pi.tolist(), action, next_state, z, done)
 
 	move = convert_my_action_to_webgame_move(action)
 	LOGGER.info(f'get red move={move}')
@@ -83,8 +83,9 @@ def go_on_gaming(func_name, data_board):
 
 		hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 		black_next_state, black_z, black_done = hoho_game.step(black_action)
-		hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist(), black_action)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
+		hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist(), flip_action(black_action), flip_board(black_next_state), black_z, black_done)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
 		LOGGER.info(f'black_state={black_state}, with action={black_action}, pi={np.max(black_pi):.3f}, to state={black_next_state}')
+		LOGGER.info(f"flip_board(black_state)={flip_board(black_state)}, flip_action(black_action)={flip_action(black_action)}")
 
 		if black_done:  # 黑方赢了，红方就不需要再走了
 			LOGGER.info(f'black win!')
@@ -94,7 +95,7 @@ def go_on_gaming(func_name, data_board):
 		red_state = hoho_game.state
 		red_pi, red_action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 		red_next_state, red_z, red_done = hoho_game.step(red_action)
-		hoho_round.add_red_step(red_state, red_pi.tolist(), red_action)
+		hoho_round.add_red_step(red_state, red_pi.tolist(), red_action, red_next_state, red_z, red_done)
 		LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_next_state}')
 
 		red_move = convert_my_action_to_webgame_move(red_action)
