@@ -5,3 +5,5 @@ hoho_agent.onnx
 *.log
 Web/test/.ipynb_checkpoints/data_checker-checkpoint.ipynb
 Web/test/.ipynb_checkpoints/data_process-checkpoint.ipynb
+Web/scripts/.ipynb_checkpoints/data_checker-checkpoint.ipynb
+Web/scripts/.ipynb_checkpoints/data_process-checkpoint.ipynb
