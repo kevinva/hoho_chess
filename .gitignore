@@ -12,3 +12,5 @@ Web/scripts/outputs/Xy_data_processed_20230905213354.xlsx
 Web/scripts/outputs/y_20230905213354.npy
 Web/scripts/.ipynb_checkpoints/model_reward_redistribute-checkpoint.ipynb
 Web/scripts/.ipynb_checkpoints/eda-checkpoint.ipynb
+Web/scripts/.ipynb_checkpoints/lstm_attention_model_reward_redistribution-checkpoint.ipynb
+Web/scripts/.ipynb_checkpoints/shapley_value_reward_redistribution-checkpoint.ipynb
