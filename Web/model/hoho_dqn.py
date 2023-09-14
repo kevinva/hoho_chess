@@ -99,6 +99,6 @@ if __name__ == "__main__":
     print(f"board_output: {board_output.shape}")
 
     action_output = action_net(board_output)
-    print(f"action_output: {action_output}")
+    print(f"action_output: {action_output.shape}")
 
 
