@@ -36,9 +36,6 @@ class ResidualBlock(nn.Module):
 
 
 class BoardPlaneNet(nn.Module):
-    """
-    棋盘编码网络
-    """
 
     def __init__(self, in_channels, out_channels, residual_num):
         super(BoardPlaneNet, self).__init__()
@@ -60,9 +57,6 @@ class BoardPlaneNet(nn.Module):
 
 
 class PolicyNet(nn.Module):
-    """
-    输出动作概率分布
-    """
 
     def __init__(self, in_planes, position_dim, action_dim):
         super(PolicyNet, self).__init__()
@@ -95,6 +89,7 @@ class Qnetwork(nn.Module):
     def forward(self, state):
         board_features = self.plane_net(state)
         prob = self.policy_net(board_features)
+        ### 最终输出动作的Q值
 
         return prob
 
@@ -134,7 +129,8 @@ class DQN:
         next_states = torch.tensor(transition_dict['next_states'], dtype = torch.float).to(self.device)
         dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
 
-        q_values = self.q_net(states).gather(1, actions)  # Q值
+        q_values = self.q_net(states).gather(1, actions)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
+
         # 下个状态的最大Q值
         max_next_q_values = self.target_q_net(next_states).max(1)[0].view(-1, 1)
         q_targets = rewards + self.gamma * max_next_q_values * (1 - dones)  # TD误差目标
@@ -165,16 +161,18 @@ if __name__ == "__main__":
     # print(f"action_output: {action_output.shape}")
 
 
+    ########################################################
     # 创建一个输入张量
     input = torch.tensor([[1, 2], [3, 4], [5, 6]])
 
     # 创建一个索引张量，指定要收集的元素的位置
     index = torch.tensor([[0, 1], [1, 0], [2, 1]])
     index_column = torch.tensor([[0, 1], [1, 0]])
+    index_column2 = torch.tensor([[0], [1]])
 
     # 在维度0上使用gather函数
     # result = torch.gather(input, 0, index)
-    result = torch.gather(input, 1, index_column)
+    result = torch.gather(input, 1, index_column2)
     print(result)
 
 
