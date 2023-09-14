@@ -1,9 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 
 from hoho_config import *
 from hoho_utils import *
+
+
 
 class ResidualBlock(nn.Module):
     """
@@ -72,33 +75,110 @@ class PolicyNet(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        print(f"1. {x.shape}")
         x = self.bn(x)
-        print(f"2. {x.shape}")
         x = F.relu(x)
-        print(f"3. {x.shape}")
         x = x.view(-1, self.position_dim * 2)
-        print(f"4. {x.shape}")
         x = self.fc(x)
-        print(f"5. {x.shape}")
         action_probs = self.softmax(x)
-        print(f"6. {x.shape}")
 
         return action_probs
     
 
+class Qnetwork(nn.Module):
+
+    def __init__(self):
+        super(Qnetwork, self).__init__()
+
+        self.plane_net = BoardPlaneNet(in_channels = IN_PLANES_NUM, out_channels = FILTER_NUM, residual_num = RESIDUAL_BLOCK_NUM)
+        self.policy_net = PolicyNet(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM, action_dim = ACTION_DIM)
+
+    def forward(self, state):
+        board_features = self.plane_net(state)
+        prob = self.policy_net(board_features)
+
+        return prob
+
+
+class DQN:
+    ''' DQN算法 '''
+    def __init__(self, action_dim, learning_rate, gamma, epsilon, target_update, device):
+
+        self.action_dim = action_dim
+
+        # 原始Q网络
+        self.q_net = Qnetwork().to(device)  
+
+        # 目标Q网络
+        self.target_q_net = Qnetwork().to(device)
+
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate)
+        self.gamma = gamma  # 折扣因子
+        self.epsilon = epsilon  # epsilon-贪婪策略
+        self.target_update = target_update  # 目标Q网络更新频率
+        self.count = 0  # 计数器,记录更新次数
+        self.device = device
+
+    def take_action(self, state):  # epsilon-贪婪策略采取动作
+        if np.random.random() < self.epsilon:
+            action = np.random.randint(self.action_dim)
+        else:
+            state = torch.tensor([state], dtype = torch.float).to(self.device)
+            action = self.q_net(state).argmax().item()
+
+        return action
+
+    def update(self, transition_dict):
+        states = torch.tensor(transition_dict['states'], dtype = torch.float).to(self.device)
+        actions = torch.tensor(transition_dict['actions']).view(-1, 1).to(self.device)
+        rewards = torch.tensor(transition_dict['rewards'], dtype = torch.float).view(-1, 1).to(self.device)
+        next_states = torch.tensor(transition_dict['next_states'], dtype = torch.float).to(self.device)
+        dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
+
+        q_values = self.q_net(states).gather(1, actions)  # Q值
+        # 下个状态的最大Q值
+        max_next_q_values = self.target_q_net(next_states).max(1)[0].view(-1, 1)
+        q_targets = rewards + self.gamma * max_next_q_values * (1 - dones)  # TD误差目标
+        dqn_loss = torch.mean(F.mse_loss(q_values, q_targets))  # 均方误差损失函数
+        self.optimizer.zero_grad()  # PyTorch中默认梯度会累积,这里需要显式将梯度置为0
+        dqn_loss.backward()  # 反向传播更新参数
+        self.optimizer.step()
+
+        if self.count % self.target_update == 0:
+            # print(f'loss: {dqn_loss.item()}')
+            self.target_q_net.load_state_dict(self.q_net.state_dict())  # 更新目标网络
+        self.count += 1
+
+    
+
 if __name__ == "__main__":
-    board_in_channel = IN_PLANES_NUM
-    board_out_channel = FILTER_NUM
+    # board_in_channel = IN_PLANES_NUM
+    # board_out_channel = FILTER_NUM
 
-    board_net = BoardPlaneNet(board_in_channel, board_out_channel, RESIDUAL_BLOCK_NUM)
-    action_net = PolicyNet(board_out_channel, BOARD_POSITION_NUM, ACTION_DIM)
+    # board_net = BoardPlaneNet(board_in_channel, board_out_channel, RESIDUAL_BLOCK_NUM)
+    # action_net = PolicyNet(board_out_channel, BOARD_POSITION_NUM, ACTION_DIM)
 
-    input_tensor = torch.ones((2, board_in_channel, 10, 9))
-    board_output = board_net(input_tensor)
-    print(f"board_output: {board_output.shape}")
+    # input_tensor = torch.ones((2, board_in_channel, 10, 9))
+    # board_output = board_net(input_tensor)
+    # print(f"board_output: {board_output.shape}")
 
-    action_output = action_net(board_output)
-    print(f"action_output: {action_output.shape}")
+    # action_output = action_net(board_output)
+    # print(f"action_output: {action_output.shape}")
+
+
+    # 创建一个输入张量
+    input = torch.tensor([[1, 2], [3, 4], [5, 6]])
+
+    # 创建一个索引张量，指定要收集的元素的位置
+    index = torch.tensor([[0, 1], [1, 0], [2, 1]])
+    index_column = torch.tensor([[0, 1], [1, 0]])
+
+    # 在维度0上使用gather函数
+    # result = torch.gather(input, 0, index)
+    result = torch.gather(input, 1, index_column)
+    print(result)
+
+
+
+
 
 
