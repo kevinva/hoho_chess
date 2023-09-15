@@ -173,7 +173,12 @@ class Round:
         assert len(reward_list) == len(self.red_steps), f"rewards len '{len(reward_list)}' not equal to red_steps len '{len(self.red_steps)}'"
         assert len(capture_list) == len(self.red_steps), f"capture_list len '{len(capture_list)}' should be equal to red_steps len '{len(self.red_steps)}'"
 
-
+        # x[0]: current_state, 
+        # x[1]: pi, 
+        # x[2]: action_taken, 
+        # x[3]: next_state, 
+        # x[4]: r，以红方视觉：赢为1，输为-1，其他为0
+        # x[5]: done
         self.red_steps = [(x[0], x[1], x[2], x[3], x[4], x[5], capture_list[i], reward_list[i]) for i, x in enumerate(self.red_steps)]
 
             
