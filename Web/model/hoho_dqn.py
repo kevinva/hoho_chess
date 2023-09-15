@@ -35,13 +35,13 @@ class ResidualBlock(nn.Module):
 
 
 
-class BoardPlaneNet(nn.Module):
+class BoardPlaneLayer(nn.Module):
     """
     棋盘编码网络
     """
 
     def __init__(self, in_channels, out_channels, residual_num):
-        super(BoardPlaneNet, self).__init__()
+        super(BoardPlaneLayer, self).__init__()
         
         self.residual_num = residual_num
         self.conv1 = nn.Conv2d(in_channels, out_channels, stride = 1, kernel_size = 3, padding = 1, bias = False)
@@ -59,38 +59,37 @@ class BoardPlaneNet(nn.Module):
     
 
 
-class PolicyNet(nn.Module):
+class ActionLayer(nn.Module):
     """
-    输出动作概率分布
+    输出动作Q值预测
     """
 
     def __init__(self, in_planes, position_dim, action_dim):
-        super(PolicyNet, self).__init__()
+        super(ActionLayer, self).__init__()
 
         self.position_dim = position_dim
         self.conv = nn.Conv2d(in_planes, 2, kernel_size = 1) 
         self.bn = nn.BatchNorm2d(2)   # nn.BatchNorm2d是对channel这一维度做归一化处理，输入与输出的shape要保持一致，所以输出channel的维数也为2
         self.fc = nn.Linear(position_dim * 2, action_dim)   # action_dim为动作数，包括pass这个动作
-        self.softmax = nn.Softmax(dim = 1)
+        # self.softmax = nn.Softmax(dim = 1)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
         x = F.relu(x)
         x = x.view(-1, self.position_dim * 2)
-        x = self.fc(x)
-        action_probs = self.softmax(x)
+        result = self.fc(x)
 
-        return action_probs
+        return result
     
 
-class Qnetwork(nn.Module):
+class QNetwork(nn.Module):
 
     def __init__(self):
-        super(Qnetwork, self).__init__()
+        super(QNetwork, self).__init__()
 
-        self.plane_net = BoardPlaneNet(in_channels = IN_PLANES_NUM, out_channels = FILTER_NUM, residual_num = RESIDUAL_BLOCK_NUM)
-        self.policy_net = PolicyNet(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM, action_dim = ACTION_DIM)
+        self.plane_net = BoardPlaneLayer(in_channels = IN_PLANES_NUM, out_channels = FILTER_NUM, residual_num = RESIDUAL_BLOCK_NUM)
+        self.policy_net = ActionLayer(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM, action_dim = ACTION_DIM)
 
     def forward(self, state):
         board_features = self.plane_net(state)
@@ -106,10 +105,10 @@ class DQN:
         self.action_dim = action_dim
 
         # 原始Q网络
-        self.q_net = Qnetwork().to(device)  
+        self.q_net = QNetwork().to(device)  
 
         # 目标Q网络
-        self.target_q_net = Qnetwork().to(device)
+        self.target_q_net = QNetwork().to(device)
 
         self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate)
         self.gamma = gamma  # 折扣因子
@@ -154,8 +153,8 @@ if __name__ == "__main__":
     # board_in_channel = IN_PLANES_NUM
     # board_out_channel = FILTER_NUM
 
-    # board_net = BoardPlaneNet(board_in_channel, board_out_channel, RESIDUAL_BLOCK_NUM)
-    # action_net = PolicyNet(board_out_channel, BOARD_POSITION_NUM, ACTION_DIM)
+    # board_net = BoardPlaneLayer(board_in_channel, board_out_channel, RESIDUAL_BLOCK_NUM)
+    # action_net = ActionLayer(board_out_channel, BOARD_POSITION_NUM, ACTION_DIM)
 
     # input_tensor = torch.ones((2, board_in_channel, 10, 9))
     # board_output = board_net(input_tensor)
