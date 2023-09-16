@@ -371,6 +371,38 @@ def train(agent):
     return agent_new, agent_current
 
 
+def train_off_policy_agent(env, agent, num_epoch, num_episodes, replay_buffer, minimal_size, batch_size):
+    return_list = []
+    for i in range(num_epoch):
+        for i_episode in range(num_episodes):
+            start_time = time.time()
+            episode_return = 0
+            state = env.reset()
+            done = False
+            while not done:
+                action = agent.take_action(state)
+                next_state, reward, done, _ = env.step(action)
+                replay_buffer.add(state, action, reward, next_state, done)
+                state = next_state
+                episode_return += reward
+                if replay_buffer.size() > minimal_size:
+                    b_s, b_a, b_r, b_ns, b_d = replay_buffer.sample(batch_size)
+                    transition_dict = {'states': b_s, 'actions': b_a, 'next_states': b_ns, 'rewards': b_r, 'dones': b_d}
+                    agent.update(transition_dict)
+            return_list.append(episode_return)
+            progress = (i_episode + 1) + i * num_episodes
+            total = num_epoch * num_episodes
+            if progress % 10 == 0:
+                print(f'progress={progress} / {total} | elapse={time.time() - start_time} | average return={np.mean(return_list[-10:])}')
+    return return_list
+
+    ### 
+    # 1. 每局（Round）结束后，根据奖励塑型后的奖励函数，更新每一步(step)的即时奖励，然后放入经验回放池
+    # 2. 每局（Round）结束后，判断经验回放池样本数(回合数，step)是否满足一定间隔数量（如每100个step），满足则采样一个batch_size大小的step，开始训练智能体
+    # 
+    ###
+
+
 if __name__ == '__main__':
 #     # in_channel = 1
 #     # out_channel = 1

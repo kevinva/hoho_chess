@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from hoho_config import *
-from hoho_utils import *
+from .hoho_config import *
+from .hoho_utils import *
 
 
 
@@ -89,19 +89,20 @@ class QNetwork(nn.Module):
     def __init__(self):
         super(QNetwork, self).__init__()
 
-        self.plane_net = BoardPlaneLayer(in_channels = IN_PLANES_NUM, out_channels = FILTER_NUM, residual_num = RESIDUAL_BLOCK_NUM)
-        self.policy_net = ActionLayer(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM, action_dim = ACTION_DIM)
+        self.board_layer = BoardPlaneLayer(in_channels = IN_PLANES_NUM, out_channels = FILTER_NUM, residual_num = RESIDUAL_BLOCK_NUM)
+        self.action_layer = ActionLayer(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM, action_dim = ACTION_DIM)
 
     def forward(self, state):
-        board_features = self.plane_net(state)
-        prob = self.policy_net(board_features)
+        board_features = self.board_layer(state)
+        q_value = self.action_layer(board_features)
         ### 最终输出动作的Q值
 
-        return prob
+        return q_value
 
 
 class DQN:
     ''' DQN算法 '''
+
     def __init__(self, action_dim, learning_rate, gamma, epsilon, target_update, device):
 
         self.action_dim = action_dim
@@ -119,26 +120,54 @@ class DQN:
         self.count = 0  # 计数器,记录更新次数
         self.device = device
 
-    def take_action(self, state):  # epsilon-贪婪策略采取动作
+    def take_action(self, state_str):  # epsilon-贪婪策略采取动作
+        all_legal_actions = get_legal_actions(state_str, PLAYER_RED)
+
         if np.random.random() < self.epsilon:
-            action = np.random.randint(self.action_dim)
+            print("random action!")
+
+            legal_action_dim = len(all_legal_actions)
+            action_idx = np.random.randint(legal_action_dim)
+            action = all_legal_actions[action_idx]
         else:
-            state = torch.tensor([state], dtype = torch.float).to(self.device)
-            action = self.q_net(state).argmax().item()
+            print("argmax action!")
+
+            state_tensor = convert_board_to_tensor(state_str).unsqueeze(0).to(self.device)
+            action_values = self.q_net(state_tensor)
+            action_values = action_values.to(torch.device('cpu')).detach().numpy()[0]
+
+            q_values = np.zeros((ACTION_DIM,))
+            for action in all_legal_actions:
+                action_idx = ACTIONS_2_INDEX[action]
+                q_values[action_idx] = action_values[action_idx]
+
+            action_idx = q_values.argmax()
+            action = INDEXS_2_ACTION[action_idx]
 
         return action
+    
 
     def update(self, transition_dict):
-        states = torch.tensor(transition_dict['states'], dtype = torch.float).to(self.device)
-        actions = torch.tensor(transition_dict['actions']).view(-1, 1).to(self.device)
+        planes = [convert_board_to_tensor(state) for state in transition_dict['states']]
+        states_tensor = torch.stack(planes, dim = 0).to(self.device)
+        
+        actions_index_list = []
+        for action in transition_dict['actions']:
+            action_idx = ACTIONS_2_INDEX[action]
+            actions_index_list.append(action_idx)
+        actions_index_tensor = torch.tensor(actions_index_list).view(-1, 1).to(self.device)
+
         rewards = torch.tensor(transition_dict['rewards'], dtype = torch.float).view(-1, 1).to(self.device)
-        next_states = torch.tensor(transition_dict['next_states'], dtype = torch.float).to(self.device)
+
+        next_planes = [convert_board_to_tensor(state) for state in transition_dict['next_states']]
+        next_states_tensor = torch.stack(next_planes, dim = 0).to(self.device)
+
         dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
 
-        q_values = self.q_net(states).gather(1, actions)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
+        q_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
 
         # 下个状态的最大Q值
-        max_next_q_values = self.target_q_net(next_states).max(1)[0].view(-1, 1)
+        max_next_q_values = self.target_q_net(next_states_tensor).max(1)[0].view(-1, 1)
         q_targets = rewards + self.gamma * max_next_q_values * (1 - dones)  # TD误差目标
         dqn_loss = torch.mean(F.mse_loss(q_values, q_targets))  # 均方误差损失函数
         self.optimizer.zero_grad()  # PyTorch中默认梯度会累积,这里需要显式将梯度置为0
@@ -150,7 +179,7 @@ class DQN:
             self.target_q_net.load_state_dict(self.q_net.state_dict())  # 更新目标网络
         self.count += 1
 
-    
+
 
 if __name__ == "__main__":
     # board_in_channel = IN_PLANES_NUM
@@ -168,21 +197,31 @@ if __name__ == "__main__":
 
 
     ########################################################
-    # 创建一个输入张量
-    input = torch.tensor([[1, 2], [3, 4], [5, 6]])
 
-    # 创建一个索引张量，指定要收集的元素的位置
-    index = torch.tensor([[0, 1], [1, 0], [2, 1]])
-    index_column = torch.tensor([[0, 1], [1, 0]])
-    index_column2 = torch.tensor([[0], [1]])
+    # # 创建一个输入张量
+    # input = torch.tensor([[1, 2], [3, 4], [5, 6]])
 
-    # 在维度0上使用gather函数
-    # result = torch.gather(input, 0, index)
-    result = torch.gather(input, 1, index_column2)
-    print(result)
+    # # 创建一个索引张量，指定要收集的元素的位置
+    # index = torch.tensor([[0, 1], [1, 0], [2, 1]])
+    # index_column = torch.tensor([[0, 1], [1, 0]])
+    # index_column2 = torch.tensor([[0], [1]])
 
+    # # 在维度0上使用gather函数
+    # # result = torch.gather(input, 0, index)
+    # result = torch.gather(input, 1, index_column2)
+    # print(result)
 
+    ########################################################
 
+    gamma = 0.99
+    lr = 5e-5
+    epsilon = 0.1
+
+    dqn = DQN(ACTION_DIM, lr, gamma, epsilon, 100, DEVICE)
+    state = INIT_BOARD_STATE
+    for i in range(100):
+        action = dqn.take_action(state)
+        print(f"    action: {action}")
 
 
 

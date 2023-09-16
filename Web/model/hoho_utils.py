@@ -829,7 +829,13 @@ def chess_value_equal_to_pawn(chess_str):
     if chess_str == 'C' or chess_str == 'c':
         return 2.29
         
-    return 1.00
+    return 1.00  # 兵/卒的子力
+
+
+
+
+
+
 
 if __name__ == '__main__':
     # plane = convert_board_to_tensor(INIT_BOARD_STATE)

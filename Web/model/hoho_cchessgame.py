@@ -187,33 +187,31 @@ class Round:
 
 
 class ReplayBuffer:
-    ''' 经验回放池 '''
+
     def __init__(self, capacity=10000, data_list=None):
+        self.step_list = []
         self.buffer = collections.deque(maxlen=capacity)  # 队列,先进先出
         if data_list is not None:
-            self.buffer.extend(data_list)
+            self.step_list.extend(data_list)
 
-    # def add(self, state, pi, z):  
-    #     """将数据加入buffer"""
-    #     self.buffer.append((state, pi, z))
+            for steps in data_list:
+                self.buffer.extend(steps)
 
     def add_round(self, round):
-        self.buffer.append(round.red_steps)
-
-    # def sample(self, batch_size):  
-    #     """从buffer中采样数据,数量为batch_size"""
-
-    #     transitions = random.sample(self.buffer, batch_size)
-    #     states, pis, zs = zip(*transitions)
-    #     return states, pis, zs
+        self.step_list.append(round.red_steps)   # step_list中每个元素是一个round，一个round包含若干steps
+        self.buffer.extend(round.red_steps)      # buffer中每个元素是一个独立的step
 
     def size(self):  
         """当前buffer中每局的回合的数量之和（有胜负结果多为一局，每一局有多个回合）"""
 
-        return sum([len(steps) for steps in self.buffer])
+        return sum([len(steps) for steps in self.step_list])
+    
+    def step_size(self):
+        return len(self.buffer)
 
     def clear(self):
-        self.buffer.clear()
+        self.step_list.clear()
+        # 不要清self.buffer
 
     def save(self, expand_data=None):
         filedir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data')
@@ -227,8 +225,13 @@ class ReplayBuffer:
         filepath = os.path.join(filedir, filename)
         
         with open(filepath, 'w') as f:
-            jsonstr = json.dumps(list(self.buffer))
+            jsonstr = json.dumps(self.step_list)
             f.write(jsonstr)
+
+    def sample(self, batch_size):  # 从self.buffer中采样数据,数量为batch_size
+        transitions = random.sample(self.buffer, batch_size)
+        states, pi_list, actions, next_states, chapture_reward_list, done_list = zip(*transitions)
+        return states, actions, next_states, chapture_reward_list, done_list
 
     @staticmethod
     def load_from_file(filepath):
@@ -254,6 +257,7 @@ class ReplayBuffer:
                     all_data_list.extend(data_list)
         replay_buffer = ReplayBuffer(data_list=all_data_list)
         return replay_buffer
+    
 
 
 if __name__ == '__main__':
