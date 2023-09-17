@@ -65,6 +65,11 @@ SELF_BATTLE_WIN_RATE = 0.55
 DEBUG = True
 
 
+# DQN用
+GAMMA = 0.99
+EPSILON_G = 0.1
+
+
 LOG_TAG_AGENT = '[hoho_agent]'
 LOG_TAG_CCHESSGAME = '[hoho_cchessgame]'
 LOG_TAG_REPLAY_BUFFER = '[hoho_replay_buffer]'
@@ -76,5 +81,5 @@ KEY_AGENT_ACCEPT = 'agent_accept'
 KEY_MODEL_PATH = 'model_path'
 AGENT_MSG_ID_TRAIN_FINISH = 1
 AGENT_MSG_ID_SELF_BATTLE_FINISH = 2
-REPLAY_BUFFER_FILE_PREFIX = 'replayBufferAb'
-MODEL_FILE_PREFIX = 'hohoAgentAb'
+REPLAY_BUFFER_FILE_PREFIX = 'QLearningAb'
+MODEL_FILE_PREFIX = 'QLearning'

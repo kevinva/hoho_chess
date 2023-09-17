@@ -104,8 +104,10 @@ class DQN:
     ''' DQN算法 '''
 
     def __init__(self, action_dim, learning_rate, gamma, epsilon, target_update, device):
-
+        
+        self.version = 0
         self.action_dim = action_dim
+        self.learning_rate = learning_rate
 
         # 原始Q网络
         self.q_net = QNetwork().to(device)  
@@ -122,6 +124,7 @@ class DQN:
 
     def take_action(self, state_str):  # epsilon-贪婪策略采取动作
         all_legal_actions = get_legal_actions(state_str, PLAYER_RED)
+        pis = np.zeros((ACTION_DIM,))
 
         if np.random.random() < self.epsilon:
             print("random action!")
@@ -129,9 +132,11 @@ class DQN:
             legal_action_dim = len(all_legal_actions)
             action_idx = np.random.randint(legal_action_dim)
             action = all_legal_actions[action_idx]
+            action_idx = ACTIONS_2_INDEX[action]
+            pis[action_idx] = 1.0
         else:
             print("argmax action!")
-
+            
             state_tensor = convert_board_to_tensor(state_str).unsqueeze(0).to(self.device)
             action_values = self.q_net(state_tensor)
             action_values = action_values.to(torch.device('cpu')).detach().numpy()[0]
@@ -140,11 +145,11 @@ class DQN:
             for action in all_legal_actions:
                 action_idx = ACTIONS_2_INDEX[action]
                 q_values[action_idx] = action_values[action_idx]
-
             action_idx = q_values.argmax()
             action = INDEXS_2_ACTION[action_idx]
+            pis = q_values / np.sum(q_values)
 
-        return action
+        return action, pis
     
     def update(self, transition_dict):
         planes = [convert_board_to_tensor(state) for state in transition_dict['states']]
@@ -175,9 +180,51 @@ class DQN:
 
         if self.count % self.target_update == 0:
             # print(f'loss: {dqn_loss.item()}')
+            LOGGER.info(f'Update Target network!')
             self.target_q_net.load_state_dict(self.q_net.state_dict())  # 更新目标网络
         self.count += 1
 
+        return dqn_loss.item()
+
+
+    def save_model(self):
+        dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        
+        filepath = os.path.join(dir_path, '{}_{}_{}.pth'.format(MODEL_FILE_PREFIX, int(time.time()), self.version))
+        state = self.q_net.state_dict()
+        torch.save(state, filepath)
+
+        return filepath
+
+    def load_model_from_path(self, model_path):
+        filename = os.path.basename(model_path)
+        if not filename.startswith(MODEL_FILE_PREFIX):
+            return
+
+        filename = filename.split('.')[0]
+        items = filename.split('_')
+        if len(items) == 3:
+            self.version = int(items[2])
+
+        checkpoint = torch.load(model_path)
+        self.q_net.load_state_dict(checkpoint)
+        self.target_q_net.load_state_dict(checkpoint)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate)
+    
+    def update_version(self):
+        self.version += 1
+
+    def printModel(self):
+        LOGGER.info(f'{self.q_net}')
+
+
+    def set_train_mode(self):
+        self.q_net.train()
+    
+    def set_eval_mode(self):
+        self.q_net.eval()
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ class CChessGame:
         LOGGER.info('CChessGame created!')
 
     def step(self, action):
-        state_new = do_action_on_board(self.state, action)
+        state_new = do_action_on_board(self.state, action)  # 注意：这里state以红方视觉为准，黑方的action不用flip
         z = 0
         done = False
         if 'K' not in state_new:
@@ -110,11 +110,11 @@ class Round:
         self.red_steps = list()
         self.black_steps = list()
 
-    def add_red_step(self, current_state, pi, action_taken, next_state, r, done):
-        self.red_steps.append((current_state, pi, action_taken, next_state, r, done))
+    def add_red_step(self, current_state, pi, action_taken, mid_state, r, done):
+        self.red_steps.append((current_state, pi, action_taken, mid_state, r, done))
     
-    def add_black_step(self, current_state, pi, action_taken, next_state, r, done):
-        self.black_steps.append((current_state, pi, action_taken, next_state, r, done))
+    def add_black_step(self, current_state, pi, action_taken, mid_state, r, done):
+        self.black_steps.append((current_state, pi, action_taken, mid_state, r, done))
 
     # 检查每步吃子的情况，更新reward，每到局终时需要调一下(这里也进行奖励重分配)
     def update_winner(self, winner = None):
@@ -273,17 +273,15 @@ class ReplayBuffer:
         self.step_list.append(round.red_steps)   # step_list中每个元素是一个round，一个round包含若干steps
         self.buffer.extend(round.red_steps)      # buffer中每个元素是一个独立的step
 
-    def size(self):  
-        """当前buffer中每局的回合的数量之和（有胜负结果多为一局，每一局有多个回合）"""
-
-        return sum([len(steps) for steps in self.step_list])
+    def round_size(self):  
+        return len(self.step_list)
     
     def step_size(self):
         return len(self.buffer)
 
     def clear(self):
         self.step_list.clear()
-        # 不要清self.buffer
+        # 不要清self.buffer!!!!!!
 
     def save(self, expand_data=None):
         filedir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data')
@@ -302,8 +300,8 @@ class ReplayBuffer:
 
     def sample(self, batch_size):  # 从self.buffer中采样数据,数量为batch_size
         transitions = random.sample(self.buffer, batch_size)
-        states, pi_list, actions, next_states, reward_list, done_list = zip(*transitions)
-        return states, actions, next_states, reward_list, done_list
+        states, pi_list, actions, next_states, raw_rewards, done_list, chapture_list, chapture_rewards, re_rewards  = zip(*transitions)
+        return states, actions, re_rewards, next_states, done_list
 
     @staticmethod
     def load_from_file(filepath):
