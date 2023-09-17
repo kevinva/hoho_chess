@@ -205,7 +205,7 @@ def should_update_agent(model_version):
 	# if hoho_replay_buffer.step_size() % 100:
 	# 	return True
 
-	if hoho_replay_buffer.step_size() > 10:
+	if hoho_replay_buffer.step_size() > 100:     
 		if time.time() - updated_time > 1800:   # 大于1800秒
 			return True
 	
@@ -230,7 +230,7 @@ def update_agent():
 	# 模型训练
 	# agent_new, agent_current = train(hoho_agent)
 
-	agent_update_path = train_off_policy_agent(hoho_agent, 10, hoho_replay_buffer, batch_size = 4)  # hoho_debug: 
+	agent_update_path = train_off_policy_agent(hoho_agent, 10, hoho_replay_buffer, batch_size = BATCH_SIZE) 
 	agent_update_accepted = True
 
 
@@ -283,8 +283,6 @@ def rpc_auto_move(board_key):
 rpc_registry = {}
 # 登记函数 RPC auto_move
 rpc_registry['rpc_auto_move'] = rpc_auto_move
-
-
 
 
 

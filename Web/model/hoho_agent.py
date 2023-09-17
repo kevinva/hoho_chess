@@ -372,7 +372,7 @@ def train(agent):
     return agent_new, agent_current
 
 
-def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer, batch_size):
+def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, batch_size):
     ### 
     # 1. 每局（Round）结束后，根据奖励塑型后的奖励函数，更新每一步(step)的即时奖励，然后放入经验回放池
     # 2. 每局（Round）结束后，判断经验回放池样本数(回合数，step)是否满足一定间隔数量（如每100个step），满足则采样一个batch_size大小的step，开始训练智能体
