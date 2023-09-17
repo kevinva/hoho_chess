@@ -45,6 +45,7 @@ def go_to_new_round(argv):
 		else: # 平局
 			hoho_round.update_winner()
 
+		# !!!!!!必须update_winner之后再add_round!!!!!!
 		if hoho_round.size() > 0:
 			hoho_replay_buffer.add_round(hoho_round)
 

@@ -182,26 +182,70 @@ class Round:
         # x[5]: done
         self.red_steps = [(x[0], x[1], x[2], x[3], x[4], x[5], capture_list[i], chapture_reward_list[i]) for i, x in enumerate(self.red_steps)]
 
-    # reward shaping
+        # 纠正数据
+        final_red_step = self.red_steps[-1]
+        final_capture_list = final_red_step[6]
+        win = 0
+        if "K" in final_capture_list:
+            win = -1
+        elif "k" in final_capture_list:
+            win = 1
+        final_red_step[5] = True  # done
+        final_red_step[4] = win
+
+        self.red_steps = Round.redistribute_reward(self.red_steps)
+
+
+    # 奖励重塑
     @staticmethod
     def redistribute_reward(episode_step_list):
         final_step = episode_step_list[-1]
         final_reward = final_step[4]
-        final_reward_list = [final_reward] * len(episode_step_list)
+        raw_rewards = np.array([final_reward] * len(episode_step_list))
         window_size = 2 # 前后window_size个位置都要考虑
         lamb = 0.9
         step_count = len(episode_step_list)
         # 构造奖励衰减矩阵
         reward_mat = np.zeros((step_count, step_count))
+
+        # print(f"step_count: {step_count}")
+
         for t in range(step_count):
             step = episode_step_list[t]
-            chapture_reward = step[6]
-            min_idx = max(0, t - window_size)
-            max_idx = m(t, t + window_size)
-            for w_t in range(window_size):
-                
+            chapture_reward = step[7]
 
+            left_bound = max(0, t - window_size)
+            right_bound = min(t + window_size, step_count - 1)
+
+            # print(f"t: {t}, left - right: {left_bound} - {right_bound}")
+
+            reward_mat[t][t] = chapture_reward * lamb
+
+            # 向前衰减
+            for i, val in enumerate(range(t, left_bound, -1)):
+                reward_mat[t][val - 1] = chapture_reward * pow(lamb, i + 1)
+
+            # 向后衰减
+            for i, val in enumerate(range(t, right_bound)):
+                reward_mat[t][val + 1] = chapture_reward * pow(lamb, i + 1)
+
+
+        # print(f"reward_mat: {reward_mat}")
+
+        # 按列相加得出每一步的附加奖励
+        addition_rewards = np.sum(reward_mat, axis = 0)
+
+        # print(f"addition_rewards: {addition_rewards}")
+
+        assert raw_rewards.shape[0] == addition_rewards.shape[0]
+        assert addition_rewards.shape[0] == len(episode_step_list)
+
+        final_rewards = raw_rewards + addition_rewards
+        result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
+        
+        return result_steps
             
+
     def size(self):
         return len(self.red_steps)
 
