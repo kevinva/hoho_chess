@@ -116,12 +116,12 @@ class Round:
     def add_black_step(self, current_state, pi, action_taken, next_state, r, done):
         self.black_steps.append((current_state, pi, action_taken, next_state, r, done))
 
-    # 检查每步吃子的情况，更新reward，每到局终时需要调一下
+    # 检查每步吃子的情况，更新reward，每到局终时需要调一下(这里也进行奖励重分配)
     def update_winner(self, winner = None):
 
         # LOGGER.info(f"winner: {winner}, black: {len(self.black_steps)}, red: {len(self.red_steps)}")
 
-        reward_list = list()
+        chapture_reward_list = list()
         capture_list = list()
         for index, step in enumerate(self.red_steps):
             if index + 1 < len(self.red_steps):
@@ -137,10 +137,11 @@ class Round:
                         elif piece.islower():  # 黑方子被吃
                             step_reward += chess_value_equal_to_pawn(piece)
 
-                    reward_list.append(step_reward)
+                    chapture_reward_list.append(step_reward)
                 else:
-                    reward_list.append(0) # 没有吃子，reward为0
+                    chapture_reward_list.append(0) # 没有吃子，reward为0
 
+        # 最后step的处理
         current_state = None
         final_state = None
         if len(self.red_steps) > len(self.black_steps):  # 最终步结束于红方
@@ -165,21 +166,40 @@ class Round:
                 elif piece.islower():  # 黑方子被吃
                     step_reward += chess_value_equal_to_pawn(piece)
 
-            reward_list.append(step_reward)
+            chapture_reward_list.append(step_reward)
         else:
-            reward_list.append(0) # 没有吃子，reward为0
+            chapture_reward_list.append(0) # 没有吃子，reward为0
 
 
-        assert len(reward_list) == len(self.red_steps), f"rewards len '{len(reward_list)}' not equal to red_steps len '{len(self.red_steps)}'"
+        assert len(chapture_reward_list) == len(self.red_steps), f"chapture rewards len '{len(chapture_reward_list)}' not equal to red_steps len '{len(self.red_steps)}'"
         assert len(capture_list) == len(self.red_steps), f"capture_list len '{len(capture_list)}' should be equal to red_steps len '{len(self.red_steps)}'"
 
         # x[0]: current_state, 
         # x[1]: pi, 
         # x[2]: action_taken, 
         # x[3]: next_state, 
-        # x[4]: r，以红方视觉：赢为1，输为-1，其他为0
+        # x[4]: reward_raw，以红方视觉：赢为1，输为-1，其他为0
         # x[5]: done
-        self.red_steps = [(x[0], x[1], x[2], x[3], x[4], x[5], capture_list[i], reward_list[i]) for i, x in enumerate(self.red_steps)]
+        self.red_steps = [(x[0], x[1], x[2], x[3], x[4], x[5], capture_list[i], chapture_reward_list[i]) for i, x in enumerate(self.red_steps)]
+
+    # reward shaping
+    @staticmethod
+    def redistribute_reward(episode_step_list):
+        final_step = episode_step_list[-1]
+        final_reward = final_step[4]
+        final_reward_list = [final_reward] * len(episode_step_list)
+        window_size = 2 # 前后window_size个位置都要考虑
+        lamb = 0.9
+        step_count = len(episode_step_list)
+        # 构造奖励衰减矩阵
+        reward_mat = np.zeros((step_count, step_count))
+        for t in range(step_count):
+            step = episode_step_list[t]
+            chapture_reward = step[6]
+            min_idx = max(0, t - window_size)
+            max_idx = m(t, t + window_size)
+            for w_t in range(window_size):
+                
 
             
     def size(self):
@@ -230,8 +250,8 @@ class ReplayBuffer:
 
     def sample(self, batch_size):  # 从self.buffer中采样数据,数量为batch_size
         transitions = random.sample(self.buffer, batch_size)
-        states, pi_list, actions, next_states, chapture_reward_list, done_list = zip(*transitions)
-        return states, actions, next_states, chapture_reward_list, done_list
+        states, pi_list, actions, next_states, reward_list, done_list = zip(*transitions)
+        return states, actions, next_states, reward_list, done_list
 
     @staticmethod
     def load_from_file(filepath):
