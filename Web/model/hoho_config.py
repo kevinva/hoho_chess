@@ -66,8 +66,12 @@ DEBUG = True
 
 
 # DQN用
-GAMMA = 0.99
+GAMMA = 0.90
 EPSILON_G = 0.1
+
+# 奖励重分配参数
+RER_LAMBDA = 0.9
+RER_WINDOW_SIZE = 2  # 前后window_size个位置都要考虑
 
 
 LOG_TAG_AGENT = '[hoho_agent]'

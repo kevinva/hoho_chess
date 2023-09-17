@@ -65,9 +65,9 @@ def go_to_new_round(argv):
 	# pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 	red_action, red_pi = hoho_agent.take_action(red_state)
 	mid_state, z, done = hoho_game.step(red_action)
-	hoho_round.add_red_step(red_state, red_pi.tolist(), action, mid_state, z, done)
+	hoho_round.add_red_step(red_state, red_pi.tolist(), red_action, mid_state, z, done)
 
-	move = convert_my_action_to_webgame_move(action)
+	move = convert_my_action_to_webgame_move(red_action)
 	LOGGER.info(f'get red move={move}')
 
 	return move
@@ -132,7 +132,7 @@ def home(request_, response_, route_args_):
 
 def ajax_(request_, response_, route_args_):
 	global rpc_registry, agent_updating
-	global hoho_agent, hoho_replay_buffer, hoho_round
+	global hoho_agent, hoho_replay_buffer, hoho_round, updated_time
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
 
@@ -168,6 +168,7 @@ def ajax_(request_, response_, route_args_):
 
 	if (not agent_updating) and should_update_agent(hoho_agent.version):
 		update_agent()
+		updated_time = time.time()
 		agent_updating = True
 
 	# if not message_queue.empty():

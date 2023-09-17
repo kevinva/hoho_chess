@@ -210,8 +210,6 @@ class Round:
         final_step = episode_step_list[-1]
         final_reward = final_step[4]
         raw_rewards = np.array([final_reward] * len(episode_step_list))
-        window_size = 2 # 前后window_size个位置都要考虑
-        lamb = 0.9
         step_count = len(episode_step_list)
         # 构造奖励衰减矩阵
         reward_mat = np.zeros((step_count, step_count))
@@ -222,20 +220,20 @@ class Round:
             step = episode_step_list[t]
             chapture_reward = step[7]
 
-            left_bound = max(0, t - window_size)
-            right_bound = min(t + window_size, step_count - 1)
+            left_bound = max(0, t - RER_WINDOW_SIZE)
+            right_bound = min(t + RER_WINDOW_SIZE, step_count - 1)
 
             # print(f"t: {t}, left - right: {left_bound} - {right_bound}")
 
-            reward_mat[t][t] = chapture_reward * lamb
+            reward_mat[t][t] = chapture_reward * RER_LAMBDA
 
             # 向前衰减
             for i, val in enumerate(range(t, left_bound, -1)):
-                reward_mat[t][val - 1] = chapture_reward * pow(lamb, i + 1)
+                reward_mat[t][val - 1] = chapture_reward * pow(RER_LAMBDA, i + 1)
 
             # 向后衰减
             for i, val in enumerate(range(t, right_bound)):
-                reward_mat[t][val + 1] = chapture_reward * pow(lamb, i + 1)
+                reward_mat[t][val + 1] = chapture_reward * pow(RER_LAMBDA, i + 1)
 
 
         # print(f"reward_mat: {reward_mat}")
