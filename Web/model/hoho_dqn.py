@@ -116,9 +116,9 @@ class DQN:
         self.target_q_net = QNetwork().to(device)
 
         self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate)
-        self.gamma = gamma  # 折扣因子
-        self.epsilon = epsilon  # epsilon-贪婪策略
-        self.target_update = target_update  # 目标Q网络更新频率
+        self.gamma = gamma 
+        self.epsilon = epsilon 
+        self.target_update = target_update
         self.count = 0  # 计数器,记录更新次数
         self.device = device
 

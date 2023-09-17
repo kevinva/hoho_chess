@@ -379,7 +379,7 @@ def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, b
     # 
     ###
 
-    agent_current = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, 10, DEVICE)
+    agent_current = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, 20, DEVICE)
     agent_current.version = agent.version
     agent_current.count = agent.count
     agent_current.q_net.load_state_dict(agent.q_net.state_dict())

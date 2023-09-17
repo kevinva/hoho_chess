@@ -66,11 +66,12 @@ DEBUG = True
 
 
 # DQN用
-GAMMA = 0.90
-EPSILON_G = 0.1
+GAMMA = 0.98   # 折扣因子
+EPSILON_G = 0.1 # epsilon贪婪策略
+TARGET_UPDATE_COUNT = 30  # 更新目标网络的频率
 
 # 奖励重分配参数
-RER_LAMBDA = 0.9
+RER_LAMBDA = 0.90
 RER_WINDOW_SIZE = 2  # 前后window_size个位置都要考虑
 
 

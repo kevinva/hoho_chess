@@ -282,6 +282,9 @@ class ReplayBuffer:
         # 不要清self.buffer!!!!!!
 
     def save(self, expand_data=None):
+        if len(self.step_list) == 0:
+            return
+        
         filedir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data')
         if not os.path.exists(filedir):
             os.makedirs(filedir)

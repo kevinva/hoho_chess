@@ -53,7 +53,7 @@ def go_to_new_round(argv):
 	
 		agent_net_updated_count = hoho_agent.count
 		
-		hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, 10, DEVICE)
+		hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
 		hoho_agent.load_model_from_path(agent_update_path)
 		hoho_agent.count = agent_net_updated_count
 		LOGGER.info(f'Agent updated! version={hoho_agent.version}')
@@ -230,7 +230,7 @@ def update_agent():
 	# 模型训练
 	# agent_new, agent_current = train(hoho_agent)
 
-	agent_update_path = train_off_policy_agent(hoho_agent, 10, hoho_replay_buffer, batch_size = BATCH_SIZE) 
+	agent_update_path = train_off_policy_agent(hoho_agent, 60, hoho_replay_buffer, batch_size = BATCH_SIZE) 
 	agent_update_accepted = True
 
 
@@ -305,7 +305,7 @@ if __name__ == '__main__':
 	hoho_replay_buffer = ReplayBuffer()
 
 	# hoho_agent = Player()
-	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, 10, DEVICE)
+	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
 	model_path = find_top_version_model_path()
 	LOGGER.info(f"model_path: {model_path}")
 	
