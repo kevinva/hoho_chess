@@ -44,9 +44,13 @@ def go_to_new_round(argv):
 		hoho_replay_buffer.save({'model_version': hoho_agent.version})
 		hoho_replay_buffer.clear()
 
-
 	if agent_update_accepted and (agent_update_path is not None):
 		# hoho_agent = Player()
+
+		# 为了好区分模型版本，模型更新前都先保存样本数据
+		hoho_replay_buffer.save({'model_version': hoho_agent.version})
+		hoho_replay_buffer.clear()
+	
 		agent_net_updated_count = hoho_agent.count
 		
 		hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, 10, DEVICE)
