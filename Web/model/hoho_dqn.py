@@ -146,7 +146,6 @@ class DQN:
 
         return action
     
-
     def update(self, transition_dict):
         planes = [convert_board_to_tensor(state) for state in transition_dict['states']]
         states_tensor = torch.stack(planes, dim = 0).to(self.device)

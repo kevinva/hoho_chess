@@ -123,9 +123,13 @@ class Round:
 
         chapture_reward_list = list()
         capture_list = list()
+        next_state_list = list()
         for index, step in enumerate(self.red_steps):
             if index + 1 < len(self.red_steps):
                 next_step = self.red_steps[index + 1]
+
+                next_state_list.append(next_step[0])
+
                 step_captures = check_capture(step[0], next_step[0])  # 计算当前棋局下，走当前步后多吃子情况
                 capture_list.append(step_captures)
 
@@ -148,10 +152,12 @@ class Round:
             red_last_step = self.red_steps[-1]
             current_state = red_last_step[0]
             final_state = red_last_step[3]
+            next_state_list.append(final_state)
         else:                                             # 最终步结束于黑方
             current_state = self.red_steps[-1][0]
             black_last_step = self.black_steps[-1]
             final_state = flip_board(black_last_step[3]) # 注意：黑方的当前棋局需要翻转为红方视觉
+            next_state_list.append(final_state)
 
         step_captures = check_capture(current_state, final_state)
         capture_list.append(step_captures)
@@ -170,20 +176,19 @@ class Round:
         else:
             chapture_reward_list.append(0) # 没有吃子，reward为0
 
-
         assert len(chapture_reward_list) == len(self.red_steps), f"chapture rewards len '{len(chapture_reward_list)}' not equal to red_steps len '{len(self.red_steps)}'"
         assert len(capture_list) == len(self.red_steps), f"capture_list len '{len(capture_list)}' should be equal to red_steps len '{len(self.red_steps)}'"
+        assert len(next_state_list) == len(self.red_steps), f"next_state_list len '{len(next_state_list)}' should be equal to red_steps len '{len(self.red_steps)}'"
 
         # x[0]: current_state, 
         # x[1]: pi, 
         # x[2]: action_taken, 
-        # x[3]: next_state, 
         # x[4]: reward_raw，以红方视觉：赢为1，输为-1，其他为0
         # x[5]: done
-        self.red_steps = [(x[0], x[1], x[2], x[3], x[4], x[5], capture_list[i], chapture_reward_list[i]) for i, x in enumerate(self.red_steps)]
+        self.red_steps = [(x[0], x[1], x[2], next_state_list[i], x[4], x[5], capture_list[i], chapture_reward_list[i]) for i, x in enumerate(self.red_steps)]
 
         # 纠正数据
-        final_red_step = self.red_steps[-1]
+        final_red_step = list(self.red_steps[-1])
         final_capture_list = final_red_step[6]
         win = 0
         if "K" in final_capture_list:
@@ -192,6 +197,9 @@ class Round:
             win = 1
         final_red_step[5] = True  # done
         final_red_step[4] = win
+        
+        del(self.red_steps[-1])
+        self.red_steps.append(tuple(final_red_step))
 
         self.red_steps = Round.redistribute_reward(self.red_steps)
 
