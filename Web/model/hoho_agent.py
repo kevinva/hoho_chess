@@ -401,6 +401,8 @@ def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, b
     agent_current.update_version()
     model_path = agent_current.save_model()
 
+    del agent_current
+
     return model_path
 
 
