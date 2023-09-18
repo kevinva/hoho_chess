@@ -20,7 +20,7 @@ from model.hoho_config import *
 
 def go_to_new_round(argv):
 	global hoho_game, hoho_mcts, hoho_agent, hoho_round
-	global match_count, agent_updating, agent_update_accepted, agent_update_path, win_count
+	global match_count, agent_updating, agent_update_accepted, agent_update_path, win_count, agent_updated_count
 
 	match_count += 1
 	win_player = argv[2]
@@ -50,12 +50,11 @@ def go_to_new_round(argv):
 		# 为了好区分模型版本，模型更新前都先保存样本数据
 		hoho_replay_buffer.save({'model_version': hoho_agent.version})
 		hoho_replay_buffer.clear()
-	
-		agent_net_updated_count = hoho_agent.count
+
 		
 		hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
 		hoho_agent.load_model_from_path(agent_update_path)
-		hoho_agent.count = agent_net_updated_count
+		hoho_agent.count = agent_updated_count
 		LOGGER.info(f'Agent updated! version={hoho_agent.version}')
 		
 		agent_updating = False
@@ -224,13 +223,13 @@ def should_update_agent(model_version):
 
 
 def update_agent():
-	global hoho_agent, message_queue, agent_update_accepted, agent_update_path
+	global hoho_agent, message_queue, agent_update_accepted, agent_update_path, agent_updated_count
 	LOGGER.info('Start training!')
 
 	# 模型训练
 	# agent_new, agent_current = train(hoho_agent)
 
-	agent_update_path = train_off_policy_agent(hoho_agent, 30, hoho_replay_buffer, batch_size = BATCH_SIZE) 
+	agent_update_path, agent_updated_count = train_off_policy_agent(hoho_agent, 30, hoho_replay_buffer, batch_size = BATCH_SIZE) 
 	agent_update_accepted = True
 
 
@@ -302,6 +301,7 @@ if __name__ == '__main__':
 	hoho_game = None
 	hoho_round = None
 	updated_time = 0
+	agent_updated_count = 0
 	hoho_replay_buffer = ReplayBuffer()
 
 	# hoho_agent = Player()

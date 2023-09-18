@@ -400,10 +400,11 @@ def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, b
     agent_current.set_eval_mode()
     agent_current.update_version()
     model_path = agent_current.save_model()
+    updated_count = agent_current.count
 
     del agent_current
 
-    return model_path
+    return model_path, updated_count
 
 
 if __name__ == '__main__':
