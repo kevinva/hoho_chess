@@ -206,7 +206,7 @@ def should_update_agent(model_version):
 	# 	return True
 
 	if hoho_replay_buffer.step_size() > 100:     
-		if time.time() - updated_time > 1200:   # 大于1200秒
+		if time.time() - updated_time > 600:   # 大于300秒， 采样速率约: 1step / 10s
 			return True
 	
 	return False
@@ -230,7 +230,7 @@ def update_agent():
 	# 模型训练
 	# agent_new, agent_current = train(hoho_agent)
 
-	agent_update_path = train_off_policy_agent(hoho_agent, 60, hoho_replay_buffer, batch_size = BATCH_SIZE) 
+	agent_update_path = train_off_policy_agent(hoho_agent, 10, hoho_replay_buffer, batch_size = BATCH_SIZE) 
 	agent_update_accepted = True
 
 
