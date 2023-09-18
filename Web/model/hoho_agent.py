@@ -395,7 +395,7 @@ def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, b
         transition_dict = {'states': batch_s, 'actions': batch_a, 'next_states': batch_ns, 'rewards': batch_r, 'dones': batch_d}
         loss = agent_current.update(transition_dict)
 
-        LOGGER.info(f'progress={i + 1} / {num_epoch} | loss = {loss:.3f} | elapse={time.time() - start_time:.3f} s')
+        LOGGER.info(f'progress={i + 1} / {num_epoch} | loss = {loss:.3f} | update count = {agent_current.count} | elapse={time.time() - start_time:.3f} s')
 
     agent_current.set_eval_mode()
     agent_current.update_version()
