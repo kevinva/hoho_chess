@@ -234,7 +234,7 @@ def update_agent():
 	# agent_update_path, agent_updated_count = train_off_policy_agent(hoho_agent, 3, hoho_replay_buffer, batch_size = BATCH_SIZE) 
 	# agent_update_accepted = True
 
-	hoho_agent = train_off_policy_agent(hoho_agent, 3, hoho_replay_buffer, batch_size = BATCH_SIZE)
+	hoho_agent = train_off_policy_agent(hoho_agent, 5, hoho_replay_buffer, batch_size = BATCH_SIZE)
 	LOGGER.info(f'Agent updated! version = {hoho_agent.version}')
 
 
