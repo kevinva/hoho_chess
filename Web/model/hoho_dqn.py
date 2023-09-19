@@ -172,17 +172,18 @@ class DQN:
         q_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
 
         # 下个状态的最大Q值（注意：要限制在合法可走子动作下）
-        target_action_values_tensor = self.target_q_net(next_states_tensor)
-        batch_size = target_action_values_tensor.shape[0]
+        next_action_values = self.q_net(next_states_tensor)
+        batch_size = next_action_values.shape[0]
         next_states_str_list = transition_dict['next_states']
         next_legal_actions_list = [get_legal_actions(next_state, PLAYER_RED) for next_state in next_states_str_list]
-        target_action_values_formatted = torch.zeros((batch_size, ACTION_DIM)).to(DEVICE)
+        next_action_values_formatted = torch.zeros((batch_size, ACTION_DIM)).to(self.device)
         for i in range(batch_size):
             legal_actions = next_legal_actions_list[i]
             for action in legal_actions:
                 action_idx = ACTIONS_2_INDEX[action]
-                target_action_values_formatted[i][action_idx] = target_action_values_tensor[i][action_idx]
-        max_next_q_values = target_action_values_formatted.max(1)[0].view(-1, 1)
+                next_action_values_formatted[i][action_idx] = next_action_values[i][action_idx]
+        max_next_actions = next_action_values_formatted.max(1)[1].view(-1, 1)
+        max_next_q_values = self.target_q_net(next_states_tensor).gather(1, max_next_actions)
 
         q_targets = rewards + self.gamma * max_next_q_values * (1 - dones)  # TD误差目标
         dqn_loss = torch.mean(F.mse_loss(q_values, q_targets))  # 均方误差损失函数
