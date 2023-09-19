@@ -379,32 +379,39 @@ def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, b
     # 
     ###
 
-    agent_current = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
-    agent_current.version = agent.version
-    agent_current.count = agent.count
-    agent_current.q_net.load_state_dict(agent.q_net.state_dict())
-    agent_current.target_q_net.load_state_dict(agent.target_q_net.state_dict())
-    agent_current.optimizer = optim.Adam(agent.q_net.parameters(), lr = agent.learning_rate)
+    # agent_current = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+    # agent_current.version = agent.version
+    # agent_current.count = agent.count
+    # agent_current.q_net.load_state_dict(agent.q_net.state_dict())
+    # agent_current.target_q_net.load_state_dict(agent.target_q_net.state_dict())
+    # agent_current.optimizer = optim.Adam(agent.q_net.parameters(), lr = agent.learning_rate)
 
-    agent_current.set_train_mode()
-
+    # agent_current.set_train_mode()
+    agent.set_train_mode()
     for i in range(num_epoch):
         start_time = time.time()
 
         batch_s, batch_a, batch_r, batch_ns, batch_d = replay_buffer.sample(batch_size)
         transition_dict = {'states': batch_s, 'actions': batch_a, 'next_states': batch_ns, 'rewards': batch_r, 'dones': batch_d}
-        loss = agent_current.update(transition_dict)
+        # loss = agent_current.update(transition_dict)
+        loss = agent.update(transition_dict)
 
-        LOGGER.info(f'progress={i + 1} / {num_epoch} | loss = {loss:.3f} | update count = {agent_current.count} | elapse={time.time() - start_time:.3f} s')
+        LOGGER.info(f'progress={i + 1} / {num_epoch} | loss = {loss:.3f} | update count = {agent.count} | elapse={time.time() - start_time:.3f} s')
 
-    agent_current.set_eval_mode()
-    agent_current.update_version()
-    model_path = agent_current.save_model()
-    updated_count = agent_current.count
+    # agent_current.set_eval_mode()
+    # agent_current.update_version()
+    agent.set_eval_mode()
+    agent.update_version()
 
-    del agent_current
+    if agent.count % 100 == 0:
+        model_path = agent.save_model()
+    # model_path = agent_current.save_model()
+    # updated_count = agent_current.count
 
-    return model_path, updated_count
+    # del agent_current
+
+    # return model_path, updated_count
+    return agent
 
 
 if __name__ == '__main__':

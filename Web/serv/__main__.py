@@ -44,22 +44,22 @@ def go_to_new_round(argv):
 		hoho_replay_buffer.save({'model_version': hoho_agent.version})
 		hoho_replay_buffer.clear()
 
-	if agent_update_accepted and (agent_update_path is not None):
-		# hoho_agent = Player()
+	# if agent_update_accepted and (agent_update_path is not None):
+	# 	# hoho_agent = Player()
 
-		# 为了好区分模型版本，模型更新前都先保存样本数据
-		hoho_replay_buffer.save({'model_version': hoho_agent.version})
-		hoho_replay_buffer.clear()
+	# 	# 为了好区分模型版本，模型更新前都先保存样本数据
+	# 	hoho_replay_buffer.save({'model_version': hoho_agent.version})
+	# 	hoho_replay_buffer.clear()
 
 		
-		hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
-		hoho_agent.load_model_from_path(agent_update_path)
-		hoho_agent.count = agent_updated_count
-		LOGGER.info(f'Agent updated! version={hoho_agent.version}')
+	# 	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+	# 	hoho_agent.load_model_from_path(agent_update_path)
+	# 	hoho_agent.count = agent_updated_count
+	# 	LOGGER.info(f'Agent updated! version={hoho_agent.version}')
 		
-		agent_updating = False
-		agent_update_accepted = False
-		agent_update_path = None
+	# 	agent_updating = False
+	# 	agent_update_accepted = False
+	# 	agent_update_path = None
 
 	# hoho_mcts = MCTS(start_player=PLAYER_RED)
 	hoho_game = CChessGame()
@@ -170,9 +170,11 @@ def ajax_(request_, response_, route_args_):
 
 
 	if (not agent_updating) and should_update_agent(hoho_agent.version):
-		update_agent()
-		updated_time = time.time()
 		agent_updating = True
+		updated_time = time.time()
+		update_agent()
+		agent_updating = False
+		
 
 	# if not message_queue.empty():
 	# 	msg_info = message_queue.get()
@@ -205,7 +207,7 @@ def should_update_agent(model_version):
 	# 	return True
 
 	if hoho_replay_buffer.step_size() > 100:     
-		if time.time() - updated_time > 1800:   # 大于1800秒， 采样速率约: 1 step / 10s
+		if time.time() - updated_time > 60:   # 大于60秒， 采样速率约: 1 step / 10s
 			return True
 	
 	return False
@@ -229,8 +231,11 @@ def update_agent():
 	# 模型训练
 	# agent_new, agent_current = train(hoho_agent)
 
-	agent_update_path, agent_updated_count = train_off_policy_agent(hoho_agent, 50, hoho_replay_buffer, batch_size = BATCH_SIZE) 
-	agent_update_accepted = True
+	# agent_update_path, agent_updated_count = train_off_policy_agent(hoho_agent, 3, hoho_replay_buffer, batch_size = BATCH_SIZE) 
+	# agent_update_accepted = True
+
+	hoho_agent = train_off_policy_agent(hoho_agent, 3, hoho_replay_buffer, batch_size = BATCH_SIZE)
+	LOGGER.info(f'Agent updated! version = {hoho_agent.version}')
 
 
 	# # 自博弈

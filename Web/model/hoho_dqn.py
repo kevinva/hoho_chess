@@ -198,7 +198,6 @@ class DQN:
 
         return dqn_loss.item()
 
-
     def save_model(self):
         dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
         if not os.path.exists(dir_path):
