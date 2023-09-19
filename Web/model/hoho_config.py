@@ -14,7 +14,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # DEVICE = torch.device('cpu')
 
 # 残差网络层数，见hoho_agent.py
-RESIDUAL_BLOCK_NUM = 20
+RESIDUAL_BLOCK_NUM = 40
 
 # 特征提取输出通道数，见hoho_agent.py
 FILTER_NUM = 256
