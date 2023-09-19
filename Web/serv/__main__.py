@@ -204,8 +204,8 @@ def should_update_agent(model_version):
 	# if hoho_replay_buffer.step_size() % 100:
 	# 	return True
 
-	if hoho_replay_buffer.step_size() > 300:     
-		if time.time() - updated_time > 3600:   # 大于3600秒， 采样速率约: 1 step / 10s
+	if hoho_replay_buffer.step_size() > 100:     
+		if time.time() - updated_time > 1800:   # 大于1800秒， 采样速率约: 1 step / 10s
 			return True
 	
 	return False
