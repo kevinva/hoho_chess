@@ -316,7 +316,7 @@ class ReplayBuffer:
     @staticmethod
     def load_from_dir(dirpath):
         if not os.path.exists(dirpath):
-            return
+            return ReplayBuffer()
             
         all_data_list = list()
         for filename in os.listdir(dirpath):
@@ -326,7 +326,11 @@ class ReplayBuffer:
                     jsonstr = f.read()
                     data_list = json.loads(jsonstr)
                     all_data_list.extend(data_list)
-        replay_buffer = ReplayBuffer(data_list=all_data_list)
+
+        if len(all_data_list) == 0:
+            return ReplayBuffer()
+        
+        replay_buffer = ReplayBuffer(data_list = all_data_list)
         return replay_buffer
     
 

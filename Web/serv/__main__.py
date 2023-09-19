@@ -307,7 +307,7 @@ if __name__ == '__main__':
 	hoho_round = None
 	updated_time = 0
 	agent_updated_count = 0
-	hoho_replay_buffer = ReplayBuffer()
+	hoho_replay_buffer = ReplayBuffer.load_from_dir(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data'))
 
 	# hoho_agent = Player()
 	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
