@@ -171,7 +171,7 @@ class DQN:
         # 为了方便，直接用action的索引作为输入，暂没有编码action
         q_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
 
-        # 下个状态的最大Q值
+        # 下个状态的最大Q值（注意：要限制在合法可走子动作下）
         target_action_values_tensor = self.target_q_net(next_states_tensor)
         batch_size = target_action_values_tensor.shape[0]
         next_states_str_list = transition_dict['next_states']
