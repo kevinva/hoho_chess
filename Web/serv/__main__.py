@@ -40,7 +40,7 @@ def go_to_new_round(argv):
 
 	hoho_round = Round(int(time.time()))
 
-	if hoho_replay_buffer.round_size() >= 100:
+	if hoho_replay_buffer.round_size() >= 10:
 		hoho_replay_buffer.save({'model_version': hoho_agent.version})
 		hoho_replay_buffer.clear()
 
