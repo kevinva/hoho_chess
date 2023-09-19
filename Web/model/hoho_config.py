@@ -67,7 +67,7 @@ DEBUG = True
 
 # DQN用
 GAMMA = 0.98   # 折扣因子
-EPSILON_G = 0.1 # epsilon贪婪策略
+EPSILON_G = 0.2 # epsilon贪婪策略
 TARGET_UPDATE_COUNT = 20  # 更新目标网络的频率
 
 # 奖励重分配参数
