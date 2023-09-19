@@ -168,6 +168,7 @@ class DQN:
 
         dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
 
+        # 为了方便，直接用action的索引作为输入，暂没有编码action
         q_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
 
         # 下个状态的最大Q值
