@@ -126,6 +126,8 @@ class DQN:
         all_legal_actions = get_legal_actions(state_str, PLAYER_RED)
         pis = np.zeros((ACTION_DIM,))
 
+        print(f"state: {state_str}, all_legal_actions: {all_legal_actions}")
+
         if np.random.random() < self.epsilon:
             print("random action!")
 
@@ -136,18 +138,24 @@ class DQN:
             pis[action_idx] = 1.0
         else:
             print("argmax action!")
+            print(f"a0b0: {'a0b0' in all_legal_actions},  {ACTIONS_2_INDEX['a0b0']}")
             
             state_tensor = convert_board_to_tensor(state_str).unsqueeze(0).to(self.device)
             action_values = self.q_net(state_tensor)
             action_values = action_values.to(torch.device('cpu')).detach().numpy()[0]
-
+            
             q_values = np.zeros((ACTION_DIM,))
+
+            print(f"action_values len: {action_values.shape}, q_values: {q_values.shape}")
+
             for action in all_legal_actions:
                 action_idx = ACTIONS_2_INDEX[action]
                 q_values[action_idx] = action_values[action_idx]
             action_idx = q_values.argmax()
             action = INDEXS_2_ACTION[action_idx]
             pis = q_values / np.sum(q_values)
+
+            print(f"select: action = {action}, pis max = {np.max(pis)}")
 
         return action, pis
     
