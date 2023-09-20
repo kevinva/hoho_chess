@@ -12,7 +12,7 @@ from .lib.http_ import Http_
 
 from model.hoho_utils import *
 from model.hoho_agent import *
-from model.hoho_dqn import *
+from model.hoho_d3qn import *
 from model.hoho_mcts import *
 from model.hoho_cchessgame import *
 from model.hoho_config import *
@@ -261,6 +261,9 @@ def find_top_version_model_path():
 	result_path = None
 	top_version = 0
 	for filename in os.listdir(model_dir_path):
+		if not filename.startswith(MODEL_FILE_PREFIX):
+			continue
+
 		name = filename.split('.')[0]
 		items = name.split('_')
 		if len(items) == 3:
@@ -292,7 +295,7 @@ rpc_registry['rpc_auto_move'] = rpc_auto_move
 
 
 if __name__ == '__main__':
-	setup_seed(6666)
+	setup_seed(6667)
 
 	mp.set_start_method('spawn')   # Unix上跑要打开这句！要写在所有执行多线程代码之前！
 
@@ -310,7 +313,7 @@ if __name__ == '__main__':
 	hoho_replay_buffer = ReplayBuffer.load_from_dir(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data'))
 
 	# hoho_agent = Player()
-	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+	hoho_agent = D3QN(ACTION_DIM, LEARNING_RATE, L2_REGULARIZATION, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
 	model_path = find_top_version_model_path()
 	LOGGER.info(f"model_path: {model_path}")
 	
@@ -318,7 +321,7 @@ if __name__ == '__main__':
 		hoho_agent.load_model_from_path(model_path)
 
 	LOGGER.info(f'[pid={os.getpid()}] start server!')
-	start_server_(8000, 100)
+	start_server_(9000, 100)
 
 	#hoho_test
 	# update_agent()

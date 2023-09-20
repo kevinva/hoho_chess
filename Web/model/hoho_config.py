@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
 import torch
@@ -20,10 +20,10 @@ RESIDUAL_BLOCK_NUM = 40
 FILTER_NUM = 256
 
 # training batch_size
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 
 # 学习率
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 5e-5
 
 # Loss用的L2范数
 L2_REGULARIZATION = 1e-4
@@ -87,4 +87,4 @@ KEY_MODEL_PATH = 'model_path'
 AGENT_MSG_ID_TRAIN_FINISH = 1
 AGENT_MSG_ID_SELF_BATTLE_FINISH = 2
 REPLAY_BUFFER_FILE_PREFIX = 'QLearningAb'
-MODEL_FILE_PREFIX = 'QLearning'
+MODEL_FILE_PREFIX = 'D3QN'

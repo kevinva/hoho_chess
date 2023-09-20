@@ -36,13 +36,13 @@ class ResidualBlock(nn.Module):
 
 
 
-class BoardPlaneLayer(nn.Module):
+class BoardPlaneNet(nn.Module):
     """
     棋盘编码网络
     """
 
     def __init__(self, in_channels, out_channels, residual_num):
-        super(BoardPlaneLayer, self).__init__()
+        super(BoardPlaneNet, self).__init__()
         
         self.residual_num = residual_num
         self.conv1 = nn.Conv2d(in_channels, out_channels, stride = 1, kernel_size = 3, padding = 1, bias = False)
@@ -59,14 +59,29 @@ class BoardPlaneLayer(nn.Module):
         return x
     
 
+class VNet(nn.Module):
 
-class ActionLayer(nn.Module):
-    """
-    输出动作Q值预测
-    """
+    def __init__(self, in_planes, position_dim):
+        super(VNet, self).__init__()
+
+        self.position_dim = position_dim
+        self.conv = nn.Conv2d(in_planes, 1, kernel_size = 1)
+        self.bn = nn.BatchNorm2d(1)
+        self.fc1 = nn.Linear(position_dim, 256)
+        self.fc2 = nn.Linear(256, 1)
+
+    def forward(self, x):
+        x = F.relu(self.bn(self.conv(x)))
+        x = x.view(-1, self.position_dim)
+        x = F.relu(self.fc1(x))
+        result = self.fc2(x)
+        return result
+
+
+class ANet(nn.Module):
 
     def __init__(self, in_planes, position_dim, action_dim):
-        super(ActionLayer, self).__init__()
+        super(ANet, self).__init__()
 
         self.position_dim = position_dim
         self.conv = nn.Conv2d(in_planes, 2, kernel_size = 1) 
@@ -89,25 +104,28 @@ class QNetwork(nn.Module):
     def __init__(self):
         super(QNetwork, self).__init__()
 
-        self.board_layer = BoardPlaneLayer(in_channels = IN_PLANES_NUM, out_channels = FILTER_NUM, residual_num = RESIDUAL_BLOCK_NUM)
-        self.action_layer = ActionLayer(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM, action_dim = ACTION_DIM)
+        self.board_layer = BoardPlaneNet(in_channels = IN_PLANES_NUM, out_channels = FILTER_NUM, residual_num = RESIDUAL_BLOCK_NUM)
+        self.A_layer = ANet(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM, action_dim = ACTION_DIM)
+        self.V_layer = VNet(in_planes = FILTER_NUM, position_dim = BOARD_POSITION_NUM)
 
     def forward(self, state):
-        board_features = self.board_layer(state)
-        q_value = self.action_layer(board_features)
-        ### 最终输出动作的Q值
+        board_features = F.relu(self.board_layer(state))
+        A = self.A_layer(board_features)
+        board_features = F.relu(self.board_layer(state))
+        V = self.V_layer(board_features)
+        Q = V + A - A.mean(1).view(-1, 1)
 
-        return q_value
+        return Q
 
+# dueling + double DQN
+class D3QN:
 
-class DQN:
-    ''' DQN算法 '''
-
-    def __init__(self, action_dim, learning_rate, gamma, epsilon, target_update, device):
+    def __init__(self, action_dim, learning_rate, lr_decay, gamma, epsilon, target_update, device):
         
         self.version = 0
         self.action_dim = action_dim
         self.learning_rate = learning_rate
+        self.lr_decay = lr_decay
 
         # 原始Q网络
         self.q_net = QNetwork().to(device)  
@@ -115,7 +133,7 @@ class DQN:
         # 目标Q网络
         self.target_q_net = QNetwork().to(device)
 
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate, weight_decay = lr_decay)
         self.gamma = gamma 
         self.epsilon = epsilon 
         self.target_update = target_update
@@ -125,8 +143,6 @@ class DQN:
     def take_action(self, state_str):  # epsilon-贪婪策略采取动作
         all_legal_actions = get_legal_actions(state_str, PLAYER_RED)
         
-        print(f"state: {state_str}, all_legal_actions: {all_legal_actions}")
-
         if np.random.random() < self.epsilon:
             print("random action!")
 
@@ -174,7 +190,6 @@ class DQN:
 
         dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
 
-        # 为了方便，直接用action的索引作为输入，暂没有编码action
         q_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
 
         # 下个状态的最大Q值（注意：要限制在合法可走子动作下）
@@ -229,7 +244,7 @@ class DQN:
         checkpoint = torch.load(model_path)
         self.q_net.load_state_dict(checkpoint)
         self.target_q_net.load_state_dict(checkpoint)
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate, weight_decay = self.lr_decay)
     
     def update_version(self):
         self.version += 1
@@ -280,8 +295,9 @@ if __name__ == "__main__":
     gamma = 0.99
     lr = 5e-5
     epsilon = 0.1
+    lr_decay = 1e-4
 
-    dqn = DQN(ACTION_DIM, lr, gamma, epsilon, 100, DEVICE)
+    dqn = D3QN(ACTION_DIM, lr, lr_decay, gamma, epsilon, 100, DEVICE)
     state = INIT_BOARD_STATE
     for i in range(100):
         action = dqn.take_action(state)
