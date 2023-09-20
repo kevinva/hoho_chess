@@ -261,6 +261,9 @@ def find_top_version_model_path():
 	result_path = None
 	top_version = 0
 	for filename in os.listdir(model_dir_path):
+		if not filename.startswith(MODEL_FILE_PREFIX):
+			continue
+
 		name = filename.split('.')[0]
 		items = name.split('_')
 		if len(items) == 3:
@@ -310,7 +313,7 @@ if __name__ == '__main__':
 	hoho_replay_buffer = ReplayBuffer.load_from_dir(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data'))
 
 	# hoho_agent = Player()
-	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, L2_REGULARIZATION, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
 	model_path = find_top_version_model_path()
 	LOGGER.info(f"model_path: {model_path}")
 	

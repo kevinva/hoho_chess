@@ -103,11 +103,12 @@ class QNetwork(nn.Module):
 class DQN:
     ''' DQN算法 '''
 
-    def __init__(self, action_dim, learning_rate, gamma, epsilon, target_update, device):
+    def __init__(self, action_dim, learning_rate, lr_decay, gamma, epsilon, target_update, device):
         
         self.version = 0
         self.action_dim = action_dim
         self.learning_rate = learning_rate
+        self.lr_decay = lr_decay
 
         # 原始Q网络
         self.q_net = QNetwork().to(device)  
@@ -115,7 +116,7 @@ class DQN:
         # 目标Q网络
         self.target_q_net = QNetwork().to(device)
 
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate, weight_decay = lr_decay)
         self.gamma = gamma 
         self.epsilon = epsilon 
         self.target_update = target_update
@@ -229,7 +230,7 @@ class DQN:
         checkpoint = torch.load(model_path)
         self.q_net.load_state_dict(checkpoint)
         self.target_q_net.load_state_dict(checkpoint)
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate, weight_decay = self.lr_decay)
     
     def update_version(self):
         self.version += 1
@@ -280,8 +281,9 @@ if __name__ == "__main__":
     gamma = 0.99
     lr = 5e-5
     epsilon = 0.1
+    lr_decay = 1e-4
 
-    dqn = DQN(ACTION_DIM, lr, gamma, epsilon, 100, DEVICE)
+    dqn = DQN(ACTION_DIM, lr, lr_decay, gamma, epsilon, 100, DEVICE)
     state = INIT_BOARD_STATE
     for i in range(100):
         action = dqn.take_action(state)
