@@ -1,6 +1,6 @@
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 
 import torch
@@ -20,7 +20,7 @@ RESIDUAL_BLOCK_NUM = 40
 FILTER_NUM = 256
 
 # training batch_size
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 
 # 学习率
 LEARNING_RATE = 5e-5
