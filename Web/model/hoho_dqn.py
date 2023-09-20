@@ -124,8 +124,7 @@ class DQN:
 
     def take_action(self, state_str):  # epsilon-贪婪策略采取动作
         all_legal_actions = get_legal_actions(state_str, PLAYER_RED)
-        pis = np.zeros((ACTION_DIM,))
-
+        
         print(f"state: {state_str}, all_legal_actions: {all_legal_actions}")
 
         if np.random.random() < self.epsilon:
@@ -135,29 +134,28 @@ class DQN:
             action_idx = np.random.randint(legal_action_dim)
             action = all_legal_actions[action_idx]
             action_idx = ACTIONS_2_INDEX[action]
+
+            pis = np.zeros((ACTION_DIM,))
             pis[action_idx] = 1.0
+
+            return action, pis
         else:
             print("argmax action!")
-            print(f"a0b0: {'a0b0' in all_legal_actions},  {ACTIONS_2_INDEX['a0b0']}")
             
             state_tensor = convert_board_to_tensor(state_str).unsqueeze(0).to(self.device)
-            action_values = self.q_net(state_tensor)
+            action_values = self.q_net(state_tensor) # 注意：action_values可能有负值
             action_values = action_values.to(torch.device('cpu')).detach().numpy()[0]
             
-            q_values = np.zeros((ACTION_DIM,))
-
-            print(f"action_values len: {action_values.shape}, q_values: {q_values.shape}")
+            # q_values = np.zeros((ACTION_DIM,)) # 注意：action_values可能有负值，0值可能不是考虑范围
+            q_values = np.array([float('-inf')] * ACTION_DIM) 
 
             for action in all_legal_actions:
                 action_idx = ACTIONS_2_INDEX[action]
                 q_values[action_idx] = action_values[action_idx]
             action_idx = q_values.argmax()
             action = INDEXS_2_ACTION[action_idx]
-            pis = q_values / np.sum(q_values)
 
-            print(f"select: action = {action}, pis max = {np.max(pis)}")
-
-        return action, pis
+            return action, q_values
     
     def update(self, transition_dict):
         planes = [convert_board_to_tensor(state) for state in transition_dict['states']]
