@@ -374,7 +374,7 @@ class Round:
     
 
     def all_step_size(self):
-        return len(self.all_steps_list)
+        return len(self.all_step_list)
             
 
     def size(self):

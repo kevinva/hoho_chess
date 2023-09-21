@@ -77,8 +77,10 @@ def go_to_new_round(argv):
 	red_state = hoho_game.state
 	# pi, action = hoho_mcts.take_simulation(hoho_agent, hoho_game)
 	red_action, red_pi = hoho_agent.take_action(red_state)
-	mid_state, z, done = hoho_game.step(red_action)
-	hoho_round.add_red_step(red_state, red_pi.tolist(), red_action, mid_state, z, done)
+	red_mid_state, z, done = hoho_game.step(red_action)
+	hoho_round.add_red_step(red_state, red_pi.tolist(), red_action, red_mid_state, z, done)
+	LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_mid_state}')
+
 
 	move = convert_my_action_to_webgame_move(red_action)
 	LOGGER.info(f'get red move={move}')
@@ -171,7 +173,7 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move), 'expand': {'agent_updating': agent_updating}}
 		json_ = json.dumps(json_data)
 
-		LOGGER.info(f'current round steps = {hoho_round.size()} | total steps: {hoho_replay_buffer.step_size()} | total rounds: {hoho_replay_buffer.round_size()}')
+		LOGGER.info(f'current round steps = {hoho_round.size()} | total steps: {hoho_replay_buffer.step_size()} | total rounds: {hoho_replay_buffer.round_size()} ({hoho_replay_buffer.all_round_size()})')
 		LOGGER.info(f'{round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
 
 		win_rate = (win_count / match_count) if match_count > 0 else 0
