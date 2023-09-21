@@ -12,7 +12,7 @@ from .lib.http_ import Http_
 
 from model.hoho_utils import *
 from model.hoho_agent import *
-from model.hoho_dqn import *
+from model.hoho_d3qn import *
 from model.hoho_mcts import *
 from model.hoho_cchessgame import *
 from model.hoho_config import *
