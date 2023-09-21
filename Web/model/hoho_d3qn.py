@@ -133,7 +133,7 @@ class D3QN:
         # 目标Q网络
         self.target_q_net = QNetwork().to(device)
 
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate, weight_decay = lr_decay)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate)
         self.gamma = gamma 
         self.epsilon = epsilon 
         self.target_update = target_update
@@ -244,7 +244,7 @@ class D3QN:
         checkpoint = torch.load(model_path)
         self.q_net.load_state_dict(checkpoint)
         self.target_q_net.load_state_dict(checkpoint)
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate, weight_decay = self.lr_decay)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate)
     
     def update_version(self):
         self.version += 1
