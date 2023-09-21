@@ -231,9 +231,9 @@ class Round:
             for i, val in enumerate(range(t, left_bound, -1)):
                 reward_mat[t][val - 1] = chapture_reward * pow(RER_LAMBDA, i + 1)
 
-            # # 向后衰减
-            # for i, val in enumerate(range(t, right_bound)):
-            #     reward_mat[t][val + 1] = chapture_reward * pow(RER_LAMBDA, i + 1)
+            # 向后衰减
+            for i, val in enumerate(range(t, right_bound)):
+                reward_mat[t][val + 1] = chapture_reward * pow(RER_LAMBDA, i + 1)
 
 
         # print(f"reward_mat: {reward_mat}")
