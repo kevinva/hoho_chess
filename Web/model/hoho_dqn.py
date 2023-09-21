@@ -126,7 +126,7 @@ class DQN:
     def take_action(self, state_str):  # epsilon-贪婪策略采取动作
         all_legal_actions = get_legal_actions(state_str, PLAYER_RED)
         
-        print(f"state: {state_str}, all_legal_actions: {all_legal_actions}")
+        # print(f"state: {state_str}, all_legal_actions: {all_legal_actions}")
 
         if np.random.random() < self.epsilon:
             print("random action!")
