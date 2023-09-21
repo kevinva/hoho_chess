@@ -331,7 +331,7 @@ if __name__ == '__main__':
 		hoho_agent.load_model_from_path(model_path)
 
 	LOGGER.info(f'[pid={os.getpid()}] start server!')
-	start_server_(8000, 100)
+	start_server_(9000, 100)
 
 	#hoho_test
 	# update_agent()
