@@ -258,7 +258,7 @@ class Round:
 
 class ReplayBuffer:
 
-    def __init__(self, capacity=10000, data_list=None):
+    def __init__(self, capacity = 20000, data_list = None):
         self.step_list = []
         self.buffer = collections.deque(maxlen=capacity)  # 队列,先进先出
         if data_list is not None:
