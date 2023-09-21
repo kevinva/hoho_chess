@@ -29,20 +29,30 @@ def go_to_new_round(argv):
 		if win_player == 'Red':
 			win_count += 1
 			hoho_round.update_winner('Red')
+			hoho_round.update_winner_v2("Red")
 		elif win_player == 'Black':
 			hoho_round.update_winner('Black')
+			hoho_round.update_winner_v2("Black")
 		else: # 平局
 			hoho_round.update_winner()
+			hoho_round.update_winner_v2()
 
 		# 必须update_winner之后再add_round!!!!!!
 		if hoho_round.size() > 0:
 			hoho_replay_buffer.add_round(hoho_round)
+
+		if hoho_round.all_step_size() > 0:
+			hoho_replay_buffer.add_round_all(hoho_round)
 
 	hoho_round = Round(int(time.time()))
 
 	if hoho_replay_buffer.round_size() >= 50:
 		hoho_replay_buffer.save({'model_version': hoho_agent.version})
 		hoho_replay_buffer.clear()
+
+	if hoho_replay_buffer.all_round_size() >= 50:
+		hoho_replay_buffer.save_all_steps({'model_version': hoho_agent.version})
+		hoho_replay_buffer.clear_all_steps()
 
 	# if agent_update_accepted and (agent_update_path is not None):
 	# 	# hoho_agent = Player()
