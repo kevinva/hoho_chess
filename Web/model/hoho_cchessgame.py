@@ -109,6 +109,7 @@ class Round:
         self.round_id = round_id
         self.red_steps = list()
         self.black_steps = list()
+        self.all_step_list = list()
 
     def add_red_step(self, current_state, pi, action_taken, mid_state, r, done):
         self.red_steps.append((current_state, pi, action_taken, mid_state, r, done))
@@ -203,6 +204,74 @@ class Round:
 
         self.red_steps = Round.redistribute_reward(self.red_steps)
 
+    def update_winner_v2(self, winner = None):
+        all_steps = []
+        all_len = len(self.red_steps) + len(self.black_steps)
+        r_idx = 0
+        b_idx = 0
+        chapture_reward_list = list()
+        capture_list = list()
+        player_list = list()
+        while len(all_steps) < all_len:
+            ###### 统计红方
+            red_step = self.red_steps[r_idx]
+
+            red_step_captures = check_capture(red_step[0], red_step[3])  # 计算当前棋局下，走当前步后吃子情况
+            capture_list.append(red_step_captures)
+
+            red_step_reward = 0
+            for piece in red_step_captures:
+                if piece.isupper():  # 红方子被吃
+                    red_step_reward -= chess_value_equal_to_pawn(piece)
+                elif piece.islower():  # 红方吃子  (只有这种情况)
+                    red_step_reward += chess_value_equal_to_pawn(piece)
+            chapture_reward_list.append(red_step_reward)
+
+            player_list.append("r")
+            all_steps.append(red_step)
+            r_idx += 1
+
+            ###### 统计黑方
+            black_step = self.black_steps[b_idx]
+
+            black_step_captures = check_capture(black_step[0], black_step[3])  # 计算当前棋局下，走当前步后吃子情况
+            capture_list.append(black_step_captures)
+
+            black_step_reward = 0
+            for piece in black_step_captures:
+                if piece.isupper():  # 红方子被吃 （只有这种情况）
+                    black_step_reward -= chess_value_equal_to_pawn(piece)
+                elif piece.islower():  # 红方吃子
+                    black_step_reward += chess_value_equal_to_pawn(piece)
+            chapture_reward_list.append(black_step_reward)
+
+            player_list.append("b")
+            all_steps.append(black_step)
+            b_idx += 1
+
+        assert len(chapture_reward_list) == len(all_steps), f"chapture rewards len '{len(chapture_reward_list)}' not equal to all_steps len '{len(all_steps)}'"
+        assert len(capture_list) == len(all_steps), f"capture_list len '{len(capture_list)}' should be equal to all_steps len '{len(all_steps)}'"
+
+        all_steps_new = [(x[0], x[1], x[2], x[3], x[4], x[5], capture_list[i], chapture_reward_list[i], player_list[i]) for i, x in enumerate(all_steps)]
+
+
+        # 纠正数据
+        final_step = list(all_steps_new[-1])
+        final_capture_list = final_step[6]
+        win = 0
+        if "K" in final_capture_list:
+            win = -1
+        elif "k" in final_capture_list:
+            win = 1
+        final_step[5] = True  # done
+        final_step[4] = win
+        
+        del(all_steps_new[-1])
+        all_steps_new.append(tuple(final_step))
+        all_steps_new = Round.redistribute_reward_v2(all_steps_new)
+
+        self.all_step_list.append(all_steps_new)
+
 
     # 奖励重塑
     @staticmethod
@@ -250,6 +319,62 @@ class Round:
         result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
         
         return result_steps
+    
+    @staticmethod
+    def redistribute_reward_v2(episode_step_list):
+        step_count = len(episode_step_list)
+        raw_rewards = np.zeros((step_count,))
+        final_step = episode_step_list[-1]
+        final_reward = final_step[4]
+        if final_reward != 0:
+            r = final_reward
+            for i in range(raw_rewards.shape[0]):
+                raw_rewards[step_count - 1 - i] = r
+                r = -r
+
+        # 构造奖励衰减矩阵
+        reward_mat = np.zeros((step_count, step_count))
+
+        # print(f"step_count: {step_count}")
+
+        for t in range(step_count):
+            step = episode_step_list[t]
+            chapture_reward = step[7]
+
+            left_bound = max(0, t - RER_ALL_STEP_WINDOW_SIZE)
+            right_bound = min(t + RER_ALL_STEP_WINDOW_SIZE, step_count - 1)
+
+            # print(f"t: {t}, left - right: {left_bound} - {right_bound}")
+
+            reward_mat[t][t] = chapture_reward * RER_LAMBDA
+
+            # 向前衰减
+            for i, val in enumerate(range(t, left_bound, -1)):
+                reward_mat[t][val - 1] = chapture_reward * pow(RER_LAMBDA, i + 1)
+
+            # # 向后衰减
+            # for i, val in enumerate(range(t, right_bound)):
+            #     reward_mat[t][val + 1] = chapture_reward * pow(RER_LAMBDA, i + 1)
+
+
+        # print(f"reward_mat: {reward_mat}")
+
+        # 按列相加得出每一步的附加奖励
+        addition_rewards = np.sum(reward_mat, axis = 0)
+
+        # print(f"addition_rewards: {addition_rewards}")
+
+        assert raw_rewards.shape[0] == addition_rewards.shape[0]
+        assert addition_rewards.shape[0] == len(episode_step_list)
+
+        final_rewards = RER_ALPHA * raw_rewards + (1 - RER_ALPHA) *addition_rewards
+        result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], episode_info[8], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
+        
+        return result_steps
+    
+
+    def all_step_size(self):
+        return len(self.all_steps_list)
             
 
     def size(self):
@@ -258,8 +383,9 @@ class Round:
 
 class ReplayBuffer:
 
-    def __init__(self, capacity = 20000, data_list=None):
+    def __init__(self, capacity = 20000, data_list = None):
         self.step_list = []
+        self.all_steps_list = []
         self.buffer = collections.deque(maxlen=capacity)  # 队列,先进先出
         if data_list is not None:
             self.step_list.extend(data_list)
@@ -271,8 +397,14 @@ class ReplayBuffer:
         self.step_list.append(round.red_steps)   # step_list中每个元素是一个round，一个round包含若干steps
         self.buffer.extend(round.red_steps)      # buffer中每个元素是一个独立的step
 
+    def add_round_all(self, round: Round):
+        self.all_steps_list.append(round.all_step_list)
+
     def round_size(self):  
         return len(self.step_list)
+    
+    def all_round_size(self):
+        return len(self.all_steps_list)
     
     def step_size(self):
         return len(self.buffer)
@@ -281,7 +413,10 @@ class ReplayBuffer:
         self.step_list.clear()
         # 不要清self.buffer!!!!!!
 
-    def save(self, expand_data=None):
+    def clear_all_steps(self):
+        self.all_steps_list.clear()
+
+    def save(self, expand_data = None):
         if len(self.step_list) == 0:
             return
         
@@ -298,6 +433,25 @@ class ReplayBuffer:
         with open(filepath, 'w') as f:
             jsonstr = json.dumps(self.step_list)
             f.write(jsonstr)
+
+    def save_all_steps(self, expand_data = None):
+        if len(self.all_steps_list) == 0:
+            return
+        
+        filedir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data_all_steps')
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)
+        
+        model_version = 0
+        if expand_data is not None:
+            model_version = expand_data.get('model_version')
+        filename = '{}_{}_{}.json'.format(REPLAY_BUFFER_FILE_PREFIX, int(time.time()), model_version)
+        filepath = os.path.join(filedir, filename)
+        
+        with open(filepath, 'w') as f:
+            jsonstr = json.dumps(self.step_list)
+            f.write(jsonstr)
+        
 
     def sample(self, batch_size):  # 从self.buffer中采样数据,数量为batch_size
         transitions = random.sample(self.buffer, batch_size)

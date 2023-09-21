@@ -73,7 +73,8 @@ TARGET_UPDATE_COUNT = 10  # 更新目标网络的频率
 # 奖励重分配参数
 RER_LAMBDA = 0.90
 RER_WINDOW_SIZE = 2  # 前后window_size个位置都要考虑
-
+RER_ALL_STEP_WINDOW_SIZE = 4
+RER_ALPHA = 0.1
 
 LOG_TAG_AGENT = '[hoho_agent]'
 LOG_TAG_CCHESSGAME = '[hoho_cchessgame]'
