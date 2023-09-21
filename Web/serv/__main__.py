@@ -323,7 +323,7 @@ if __name__ == '__main__':
 	hoho_replay_buffer = ReplayBuffer.load_from_dir(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data'))
 
 	# hoho_agent = Player()
-	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, L2_REGULARIZATION, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+	hoho_agent = D3QN(ACTION_DIM, LEARNING_RATE, L2_REGULARIZATION, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
 	model_path = find_top_version_model_path()
 	LOGGER.info(f"model_path: {model_path}")
 	
