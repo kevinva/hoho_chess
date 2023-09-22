@@ -449,7 +449,7 @@ class ReplayBuffer:
         filepath = os.path.join(filedir, filename)
         
         with open(filepath, 'w') as f:
-            jsonstr = json.dumps(self.step_list)
+            jsonstr = json.dumps(self.all_steps_list)
             f.write(jsonstr)
         
 
