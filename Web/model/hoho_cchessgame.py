@@ -204,6 +204,7 @@ class Round:
 
         self.red_steps = Round.redistribute_reward(self.red_steps)
 
+    # 包含红黑双方的数据
     def update_winner_v2(self, winner = None):
         all_steps = []
         all_len = len(self.red_steps) + len(self.black_steps)
