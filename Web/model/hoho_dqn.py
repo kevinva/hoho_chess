@@ -101,7 +101,7 @@ class QNetwork(nn.Module):
 
 
 class DQN:
-    ''' DQN算法 '''
+    ''' DQN算法(基于Double DQN) '''
 
     def __init__(self, action_dim, learning_rate, lr_decay, gamma, epsilon, target_update, device):
         
@@ -246,6 +246,152 @@ class DQN:
         self.q_net.eval()
 
 
+class MiniMaxDQN:
+    ''' minimax-DQN算法（基于Double DQN） '''
+
+    def __init__(self, action_dim, learning_rate, gamma, epsilon, target_update, device):
+        
+        self.version = 0
+        self.action_dim = action_dim
+        self.learning_rate = learning_rate
+
+        # 原始Q网络
+        self.q_net = QNetwork().to(device)  
+
+        # 目标Q网络
+        self.target_q_net = QNetwork().to(device)
+
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = learning_rate)
+        self.gamma = gamma 
+        self.epsilon = epsilon 
+        self.target_update = target_update
+        self.count = 0  # 计数器,记录更新次数
+        self.device = device
+
+    def take_action(self, state_str):  # epsilon-贪婪策略采取动作
+        all_legal_actions = get_legal_actions(state_str, PLAYER_RED)
+        
+        print(f"state: {state_str}, all_legal_actions: {all_legal_actions}")
+
+        if np.random.random() < self.epsilon:
+            print("random action!")
+
+            legal_action_dim = len(all_legal_actions)
+            action_idx = np.random.randint(legal_action_dim)
+            action = all_legal_actions[action_idx]
+            action_idx = ACTIONS_2_INDEX[action]
+
+            pis = np.zeros((ACTION_DIM,))
+            pis[action_idx] = 1.0
+
+            return action, pis
+        else:
+            print("argmax action!")
+            
+            state_tensor = convert_board_to_tensor(state_str).unsqueeze(0).to(self.device)
+            action_values = self.q_net(state_tensor) # 注意：action_values可能有负值
+            action_values = action_values.to(torch.device('cpu')).detach().numpy()[0]
+            
+            # q_values = np.zeros((ACTION_DIM,)) # 注意：action_values可能有负值，0值可能不是考虑范围
+            q_values = np.array([float('-inf')] * ACTION_DIM) 
+
+            for action in all_legal_actions:
+                action_idx = ACTIONS_2_INDEX[action]
+                q_values[action_idx] = action_values[action_idx]
+            action_idx = q_values.argmax()
+            action = INDEXS_2_ACTION[action_idx]
+
+            return action, q_values
+    
+    def update(self, transition_dict):
+        planes = [convert_board_to_tensor(state) for state in transition_dict['states']]
+        states_tensor = torch.stack(planes, dim = 0).to(self.device)
+        
+        actions_index_list = []
+        for action in transition_dict['actions']:
+            action_idx = ACTIONS_2_INDEX[action]
+            actions_index_list.append(action_idx)
+        actions_index_tensor = torch.tensor(actions_index_list).view(-1, 1).to(self.device)
+
+        rewards = torch.tensor(transition_dict['rewards'], dtype = torch.float).view(-1, 1).to(self.device)
+
+        next_planes = [convert_board_to_tensor(state) for state in transition_dict['next_states']]
+        next_states_tensor = torch.stack(next_planes, dim = 0).to(self.device)
+
+        dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
+
+        # 为了方便，直接用action的索引作为输入，暂没有编码action
+        selected_action_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
+
+        # 下个状态的最大Q值（注意：要限制在合法可走子动作下）
+        # 如果next_state对应黑方，则next_state以红方视角来展示，动作也是
+        next_action_values = self.target_q_net(next_states_tensor)
+        batch_size = next_action_values.shape[0]
+        next_states_str_list = transition_dict['next_states']
+        next_legal_actions_list = [get_legal_actions(next_state, PLAYER_RED) for next_state in next_states_str_list]
+        next_action_values_validated = torch.full((batch_size, ACTION_DIM, -DISCARD_Q_VALUE)).to(self.device)   # 
+        for i in range(batch_size):
+            legal_actions = next_legal_actions_list[i]
+            for action in legal_actions:
+                action_idx = ACTIONS_2_INDEX[action]
+                next_action_values_validated[i][action_idx] = next_action_values[i][action_idx]
+        next_action_values_validated = -next_action_values_validated   # 使用negamax(minimax的变种)算法，所以要取负值
+        next_values = next_action_values_validated.max(dim = 1)[0].view(-1, 1)
+
+        actual_values = rewards + self.gamma * next_values * (1 - dones)  # TD误差目标
+        dqn_loss = torch.mean(F.mse_loss(selected_action_values, actual_values))  # 均方误差损失函数
+        self.optimizer.zero_grad()  # PyTorch中默认梯度会累积,这里需要显式将梯度置为0
+        dqn_loss.backward()  # 反向传播更新参数
+        self.optimizer.step()
+
+        if self.count % self.target_update == 0:
+            # print(f'loss: {dqn_loss.item()}')
+            LOGGER.info(f'Update Target network!')
+            self.target_q_net.load_state_dict(self.q_net.state_dict())  # 更新目标网络
+        self.count += 1
+
+        return dqn_loss.item()
+
+    def save_model(self):
+        dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        
+        filepath = os.path.join(dir_path, '{}_{}_{}.pth'.format(MODEL_FILE_PREFIX, int(time.time()), self.version))
+        state = self.q_net.state_dict()
+        torch.save(state, filepath)
+
+        return filepath
+
+    def load_model_from_path(self, model_path):
+        filename = os.path.basename(model_path)
+        if not filename.startswith(MODEL_FILE_PREFIX):
+            return
+
+        filename = filename.split('.')[0]
+        items = filename.split('_')
+        if len(items) == 3:
+            self.version = int(items[2])
+
+        checkpoint = torch.load(model_path)
+        self.q_net.load_state_dict(checkpoint)
+        self.target_q_net.load_state_dict(checkpoint)
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr = self.learning_rate)
+    
+    def update_version(self):
+        self.version += 1
+
+    def printModel(self):
+        LOGGER.info(f'{self.q_net}')
+
+
+    def set_train_mode(self):
+        self.q_net.train()
+    
+    def set_eval_mode(self):
+        self.q_net.eval()
+
+
 if __name__ == "__main__":
     # board_in_channel = IN_PLANES_NUM
     # board_out_channel = FILTER_NUM
@@ -263,31 +409,28 @@ if __name__ == "__main__":
 
     ########################################################
 
-    # # 创建一个输入张量
-    # input = torch.tensor([[1, 2], [3, 4], [5, 6]])
+    # 创建一个输入张量
+    input = torch.tensor([[1, 2], [3, 4], [5, 6]])
 
-    # # 创建一个索引张量，指定要收集的元素的位置
-    # index = torch.tensor([[0, 1], [1, 0], [2, 1]])
-    # index_column = torch.tensor([[0, 1], [1, 0]])
-    # index_column2 = torch.tensor([[0], [1]])
+    # 创建一个索引张量，指定要收集的元素的位置
+    index = torch.tensor([[0, 1], [1, 0], [2, 1]])
+    index_column = torch.tensor([[0, 1], [1, 0]])
+    index_column2 = torch.tensor([[0], [1]])
 
-    # # 在维度0上使用gather函数
-    # # result = torch.gather(input, 0, index)
-    # result = torch.gather(input, 1, index_column2)
-    # print(result)
+    # 在维度0上使用gather函数
+    # result = torch.gather(input, 0, index)
+    result = torch.gather(input, 1, index_column2)  # 结果的形状跟随index_columns
+    print(result)
 
     ########################################################
+    # gamma = 0.99
+    # lr = 5e-5
+    # epsilon = 0.1
 
-    gamma = 0.99
-    lr = 5e-5
-    epsilon = 0.1
-    lr_decay = 1e-4
-
-    dqn = DQN(ACTION_DIM, lr, lr_decay, gamma, epsilon, 100, DEVICE)
-    state = INIT_BOARD_STATE
-    for i in range(100):
-        action = dqn.take_action(state)
-        print(f"    action: {action}")
-
+    # dqn = DQN(ACTION_DIM, lr, gamma, epsilon, 100, DEVICE)
+    # state = INIT_BOARD_STATE
+    # for i in range(100):
+    #     action = dqn.take_action(state)
+    #     print(f"    action: {action}")
 
 

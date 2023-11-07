@@ -76,6 +76,8 @@ RER_WINDOW_SIZE = 2  # 前后window_size个位置都要考虑
 RER_ALL_STEP_WINDOW_SIZE = 4
 RER_ALPHA = 0.1
 
+DISCARD_Q_VALUE = -1e7   # 可忽视的Q值
+
 LOG_TAG_AGENT = '[hoho_agent]'
 LOG_TAG_CCHESSGAME = '[hoho_cchessgame]'
 LOG_TAG_REPLAY_BUFFER = '[hoho_replay_buffer]'
