@@ -391,8 +391,8 @@ def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, b
     for i in range(num_epoch):
         start_time = time.time()
 
-        batch_s, batch_a, batch_r, batch_ns, batch_d = replay_buffer.sample(batch_size)
-        transition_dict = {'states': batch_s, 'actions': batch_a, 'next_states': batch_ns, 'rewards': batch_r, 'dones': batch_d}
+        batch_s, batch_a, batch_r, batch_ns, batch_d, batch_player = replay_buffer.sample(batch_size)
+        transition_dict = {'states': batch_s, 'actions': batch_a, 'next_states': batch_ns, 'rewards': batch_r, 'dones': batch_d, "players": batch_player}
         # loss = agent_current.update(transition_dict)
         loss = agent.update(transition_dict)
 

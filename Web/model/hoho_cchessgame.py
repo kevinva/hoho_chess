@@ -467,7 +467,7 @@ class ReplayBuffer:
     def sample(self, batch_size):  # 从self.buffer中采样数据,数量为batch_size
         transitions = random.sample(self.buffer, batch_size)
         states, pi_list, actions, next_states, raw_rewards, done_list, chapture_list, chapture_rewards, players, re_rewards  = zip(*transitions)
-        return states, actions, re_rewards, next_states, done_list
+        return states, actions, re_rewards, next_states, done_list, players
 
     @staticmethod
     def load_from_file(filepath, for_all = False):

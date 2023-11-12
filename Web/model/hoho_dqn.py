@@ -247,7 +247,7 @@ class DQN:
 
 
 class MiniMaxDQN:
-    ''' minimax-DQN算法（基于Double DQN） '''
+    ''' minimax-DQN算法 '''
 
     def __init__(self, action_dim, learning_rate, gamma, epsilon, target_update, device):
         
@@ -292,7 +292,7 @@ class MiniMaxDQN:
             action_values = self.q_net(state_tensor) # 注意：action_values可能有负值
             action_values = action_values.to(torch.device('cpu')).detach().numpy()[0]
             
-            # q_values = np.zeros((ACTION_DIM,)) # 注意：action_values可能有负值，0值可能不是考虑范围
+            # q_values = np.zeros((ACTION_DIM,)) # 注意：action_values可能有负值，0值可能不是考虑范围，不能初始化为0值
             q_values = np.array([float('-inf')] * ACTION_DIM) 
 
             for action in all_legal_actions:
@@ -320,22 +320,33 @@ class MiniMaxDQN:
 
         dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
 
+        players = transition_dict['players']
+
         # 为了方便，直接用action的索引作为输入，暂没有编码action
         selected_action_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
+        for i, player in enumerate(players):
+            if player == "b":  # hoho_argue
+                selected_action_values[i] = -selected_action_values[i]  # 因为神经网络以红方状态的视觉输入的，输出的应该是红方当前状态的Q值，所以如果当前是黑方的走子，则Q值要取反才是黑方真正的Q值
 
         # 下个状态的最大Q值（注意：要限制在合法可走子动作下）
         # 如果next_state对应黑方，则next_state以红方视角来展示，动作也是
         next_action_values = self.target_q_net(next_states_tensor)
+        for i, player in enumerate(players):
+            if player == "r":  # hoho_argue
+                next_action_values = -next_action_values  # 如果当前是红方走子，则next_state是轮到黑方，对next_state进行估值时，神经网络的输入是以红方状态为视觉的，所以要取反才是黑方的Q值
+        
         batch_size = next_action_values.shape[0]
         next_states_str_list = transition_dict['next_states']
         next_legal_actions_list = [get_legal_actions(next_state, PLAYER_RED) for next_state in next_states_str_list]
-        next_action_values_validated = torch.full((batch_size, ACTION_DIM, -DISCARD_Q_VALUE)).to(self.device)   # 
+        next_action_values_validated = torch.full((batch_size, ACTION_DIM), -DISCARD_Q_VALUE).to(self.device)
         for i in range(batch_size):
             legal_actions = next_legal_actions_list[i]
             for action in legal_actions:
                 action_idx = ACTIONS_2_INDEX[action]
                 next_action_values_validated[i][action_idx] = next_action_values[i][action_idx]
-        next_action_values_validated = -next_action_values_validated   # 使用negamax(minimax的变种)算法，所以要取负值
+
+        # 使用negamax(minimax的变种)算法，所以要取负值之后再去最大值
+        next_action_values_validated = -next_action_values_validated   
         next_values = next_action_values_validated.max(dim = 1)[0].view(-1, 1)
 
         actual_values = rewards + self.gamma * next_values * (1 - dones)  # TD误差目标
@@ -351,6 +362,7 @@ class MiniMaxDQN:
         self.count += 1
 
         return dqn_loss.item()
+    
 
     def save_model(self):
         dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'models')
