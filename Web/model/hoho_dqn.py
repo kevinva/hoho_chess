@@ -304,6 +304,8 @@ class MiniMaxDQN:
             return action, q_values
     
     def update(self, transition_dict):
+        players = transition_dict['players']
+
         planes = [convert_board_to_tensor(state) for state in transition_dict['states']]
         states_tensor = torch.stack(planes, dim = 0).to(self.device)
         
@@ -315,12 +317,15 @@ class MiniMaxDQN:
 
         rewards = torch.tensor(transition_dict['rewards'], dtype = torch.float).view(-1, 1).to(self.device)
 
-        next_planes = [convert_board_to_tensor(state) for state in transition_dict['next_states']]
+        next_planes = list()
+        for i, next_state in enumerate(transition_dict['next_states']):
+            if players[i] == "r":
+                next_planes.append(convert_board_to_tensor(flip_board(next_state)))  # 当前是红方，则下一步状态是黑方
+            elif player[i] == "b":
+                next_planes.append(convert_board_to_tensor(next_state))
         next_states_tensor = torch.stack(next_planes, dim = 0).to(self.device)
 
         dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
-
-        players = transition_dict['players']
 
         # 为了方便，直接用action的索引作为输入，暂没有编码action
         selected_action_values = self.q_net(states_tensor).gather(1, actions_index_tensor)  # Q值 (gather用法参考：https://blog.csdn.net/qq_38964360/article/details/131550919)
@@ -341,7 +346,10 @@ class MiniMaxDQN:
         next_action_values_validated = torch.full((batch_size, ACTION_DIM), -DISCARD_Q_VALUE).to(self.device)
         for i in range(batch_size):
             legal_actions = next_legal_actions_list[i]
+            player = players[i]
             for action in legal_actions:
+                if player == "r":
+                    action = flip_action(action)
                 action_idx = ACTIONS_2_INDEX[action]
                 next_action_values_validated[i][action_idx] = next_action_values[i][action_idx]
 
