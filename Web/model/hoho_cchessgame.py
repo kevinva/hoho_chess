@@ -107,9 +107,9 @@ class Round:
 
     def __init__(self, round_id):
         self.round_id = round_id
-        self.red_steps = list()
-        self.black_steps = list()
-        self.all_step_list = list()
+        self.red_steps = list()       # 只有红方的steps
+        self.black_steps = list()     # 只有黑方的steps
+        self.all_step_list = list()   # 包含红黑双方的steps
 
     def add_red_step(self, current_state, pi, action_taken, mid_state, r, done):
         self.red_steps.append((current_state, pi, action_taken, mid_state, r, done))
@@ -208,8 +208,8 @@ class Round:
     def update_winner_v2(self, winner = None):
         all_steps = []
         all_len = len(self.red_steps) + len(self.black_steps)
-        r_idx = 0
-        b_idx = 0
+        r_idx = 0  # 红方索引
+        b_idx = 0  # 黑方索引
         chapture_reward_list = list()
         capture_list = list()
         player_list = list()
@@ -231,6 +231,11 @@ class Round:
             player_list.append("r")
             all_steps.append(red_step)
             r_idx += 1
+            
+            
+            if len(all_steps) == all_len:
+                # 如果红方获胜应该会走到这一步
+                break
 
             ###### 统计黑方
             black_step = self.black_steps[b_idx]
@@ -317,7 +322,7 @@ class Round:
         assert addition_rewards.shape[0] == len(episode_step_list)
 
         final_rewards = raw_rewards + addition_rewards
-        result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
+        result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], episode_info[8], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
         
         return result_steps
     
@@ -331,7 +336,7 @@ class Round:
             r = final_reward
             for i in range(raw_rewards.shape[0]):
                 raw_rewards[step_count - 1 - i] = r
-                r = -r
+                r = -r  # 红黑方交替奖励
 
         # 构造奖励衰减矩阵
         reward_mat = np.zeros((step_count, step_count))
@@ -343,7 +348,7 @@ class Round:
             chapture_reward = step[7]
 
             left_bound = max(0, t - RER_ALL_STEP_WINDOW_SIZE)
-            right_bound = min(t + RER_ALL_STEP_WINDOW_SIZE, step_count - 1)
+            # right_bound = min(t + RER_ALL_STEP_WINDOW_SIZE, step_count - 1)  # 向后衰减需要计算右边界
 
             # print(f"t: {t}, left - right: {left_bound} - {right_bound}")
 
@@ -368,7 +373,7 @@ class Round:
         assert raw_rewards.shape[0] == addition_rewards.shape[0]
         assert addition_rewards.shape[0] == len(episode_step_list)
 
-        final_rewards = RER_ALPHA * raw_rewards + (1 - RER_ALPHA) *addition_rewards
+        final_rewards = RER_ALPHA * raw_rewards + (1 - RER_ALPHA) * addition_rewards
         result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], episode_info[7], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
         
         return result_steps
@@ -384,22 +389,27 @@ class Round:
 
 class ReplayBuffer:
 
-    def __init__(self, capacity = 20000, data_list = None):
-        self.step_list = []
-        self.all_steps_list = []
-        self.buffer = collections.deque(maxlen=capacity)  # 队列,先进先出
+    # for_all: True为包含红黑双方的回合数据
+    def __init__(self, capacity = 20000, data_list = None, for_all = False):
+        self.step_list = []   # 只有红方的steps list
+        self.all_steps_list = []   # 包含红黑双方的steps list
+        self.buffer = collections.deque(maxlen = capacity)  # 队列,先进先出
         if data_list is not None:
-            self.step_list.extend(data_list)
+            if for_all:
+                self.all_steps_list.extend(data_list)
+            else:
+                self.step_list.extend(data_list)
 
             for steps in data_list:
                 self.buffer.extend(steps)
 
-    def add_round(self, round):
+    def add_round(self, round: Round):
         self.step_list.append(round.red_steps)   # step_list中每个元素是一个round，一个round包含若干steps
         self.buffer.extend(round.red_steps)      # buffer中每个元素是一个独立的step
 
     def add_round_all(self, round: Round):
         self.all_steps_list.append(round.all_step_list)
+        self.buffer.extend(round.all_step_list)
 
     def round_size(self):  
         return len(self.step_list)
@@ -456,22 +466,22 @@ class ReplayBuffer:
 
     def sample(self, batch_size):  # 从self.buffer中采样数据,数量为batch_size
         transitions = random.sample(self.buffer, batch_size)
-        states, pi_list, actions, next_states, raw_rewards, done_list, chapture_list, chapture_rewards, re_rewards  = zip(*transitions)
+        states, pi_list, actions, next_states, raw_rewards, done_list, chapture_list, chapture_rewards, players, re_rewards  = zip(*transitions)
         return states, actions, re_rewards, next_states, done_list
 
     @staticmethod
-    def load_from_file(filepath):
+    def load_from_file(filepath, for_all = False):
         data_list = []
         with open(filepath, 'r') as f:
             jsonstr = f.read()
             data_list = json.loads(jsonstr)
-        replay_buffer = ReplayBuffer(data_list=data_list)
+        replay_buffer = ReplayBuffer(data_list = data_list, for_all = for_all)
         return replay_buffer
 
     @staticmethod
-    def load_from_dir(dirpath):
+    def load_from_dir(dirpath, for_all = False):
         if not os.path.exists(dirpath):
-            return ReplayBuffer()
+            return ReplayBuffer(for_all = for_all)
             
         all_data_list = list()
         for filename in os.listdir(dirpath):
@@ -483,9 +493,9 @@ class ReplayBuffer:
                     all_data_list.extend(data_list)
 
         if len(all_data_list) == 0:
-            return ReplayBuffer()
+            return ReplayBuffer(for_all = for_all)
         
-        replay_buffer = ReplayBuffer(data_list = all_data_list)
+        replay_buffer = ReplayBuffer(data_list = all_data_list, for_all = for_all)
         return replay_buffer
     
 
