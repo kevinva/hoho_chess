@@ -334,28 +334,29 @@ class MiniMaxDQN:
                 selected_action_values[i] = -selected_action_values[i]  # 因为神经网络以红方状态的视觉输入的，输出的应该是红方当前状态的Q值，所以如果当前是黑方的走子，则Q值要取反才是黑方真正的Q值
 
         # 下个状态的最大Q值（注意：要限制在合法可走子动作下）
-        # 如果next_state对应黑方，则next_state以红方视角来展示，动作也是
         next_action_values = self.target_q_net(next_states_tensor)
         for i, player in enumerate(players):
             if player == "r":  # hoho_argue
                 next_action_values = -next_action_values  # 如果当前是红方走子，则next_state是轮到黑方，对next_state进行估值时，神经网络的输入是以红方状态为视觉的，所以要取反才是黑方的Q值
         
         batch_size = next_action_values.shape[0]
-        next_states_str_list = transition_dict['next_states']
-        next_legal_actions_list = [get_legal_actions(next_state, PLAYER_RED) for next_state in next_states_str_list]
-        next_action_values_validated = torch.full((batch_size, ACTION_DIM), -DISCARD_Q_VALUE).to(self.device)
+        next_states_str_list_formatted = list()
+        for i, next_state in enumerate(transition_dict['next_states']):
+            if players[i] == "r":
+                next_states_str_list_formatted.append(flip_board(next_state))
+            else:
+                next_states_str_list_formatted.append(next_state)
+
+        next_legal_actions_list = [get_legal_actions(next_state, PLAYER_RED) for next_state in next_states_str_list_formatted]
+        next_action_values_validated = torch.full((batch_size, ACTION_DIM), DISCARD_Q_VALUE).to(self.device)
         for i in range(batch_size):
             legal_actions = next_legal_actions_list[i]
-            player = players[i]
             for action in legal_actions:
-                if player == "r":
-                    action = flip_action(action)
                 action_idx = ACTIONS_2_INDEX[action]
                 next_action_values_validated[i][action_idx] = next_action_values[i][action_idx]
 
-        # 使用negamax(minimax的变种)算法，所以要取负值之后再去最大值
-        next_action_values_validated = -next_action_values_validated   
-        next_values = next_action_values_validated.max(dim = 1)[0].view(-1, 1)
+        # 使用negamax(minimax的变种)算法: Q(s,a) = r + gamma * (-max Q(s,b))
+        next_values = -next_action_values_validated.max(dim = 1)[0].view(-1, 1)
 
         actual_values = rewards + self.gamma * next_values * (1 - dones)  # TD误差目标
         dqn_loss = torch.mean(F.mse_loss(selected_action_values, actual_values))  # 均方误差损失函数
