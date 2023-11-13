@@ -455,11 +455,11 @@ if __name__ == "__main__":
 
     #######################################################
 
-	agent = MiniMaxDQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+    agent = MiniMaxDQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
     board_state = 'RNBAKABNR/9/1C7/P1P1P1P1P/9/9/p1p1p1pCp/1c5c1/9/rnbakabnr'
-    # for _ in range(10):
-    #     action, pis = agent.take_action(board_state)
-    #     print(f"action: {action}, pis: {pis}")
+    for _ in range(10):
+        action, _ = agent.take_action(board_state)
+        print(f"action: {action}")
     
 
 
