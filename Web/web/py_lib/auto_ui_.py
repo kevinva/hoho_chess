@@ -48,7 +48,7 @@ class Controller(ui_.Controller):
 				self.hoho_reset()
 			return
 		
-		self.step_count += 1
+		self.step_count = self.step_count + 1
 
 		spinner_.show()
 		self.chess_board.rotate_board()
@@ -114,7 +114,7 @@ class Controller(ui_.Controller):
 		
 		time.sleep(0.1)
 
-		self.step_count += 1
+		self.step_count = self.step_count + 1
 
 		i1,j1,i2,j2 = move
 		chess1 = self.chess_board.board_map[(i1,j1)]
