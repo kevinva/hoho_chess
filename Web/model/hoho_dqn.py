@@ -337,7 +337,7 @@ class MiniMaxDQN:
         next_action_values = self.target_q_net(next_states_tensor)
         for i, player in enumerate(players):
             if player == "r":  # hoho_argue
-                next_action_values = -next_action_values  # 如果当前是红方走子，则next_state是轮到黑方，对next_state进行估值时，神经网络的输入是以红方状态为视觉的，所以要取反才是黑方的Q值
+                next_action_values[i] = -next_action_values[i]  # 如果当前是红方走子，则next_state是轮到黑方，对next_state进行估值时，神经网络的输入是以红方状态为视觉的，所以要取反才是黑方的Q值
         
         next_states_str_list_formatted = list()
         for i, next_state in enumerate(transition_dict['next_states']):
