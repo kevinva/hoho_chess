@@ -173,7 +173,7 @@ def ajax_(request_, response_, route_args_):
 		json_data = {'Black': list(black_move), 'Red': list(red_move), 'expand': {'agent_updating': agent_updating}}
 		json_ = json.dumps(json_data)
 
-		LOGGER.info(f'current round steps = {hoho_round.size()} | total steps: {hoho_replay_buffer.step_size()} | total rounds: {hoho_replay_buffer.round_size()} ({hoho_replay_buffer.all_round_size()})')
+		LOGGER.info(f'current round steps: {hoho_round.all_step_size()} | total steps: {hoho_replay_buffer.step_size()} | total rounds: {hoho_replay_buffer.all_round_size()}')
 		LOGGER.info(f'{round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
 
 		win_rate = (win_count / match_count) if match_count > 0 else 0

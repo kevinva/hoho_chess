@@ -275,8 +275,7 @@ class Round:
         del(all_steps_new[-1])
         all_steps_new.append(tuple(final_step))
         all_steps_new = Round.redistribute_reward_v2(all_steps_new)
-
-        self.all_step_list.append(all_steps_new)
+        self.all_step_list = all_steps_new
 
 
     # 奖励重塑
