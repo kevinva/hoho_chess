@@ -217,7 +217,7 @@ def start_server_(port_, max_threads_):
 def should_update_agent(model_version):
 	global hoho_replay_buffer, all_steps_count, update_time
 
-	if all_steps_count >= BATCH_SIZE:
+	if hoho_replay_buffer.step_size() >= BATCH_SIZE:
 		if time.time() - update_time > 384:
 			return True
 	
