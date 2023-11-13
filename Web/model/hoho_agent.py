@@ -380,17 +380,15 @@ def train_off_policy_agent(agent, num_epoch, replay_buffer: ReplayBuffer, batch_
 
         batch_s, batch_a, batch_r, batch_ns, batch_d, batch_player = replay_buffer.sample(batch_size)
         transition_dict = {'states': batch_s, 'actions': batch_a, 'next_states': batch_ns, 'rewards': batch_r, 'dones': batch_d, "players": batch_player}
-        # loss = agent_current.update(transition_dict)
         loss = agent.update(transition_dict)
 
         LOGGER.info(f'progress = {i + 1} / {num_epoch} | loss = {loss:.3f} | update count = {agent.count} | elapse = {time.time() - start_time:.3f} s')
 
-    # agent_current.set_eval_mode()
-    # agent_current.update_version()
     agent.set_eval_mode()
-    agent.update_version()
+    
 
-    if agent.count % 50 == 0:
+    if agent.count % 100 == 0:
+        agent.update_version()
         model_path = agent.save_model()
     # model_path = agent_current.save_model()
     # updated_count = agent_current.count

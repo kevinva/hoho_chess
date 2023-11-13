@@ -179,7 +179,7 @@ def ajax_(request_, response_, route_args_):
 	LOGGER.info(f'total steps: {all_steps_count}({hoho_replay_buffer.step_size()}) | total rounds: {hoho_replay_buffer.all_round_size()}')
 
 	win_rate = (win_count / round_count) if round_count > 0 else 0
-	LOGGER.info(f'model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
+	LOGGER.info(f'model version: {hoho_agent.version} | model update count: {hoho_agent.count} | win count: {win_count} | win rate: {win_rate}')
 	LOGGER.info('========================================================')
 
 
@@ -218,7 +218,7 @@ def should_update_agent(model_version):
 	global hoho_replay_buffer, all_steps_count, update_time
 
 	if hoho_replay_buffer.step_size() >= BATCH_SIZE:
-		if time.time() - update_time > 384:
+		if time.time() - update_time > 60:
 			return True
 	
 	return False

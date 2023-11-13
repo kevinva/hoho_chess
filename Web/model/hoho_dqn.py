@@ -298,6 +298,9 @@ class MiniMaxDQN:
             for action in all_legal_actions:
                 action_idx = ACTIONS_2_INDEX[action]
                 q_values[action_idx] = action_values[action_idx]
+
+                print(f"{action}: {q_values[action_idx]}")
+
             action_idx = q_values.argmax()
             action = INDEXS_2_ACTION[action_idx]
 
