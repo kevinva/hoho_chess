@@ -372,7 +372,7 @@ def train(agent):
     return agent_new, agent_current
 
 
-def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, batch_size):
+def train_off_policy_agent(agent, num_epoch, replay_buffer: ReplayBuffer, batch_size):
     agent.set_train_mode()
 
     for i in range(num_epoch):

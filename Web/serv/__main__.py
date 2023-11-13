@@ -142,7 +142,7 @@ def home(request_, response_, route_args_):
 
 
 def ajax_(request_, response_, route_args_):
-	global rpc_registry, agent_updating
+	global rpc_registry, agent_updating, update_time
 	global hoho_agent, all_steps_count, hoho_replay_buffer, hoho_round
 
 	params_ = request_.params_
@@ -185,6 +185,7 @@ def ajax_(request_, response_, route_args_):
 
 	if (not agent_updating) and should_update_agent(hoho_agent.version):
 		agent_updating = True
+		update_time = time.time()
 		update_agent()
 		agent_updating = False
 		
@@ -214,10 +215,11 @@ def start_server_(port_, max_threads_):
 
 
 def should_update_agent(model_version):
-	global hoho_replay_buffer, all_steps_count
+	global hoho_replay_buffer, all_steps_count, update_time
 
-	if all_steps_count % BATCH_SIZE == 0:
-		return True
+	if all_steps_count >= BATCH_SIZE:
+		if time.time() - update_time > 384:
+			return True
 	
 	return False
 
@@ -319,6 +321,7 @@ if __name__ == '__main__':
 	hoho_game = None
 	hoho_round = None
 	agent_updated_count = 0
+	update_time = 0
 	hoho_replay_buffer = ReplayBuffer.load_from_dir(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data'))
 
 	# hoho_agent = Player()
