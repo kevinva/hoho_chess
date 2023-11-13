@@ -259,6 +259,13 @@ class Round:
         assert len(chapture_reward_list) == len(all_steps), f"chapture rewards len '{len(chapture_reward_list)}' not equal to all_steps len '{len(all_steps)}'"
         assert len(capture_list) == len(all_steps), f"capture_list len '{len(capture_list)}' should be equal to all_steps len '{len(all_steps)}'"
 
+        
+        # x[0]: state, 
+        # x[1]: pi, 
+        # x[2]: action_taken, 
+        # x[3]: next_state, 
+        # x[4]: reward_raw，以红方视觉：赢为1，输为-1，其他为0
+        # x[5]: done
         all_steps_new = [(x[0], x[1], x[2], x[3], x[4], x[5], capture_list[i], chapture_reward_list[i], player_list[i]) for i, x in enumerate(all_steps)]
 
 
@@ -374,7 +381,7 @@ class Round:
         assert addition_rewards.shape[0] == len(episode_step_list)
 
         final_rewards = RER_ALPHA * raw_rewards + (1 - RER_ALPHA) * addition_rewards
-        result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], episode_info[7], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
+        result_steps = [(episode_info[0], episode_info[1], episode_info[2], episode_info[3], episode_info[4], episode_info[5], episode_info[6], episode_info[7], episode_info[8], final_reward) for episode_info, final_reward in zip(episode_step_list, final_rewards)]
         
         return result_steps
     
@@ -464,7 +471,7 @@ class ReplayBuffer:
             f.write(jsonstr)
         
 
-    def sample(self, batch_size):  # 从self.buffer中采样数据,数量为batch_size
+    def sample(self, batch_size):
         transitions = random.sample(self.buffer, batch_size)
         states, pi_list, actions, next_states, raw_rewards, done_list, chapture_list, chapture_rewards, players, re_rewards  = zip(*transitions)
         return states, actions, re_rewards, next_states, done_list, players

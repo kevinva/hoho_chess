@@ -323,6 +323,7 @@ class MiniMaxDQN:
                 next_planes.append(convert_board_to_tensor(flip_board(next_state)))  # 当前是红方，则下一步状态是黑方
             elif players[i] == "b":
                 next_planes.append(convert_board_to_tensor(next_state))
+        # print(f"next_planes: {next_planes}, players: {players}, {transition_dict['next_states']}")
         next_states_tensor = torch.stack(next_planes, dim = 0).to(self.device)
 
         dones = torch.tensor(transition_dict['dones'], dtype = torch.float).view(-1, 1).to(self.device)
