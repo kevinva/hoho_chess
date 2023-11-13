@@ -339,15 +339,15 @@ class MiniMaxDQN:
             if player == "r":  # hoho_argue
                 next_action_values = -next_action_values  # 如果当前是红方走子，则next_state是轮到黑方，对next_state进行估值时，神经网络的输入是以红方状态为视觉的，所以要取反才是黑方的Q值
         
-        batch_size = next_action_values.shape[0]
         next_states_str_list_formatted = list()
         for i, next_state in enumerate(transition_dict['next_states']):
-            if players[i] == "r":
+            if players[i] == "r":  # 当前红方的下一个状态是轮到黑方，所以要flip board
                 next_states_str_list_formatted.append(flip_board(next_state))
             else:
                 next_states_str_list_formatted.append(next_state)
 
         next_legal_actions_list = [get_legal_actions(next_state, PLAYER_RED) for next_state in next_states_str_list_formatted]
+        batch_size = next_action_values.shape[0]
         next_action_values_validated = torch.full((batch_size, ACTION_DIM), DISCARD_Q_VALUE).to(self.device)
         for i in range(batch_size):
             legal_actions = next_legal_actions_list[i]
@@ -357,7 +357,6 @@ class MiniMaxDQN:
 
         # 使用negamax(minimax的变种)算法: Q(s,a) = r + gamma * (-max Q(s,b))
         next_values = -next_action_values_validated.max(dim = 1)[0].view(-1, 1)
-
         actual_values = rewards + self.gamma * next_values * (1 - dones)  # TD误差目标
         dqn_loss = torch.mean(F.mse_loss(selected_action_values, actual_values))  # 均方误差损失函数
         self.optimizer.zero_grad()  # PyTorch中默认梯度会累积,这里需要显式将梯度置为0
