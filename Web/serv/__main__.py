@@ -166,12 +166,16 @@ def ajax_(request_, response_, route_args_):
 		red_move = go_to_new_round(argv)
 		json_data = {'Red': list(red_move), 'expand:':{'agent_updating': agent_updating}}
 		json_ = json.dumps(json_data)
+
+		LOGGER.info(f'{round_step_count} step / {round_count} round | elapse: {(time.time() - start_time):.3f}s')
 	else:
 		black_move, red_move = go_on_gaming(func_name, [data_board])   # data_board需要重新包一下
 		json_data = {'Black': list(black_move), 'Red': list(red_move), 'expand': {'agent_updating': agent_updating}}
 		json_ = json.dumps(json_data)
 
-	LOGGER.info(f'{round_step_count} step / {round_count} round | elapse: {(time.time() - start_time):.3f}s')
+		LOGGER.info(f'{round_step_count} step / {round_count} round | elapse: {(time.time() - start_time):.3f}s')
+
+	
 	LOGGER.info(f'total steps: {all_steps_count}({hoho_replay_buffer.step_size()}) | total rounds: {hoho_replay_buffer.all_round_size()}')
 
 	win_rate = (win_count / round_count) if round_count > 0 else 0

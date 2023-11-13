@@ -5,7 +5,7 @@ from . import spinner_
 from . import chess
 from . import ajax_
 
-HOHO_RESTRICT_ROUND_NUM = 100  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_ROUND_NUM相同)
+HOHO_RESTRICT_STEP_NUM = 128  # 限制多少步还没分出胜负，则平手(与hoho_utils中的RESTRICT_STEP_NUM相同)
 
 match_count = 0
 
@@ -40,7 +40,7 @@ class Controller(ui_.Controller):
 
 	def blacks_turn(self):
 		global match_count
-		if self.round_count >= HOHO_RESTRICT_ROUND_NUM:
+		if self.step_count >= HOHO_RESTRICT_STEP_NUM:
 			if should_restart(match_count):
 				restart_app()
 			else:
@@ -48,14 +48,14 @@ class Controller(ui_.Controller):
 				self.hoho_reset()
 			return
 		
-		self.round_count = self.round_count + 1
+		self.step_count += 1
 
 		spinner_.show()
 		self.chess_board.rotate_board()
 		# move = auto_move(self.chess_board)
 		try:
 			board_key = chess.board_key(self.chess_board) # board_key 可变为 JSON
-			move_dict = ajax_.rpc.rpc_auto_move(board_key, self.round_count)
+			move_dict = ajax_.rpc.rpc_auto_move(board_key, self.step_count)
 			move_black = move_dict.get('Black')
 		except RuntimeError as ex:
 			# javascript.alert(str(ex))
@@ -114,6 +114,8 @@ class Controller(ui_.Controller):
 		
 		time.sleep(0.1)
 
+		self.step_count += 1
+
 		i1,j1,i2,j2 = move
 		chess1 = self.chess_board.board_map[(i1,j1)]
 		succ, captured = self._move_chess_to(chess1, i2, j2)
@@ -136,8 +138,8 @@ class Controller(ui_.Controller):
 	def hoho_reset(self, winner = None):
 		global match_count
 		match_count = match_count + 1
-		self.round_count = 1
-		move_dict = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
+		self.step_count = 1
+		move_dict = ajax_.rpc.rpc_auto_move('Action!', self.step_count, winner)
 		red_move = move_dict.get('Red')
 		# expand_info = move_dict.get('expand')
 		# agent_updating = expand_info.get('agent_updating')

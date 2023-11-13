@@ -17,7 +17,7 @@ from model.hoho_config import *
 
 class CChessGame:
 
-    def __init__(self, state=INIT_BOARD_STATE, restrict_count=RESTRICT_ROUND_NUM, winner=None, current_player=PLAYER_RED):
+    def __init__(self, state=INIT_BOARD_STATE, restrict_count=RESTRICT_STEP_NUM, winner=None, current_player=PLAYER_RED):
         self.state = state
         self.restrict_count = restrict_count
         self.winner = winner
@@ -46,7 +46,7 @@ class CChessGame:
 
     def reset(self):
         self.state = INIT_BOARD_STATE
-        self.restrict_count = RESTRICT_ROUND_NUM
+        self.restrict_count = RESTRICT_STEP_NUM
         self.winner = None
         self.current_player = PLAYER_RED
 
@@ -104,6 +104,7 @@ class ChessDataset(Dataset):
 
 
 class Round:
+    # 一个Round相当于一个episode
 
     def __init__(self, round_id):
         self.round_id = round_id
