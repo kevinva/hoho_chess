@@ -373,7 +373,7 @@ class Round:
         # print(f"reward_mat: {reward_mat}")
 
         # 按列相加得出每一步的附加奖励
-        addition_rewards = np.sum(reward_mat, axis = 0)
+        addition_rewards = np.sum(reward_mat, axis = 0) / 100   # 除以100归一化
 
         # print(f"addition_rewards: {addition_rewards}")
 
