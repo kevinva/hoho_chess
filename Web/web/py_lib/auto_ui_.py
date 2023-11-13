@@ -13,7 +13,6 @@ class Controller(ui_.Controller):
 
 	def __init__(self, board, history_winner = None):
 		super(Controller, self).__init__(board)
-		self.round_count = 0
 		self.hoho_reset(winner = history_winner)
 
 	def onmouseup(self, ev):
@@ -137,7 +136,7 @@ class Controller(ui_.Controller):
 	def hoho_reset(self, winner = None):
 		global match_count
 		match_count = match_count + 1
-		self.round_count = 0
+		self.round_count = 1
 		move_dict = ajax_.rpc.rpc_auto_move('Action!', self.round_count, winner)
 		red_move = move_dict.get('Red')
 		# expand_info = move_dict.get('expand')

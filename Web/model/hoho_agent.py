@@ -373,21 +373,8 @@ def train(agent):
 
 
 def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, batch_size):
-    ### 
-    # 1. 每局（Round）结束后，根据奖励塑型后的奖励函数，更新每一步(step)的即时奖励，然后放入经验回放池
-    # 2. 每局（Round）结束后，判断经验回放池样本数(回合数，step)是否满足一定间隔数量（如每100个step），满足则采样一个batch_size大小的step，开始训练智能体
-    # 
-    ###
-
-    # agent_current = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
-    # agent_current.version = agent.version
-    # agent_current.count = agent.count
-    # agent_current.q_net.load_state_dict(agent.q_net.state_dict())
-    # agent_current.target_q_net.load_state_dict(agent.target_q_net.state_dict())
-    # agent_current.optimizer = optim.Adam(agent.q_net.parameters(), lr = agent.learning_rate)
-
-    # agent_current.set_train_mode()
     agent.set_train_mode()
+
     for i in range(num_epoch):
         start_time = time.time()
 
@@ -396,14 +383,14 @@ def train_off_policy_agent(agent: DQN, num_epoch, replay_buffer: ReplayBuffer, b
         # loss = agent_current.update(transition_dict)
         loss = agent.update(transition_dict)
 
-        LOGGER.info(f'progress={i + 1} / {num_epoch} | loss = {loss:.3f} | update count = {agent.count} | elapse={time.time() - start_time:.3f} s')
+        LOGGER.info(f'progress = {i + 1} / {num_epoch} | loss = {loss:.3f} | update count = {agent.count} | elapse = {time.time() - start_time:.3f} s')
 
     # agent_current.set_eval_mode()
     # agent_current.update_version()
     agent.set_eval_mode()
     agent.update_version()
 
-    if agent.count % 100 == 0:
+    if agent.count % 50 == 0:
         model_path = agent.save_model()
     # model_path = agent_current.save_model()
     # updated_count = agent_current.count

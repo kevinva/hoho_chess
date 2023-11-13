@@ -20,9 +20,9 @@ from model.hoho_config import *
 
 def go_to_new_round(argv):
 	global hoho_game, hoho_mcts, hoho_agent, hoho_round
-	global match_count, agent_updating, agent_update_accepted, agent_update_path, win_count, agent_updated_count
+	global round_count, all_steps_count, agent_updating, agent_update_accepted, agent_update_path, win_count, agent_updated_count
 
-	match_count += 1
+	round_count += 1
 	win_player = argv[2]
 
 	if hoho_round is not None:
@@ -60,12 +60,6 @@ def go_to_new_round(argv):
 	# 	# 为了好区分模型版本，模型更新前都先保存样本数据
 	# 	hoho_replay_buffer.save({'model_version': hoho_agent.version})
 	# 	hoho_replay_buffer.clear()
-
-		
-	# 	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
-	# 	hoho_agent.load_model_from_path(agent_update_path)
-	# 	hoho_agent.count = agent_updated_count
-	# 	LOGGER.info(f'Agent updated! version={hoho_agent.version}')
 		
 	# 	agent_updating = False
 	# 	agent_update_accepted = False
@@ -79,8 +73,8 @@ def go_to_new_round(argv):
 	red_action, red_pi = hoho_agent.take_action(red_state)
 	red_mid_state, z, done = hoho_game.step(red_action)
 	hoho_round.add_red_step(red_state, red_pi.tolist(), red_action, red_mid_state, z, done)
+	all_steps_count += 1
 	LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_mid_state}')
-
 
 	move = convert_my_action_to_webgame_move(red_action)
 	LOGGER.info(f'get red move={move}')
@@ -89,7 +83,7 @@ def go_to_new_round(argv):
 
 def go_on_gaming(func_name, data_board):
 	global hoho_game, hoho_mcts, hoho_agent, hoho_round
-	global match_count, agent_updating, agent_update_accepted, agent_update_path, win_count
+	global round_count, all_steps_count, agent_updating, agent_update_accepted, agent_update_path, win_count
 
 	black_move = rpc_registry[func_name](*data_board)
 	LOGGER.info(f'get black move={black_move}')  # 注意这里黑方走法，已经翻转了棋盘
@@ -108,6 +102,7 @@ def go_on_gaming(func_name, data_board):
 		# hoho_mcts.update_root_with_action(black_action)  # 独自更新MCTS的根节点，因为webgame选的black_action跟自己模型选的不一定一样
 		black_mid_state, black_z, black_done = hoho_game.step(black_action)
 		hoho_round.add_black_step(flip_board(black_state), flip_action_probas(black_pi).tolist(), flip_action(black_action), flip_board(black_mid_state), black_z, black_done)  # 注意：这里要翻转为红方走子，将黑方的经验作为红方。
+		all_steps_count += 1
 		LOGGER.info(f"(flipped, base on red) black_state={flip_board(black_state)}, to state={flip_board(black_mid_state)}, with action={flip_action(black_action)}(not flip: {black_action})")
 
 		if black_done:  # 黑方赢了，红方就不需要再走了
@@ -120,6 +115,7 @@ def go_on_gaming(func_name, data_board):
 		red_action, red_pi = hoho_agent.take_action(red_state)
 		red_mid_state, red_z, red_done = hoho_game.step(red_action)
 		hoho_round.add_red_step(red_state, red_pi.tolist(), red_action, red_mid_state, red_z, red_done)
+		all_steps_count += 1
 		LOGGER.info(f'red_state={red_state}, with action={red_action}, pi={np.max(red_pi):.3f}, to state={red_mid_state}')
 
 		red_move = convert_my_action_to_webgame_move(red_action)
@@ -147,7 +143,8 @@ def home(request_, response_, route_args_):
 
 def ajax_(request_, response_, route_args_):
 	global rpc_registry, agent_updating
-	global hoho_agent, hoho_replay_buffer, hoho_round, updated_time
+	global hoho_agent, all_steps_count, hoho_replay_buffer, hoho_round
+
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
 
@@ -160,30 +157,30 @@ def ajax_(request_, response_, route_args_):
 
 	argv = data['argv']
 	data_board = argv[0]
-	round_count = argv[1]
+	round_step_count = argv[1]
 	json_ = None
+
+	start_time = time.time()
 
 	if data_board == 'Action!': # 开始！
 		red_move = go_to_new_round(argv)
 		json_data = {'Red': list(red_move), 'expand:':{'agent_updating': agent_updating}}
 		json_ = json.dumps(json_data)
 	else:
-		start_time = time.time()
 		black_move, red_move = go_on_gaming(func_name, [data_board])   # data_board需要重新包一下
 		json_data = {'Black': list(black_move), 'Red': list(red_move), 'expand': {'agent_updating': agent_updating}}
 		json_ = json.dumps(json_data)
 
-		LOGGER.info(f'current round steps: {hoho_round.all_step_size()} | total steps: {hoho_replay_buffer.step_size()} | total rounds: {hoho_replay_buffer.all_round_size()}')
-		LOGGER.info(f'{round_count} rounds / {match_count} matches | elapse: {(time.time() - start_time):.3f}s')
+	LOGGER.info(f'{round_step_count} step / {round_count} round | elapse: {(time.time() - start_time):.3f}s')
+	LOGGER.info(f'total steps: {all_steps_count}({hoho_replay_buffer.step_size()}) | total rounds: {hoho_replay_buffer.all_round_size()}')
 
-		win_rate = (win_count / match_count) if match_count > 0 else 0
-		LOGGER.info(f'model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
-		LOGGER.info('========================================================')
+	win_rate = (win_count / round_count) if round_count > 0 else 0
+	LOGGER.info(f'model version: {hoho_agent.version} | win count: {win_count} | win rate: {win_rate}')
+	LOGGER.info('========================================================')
 
 
 	if (not agent_updating) and should_update_agent(hoho_agent.version):
 		agent_updating = True
-		updated_time = time.time()
 		update_agent()
 		agent_updating = False
 		
@@ -213,14 +210,10 @@ def start_server_(port_, max_threads_):
 
 
 def should_update_agent(model_version):
-	global hoho_replay_buffer, updated_time
+	global hoho_replay_buffer, all_steps_count
 
-	# if hoho_replay_buffer.step_size() % 100:
-	# 	return True
-
-	if hoho_replay_buffer.step_size() > 100:     
-		if time.time() - updated_time > 60:   # 大于60秒， 采样速率约: 1 step / 10s
-			return True
+	if all_steps_count % BATCH_SIZE == 0:
+		return True
 	
 	return False
 
@@ -246,7 +239,7 @@ def update_agent():
 	# agent_update_path, agent_updated_count = train_off_policy_agent(hoho_agent, 3, hoho_replay_buffer, batch_size = BATCH_SIZE) 
 	# agent_update_accepted = True
 
-	hoho_agent = train_off_policy_agent(hoho_agent, 5, hoho_replay_buffer, batch_size = BATCH_SIZE)
+	hoho_agent = train_off_policy_agent(hoho_agent, 1, hoho_replay_buffer, batch_size = BATCH_SIZE)
 	LOGGER.info(f'Agent updated! version = {hoho_agent.version}')
 
 
@@ -311,8 +304,9 @@ if __name__ == '__main__':
 
 	mp.set_start_method('spawn')   # Unix上跑要打开这句！要写在所有执行多线程代码之前！
 
+	all_steps_count = 0
 	win_count = 0
-	match_count = 0
+	round_count = 0
 	message_queue = queue.Queue()
 	agent_updating = False
 	agent_update_accepted = False
@@ -320,12 +314,13 @@ if __name__ == '__main__':
 	hoho_mcts = None
 	hoho_game = None
 	hoho_round = None
-	updated_time = 0
 	agent_updated_count = 0
 	hoho_replay_buffer = ReplayBuffer.load_from_dir(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'output', 'data'))
 
 	# hoho_agent = Player()
-	hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, L2_REGULARIZATION, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+	# hoho_agent = DQN(ACTION_DIM, LEARNING_RATE, L2_REGULARIZATION, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+	hoho_agent = MiniMaxDQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+
 	model_path = find_top_version_model_path()
 	LOGGER.info(f"model_path: {model_path}")
 	
