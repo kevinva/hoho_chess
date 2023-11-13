@@ -429,18 +429,18 @@ if __name__ == "__main__":
 
     ########################################################
 
-    # 创建一个输入张量
-    input = torch.tensor([[1, 2], [3, 4], [5, 6]])
+    # # 创建一个输入张量
+    # input = torch.tensor([[1, 2], [3, 4], [5, 6]])
 
-    # 创建一个索引张量，指定要收集的元素的位置
-    index = torch.tensor([[0, 1], [1, 0], [2, 1]])
-    index_column = torch.tensor([[0, 1], [1, 0]])
-    index_column2 = torch.tensor([[0], [1]])
+    # # 创建一个索引张量，指定要收集的元素的位置
+    # index = torch.tensor([[0, 1], [1, 0], [2, 1]])
+    # index_column = torch.tensor([[0, 1], [1, 0]])
+    # index_column2 = torch.tensor([[0], [1]])
 
-    # 在维度0上使用gather函数
-    # result = torch.gather(input, 0, index)
-    result = torch.gather(input, 1, index_column2)  # 结果的形状跟随index_columns
-    print(result)
+    # # 在维度0上使用gather函数
+    # # result = torch.gather(input, 0, index)
+    # result = torch.gather(input, 1, index_column2)  # 结果的形状跟随index_columns
+    # print(result)
 
     ########################################################
     # gamma = 0.99
@@ -452,5 +452,14 @@ if __name__ == "__main__":
     # for i in range(100):
     #     action = dqn.take_action(state)
     #     print(f"    action: {action}")
+
+    #######################################################
+
+	agent = MiniMaxDQN(ACTION_DIM, LEARNING_RATE, GAMMA, EPSILON_G, TARGET_UPDATE_COUNT, DEVICE)
+    board_state = 'RNBAKABNR/9/1C7/P1P1P1P1P/9/9/p1p1p1pCp/1c5c1/9/rnbakabnr'
+    # for _ in range(10):
+    #     action, pis = agent.take_action(board_state)
+    #     print(f"action: {action}, pis: {pis}")
+    
 
 
