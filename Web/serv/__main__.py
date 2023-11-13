@@ -50,7 +50,7 @@ def go_to_new_round(argv):
 	# 	hoho_replay_buffer.save({'model_version': hoho_agent.version})
 	# 	hoho_replay_buffer.clear()
 
-	if hoho_replay_buffer.all_round_size() >= 50:
+	if hoho_replay_buffer.all_round_size() >= BATCH_SIZE:
 		hoho_replay_buffer.save_all_steps({'model_version': hoho_agent.version})
 		hoho_replay_buffer.clear_all_steps()
 
