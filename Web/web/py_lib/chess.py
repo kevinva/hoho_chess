@@ -235,9 +235,19 @@ def get_next_moves(board):
 	return move_to_board
 
 def reverse_boardkey(board_key):
-	reversed = [('Red' if p=='Black' else 'Black', t, 8-x, 9-y) for p,t,x,y in board_key]
-	reversed.sort()
-	return tuple(reversed)
+	res = [('Red' if p=='Black' else 'Black', t, 8-x, 9-y) for p,t,x,y in board_key]
+	res.sort()
+	return tuple(res)
+
+# def flip_boardkey(board_key):
+# 	res = [(p, t, 8-x) for p,t,x,y in board_key]
+# 	res.sort()
+# 	return tuple(res)
+
+# def reverse_flip_boardkey(board_key):
+# 	res = [('Red' if p=='Black' else 'Black', t, x, 9-y) for p,t,x,y in board_key]
+# 	res.sort()
+# 	return tuple(res)
 
 def board_from_key(board_key):
 	board = ChessBoard()

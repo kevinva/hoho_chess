@@ -68,10 +68,9 @@ class ChessBoard(chess.ChessBoard):
 
 	def elt(self):
 		if self._elt is None:
-			self._elt = html('div', {"id": "hoho_board"})
+			self._elt = html('div')
 			self._refresh_elt()
 		return self._elt
-
 
 class Controller:
 	def __init__(self, chess_board):

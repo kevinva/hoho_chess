@@ -1,4 +1,4 @@
-
+// copyright 2315391089@qq.com
 function create_jswrt() {
 function _copy_span_info(to, from) {
 	to.original = from
@@ -1951,8 +1951,8 @@ class Runtime
 	constructor() {
 		this.thread_yield_interval = 100
 		this.waited_locks = new Map()
-		this.import_base = 'py_lib/'
-		this.file_base = '../cwd/'
+		this.import_base = '/web/py_lib/'
+		this.file_base = '/web/'
 		this.debug = false
 		this._init = null
 		this.__stop = true
@@ -2405,6 +2405,7 @@ class Runtime
 		for (let i = 0; i < ex.stack.length; ++ i) {
 			let call_span = ex.stack[i]
 			if (i==0 && call_span===null) continue
+			if (call_span===undefined) continue 
 			err_msg += '\n'+span_info(call_span)
 		}
 		if (ex.span!==undefined && ex.span!==null)
@@ -2836,6 +2837,10 @@ function _act_tree_except(line) {
 		let base_ex = runtime.cur_thread.__get_class(line.span, 'BaseException')
 		for (let c of children) {
 			let catch_type = runtime.cur_thread.__get_class(c, c.get_text())
+			if (catch_type===undefined) {
+				__raise_exception(line.span, __new_obj('NameError', "'"+c.get_text()+"' is not defined"))
+				return
+			}
 			let base_ex = runtime.cur_thread.__get_class(c, 'BaseException')
 			if (! runtime.cur_thread.__issubclass(line.span, catch_type, base_ex)) {
 				__raise_exception(line.span, __new_obj('TypeError', 'catching classes that do not inherit from BaseException is not allowed'))
@@ -3675,25 +3680,70 @@ class _BaseException
 		return __new_obj('str', objs[0].value)
 	}
 }
-class _AssertionError { __super__=['BaseException'] }
-class _RuntimeError { __super__=['BaseException'] }
-class _NameError { __super__=['BaseException'] }
-class _KeyError { __super__=['BaseException'] }
-class _TypeError { __super__=['BaseException'] }
-class _ValueError { __super__=['BaseException'] }
-class _LexicalError { __super__=['BaseException'] }
-class _SyntaxError { __super__=['BaseException'] }
-class _AttributeError { __super__=['BaseException'] }
-class _IndexError { __super__=['BaseException'] }
-class _UnboundLocalError { __super__=['BaseException'] }
-class _StopIteration { __super__=['BaseException'] }
 class _SystemExit { __super__=['BaseException'] }
-class _ModuleNotFoundError { __super__=['BaseException'] }
-class _FileNotFoundError { __super__=['BaseException'] }
-class _FileExistsError { __super__=['BaseException'] }
-class _UnsupportedOperation { __super__=['BaseException'] }
-class _EOFError { __super__=['BaseException'] }
-class _TimeoutError { __super__=['BaseException'] }
+class _KeyboardInterrupt { __super__=['BaseException'] }
+class _GeneratorExit { __super__=['BaseException'] }
+class _Exception { __super__=['BaseException'] }
+class _StopIteration { __super__=['Exception'] }
+class _StopAsyncIteration { __super__=['Exception'] }
+class _ArithmeticError { __super__=['Exception'] }
+class _FloatingPointError { __super__=['ArithmeticError'] }
+class _OverflowError { __super__=['ArithmeticError'] }
+class _ZeroDivisionError { __super__=['ArithmeticError'] }
+class _AssertionError { __super__=['Exception'] }
+class _AttributeError { __super__=['Exception'] }
+class _BufferError { __super__=['Exception'] }
+class _EOFError { __super__=['Exception'] }
+class _ImportError { __super__=['Exception'] }
+class _ModuleNotFoundError { __super__=['ImportError'] }
+class _LookupError { __super__=['Exception'] }
+class _IndexError { __super__=['LookupError'] }
+class _KeyError { __super__=['LookupError'] }
+class _MemoryError { __super__=['Exception'] }
+class _NameError { __super__=['Exception'] }
+class _UnboundLocalError { __super__=['NameError'] }
+class _OSError { __super__=['Exception'] }
+class _BlockingIOError { __super__=['OSError'] }
+class _ChildProcessError { __super__=['OSError'] }
+class _ConnectionError { __super__=['OSError'] }
+class _BrokenPipeError { __super__=['ConnectionError'] }
+class _ConnectionAbortedError { __super__=['ConnectionError'] }
+class _ConnectionRefusedError { __super__=['ConnectionError'] }
+class _ConnectionResetError { __super__=['ConnectionError'] }
+class _FileExistsError { __super__=['OSError'] }
+class _FileNotFoundError { __super__=['OSError'] }
+class _InterruptedError { __super__=['OSError'] }
+class _IsADirectoryError { __super__=['OSError'] }
+class _NotADirectoryError { __super__=['OSError'] }
+class _PermissionError { __super__=['OSError'] }
+class _ProcessLookupError { __super__=['OSError'] }
+class _TimeoutError { __super__=['OSError'] }
+class _ReferenceError { __super__=['Exception'] }
+class _RuntimeError { __super__=['Exception'] }
+class _NotImplementedError { __super__=['RuntimeError'] }
+class _RecursionError { __super__=['RuntimeError'] }
+class _SyntaxError { __super__=['Exception'] }
+class _LexicalError { __super__=['Exception'] }
+class _IndentationError { __super__=['SyntaxError'] }
+class _TabError { __super__=['IndentationError'] }
+class _SystemError { __super__=['Exception'] }
+class _TypeError { __super__=['Exception'] }
+class _ValueError { __super__=['Exception'] }
+class _UnicodeError { __super__=['ValueError'] }
+class _UnicodeDecodeError { __super__=['UnicodeError'] }
+class _UnicodeEncodeError { __super__=['UnicodeError'] }
+class _UnicodeTranslateError { __super__=['UnicodeError'] }
+class _Warning { __super__=['Exception'] }
+class _DeprecationWarning { __super__=['Warning'] }
+class _PendingDeprecationWarning { __super__=['Warning'] }
+class _RuntimeWarning { __super__=['Warning'] }
+class _SyntaxWarning { __super__=['Warning'] }
+class _UserWarning { __super__=['Warning'] }
+class _FutureWarning { __super__=['Warning'] }
+class _ImportWarning { __super__=['Warning'] }
+class _UnicodeWarning { __super__=['Warning'] }
+class _BytesWarning { __super__=['Warning'] }
+class _ResourceWarning { __super__=['Warning'] }
 class _NoneType
 {
 	__repr__(span, objs) {
@@ -4050,7 +4100,7 @@ function __js2py(obj) {
 		for (let n in val) {
 			if (! val.hasOwnProperty(n)) continue
 			if (n == '__proto__' || n == 'constructor' || n == '__uniqueid') continue
-			if (val[n].constructor.name == 'Function') continue
+			if (val[n]!=null && val[n].constructor.name == 'Function') continue
 			new _Dict().__setitem__(null, [d, to_py_obj(n), to_py_obj(val[n])])
 		}
 		return d
@@ -4869,7 +4919,7 @@ function __rt_listdir(span, args) {
 		function report_error(msg) {
 			interrupt.runtime._interrupt_done(interrupt, __new_obj('FileNotFoundError', msg))
 		}
-		fetch('/__dir__/'+(path=='.'?'cwd':path))
+		fetch('/__dir__/'+(path=='.'?Runtime.file_base:path))
 			.then(res => {
 				if (res.status != 200) {
 					report_error(res.statusText)
@@ -5278,16 +5328,20 @@ class _List
 		objs[0].value = []
 	}
 	__len__(span, objs) {
+		if (__assert_num_args(span, 'list.__len__()', objs, [1])) return
 		return __new_obj('int', objs[0].value.length)
 	}
 	__add__(span, objs) {
+		if (__assert_num_args(span, 'list.__add__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'list', '+')) return
 		return __new_obj('list', objs[0].value.concat(objs[1].value))
 	}
 	__contains__(span, objs) {
+		if (__assert_num_args(span, 'list.__contains__()', objs, [2])) return
 		return __list_contains(span.children[0], objs[0].value, objs[1])
 	}
 	__repr__(span, objs) {
+		if (__assert_num_args(span, 'list.__repr__()', objs, [1])) return
 		let repr = ''
 		for (let o of objs[0].value) {
 			if (repr.length > 0) repr += ', '
@@ -5296,6 +5350,7 @@ class _List
 		return __new_obj('str', '['+repr+']')
 	}
 	__iter__(span, objs) {
+		if (__assert_num_args(span, 'list.__iter__()', objs, [1])) return
 		return __new_obj('_iterator', [0,objs[0].value.length,objs[0].value])
 	}
 	__getitem__(span, objs) {
@@ -5492,16 +5547,20 @@ class _Tuple
 		__values_from_iter(span, 'tuple.__init__()', objs)
 	}
 	__len__(span, objs) {
+		if (__assert_num_args(span, 'tuple.__len__()', objs, [1])) return
 		return __new_obj('int', objs[0].value.length)
 	}
 	__add__(span, objs) {
+		if (__assert_num_args(span, 'tuple.__add__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'tuple', '+')) return
 		return __new_obj('tuple', objs[0].value.concat(objs[1].value))
 	}
 	__contains__(span, objs) {
+		if (__assert_num_args(span, 'tuple.__contains__()', objs, [2])) return
 		return __list_contains(span.children[0], objs[0].value, objs[1])
 	}
 	__repr__(span, objs) {
+		if (__assert_num_args(span, 'tuple.__repr__()', objs, [1])) return
 		let repr = ''
 		for (let o of objs[0].value) {
 			if (repr.length > 0) repr += ', '
@@ -5510,6 +5569,7 @@ class _Tuple
 		return __new_obj('str', '('+repr+')')
 	}
 	__iter__(span, objs) {
+		if (__assert_num_args(span, 'tuple.__iter__()', objs, [1])) return
 		return __new_obj('_iterator', [0,objs[0].value.length,objs[0].value])
 	}
 	__getitem__(span, objs) {
@@ -5549,21 +5609,21 @@ class _Tuple
 		return __new_obj('bool', cmp==-1)
 	}
 	__gt__(span, objs) {
-		if (__assert_num_args(span, 'tuple.__lt__()', objs, [2])) return
+		if (__assert_num_args(span, 'tuple.__gt__()', objs, [2])) return
 		if (__assert_type(span, objs[0], 'tuple', 'tuple.__lt__()')) return
 		if (__assert_type(span, objs[1], 'tuple', 'tuple.__lt__()')) return
 		let cmp = __list_cmp(span, objs[0].value, objs[1].value)
 		return __new_obj('bool', cmp==1)
 	}
 	__le__(span, objs) {
-		if (__assert_num_args(span, 'tuple.__lt__()', objs, [2])) return
+		if (__assert_num_args(span, 'tuple.__le__()', objs, [2])) return
 		if (__assert_type(span, objs[0], 'tuple', 'tuple.__lt__()')) return
 		if (__assert_type(span, objs[1], 'tuple', 'tuple.__lt__()')) return
 		let cmp = __list_cmp(span, objs[0].value, objs[1].value)
 		return __new_obj('bool', cmp!=1)
 	}
 	__ge__(span, objs) {
-		if (__assert_num_args(span, 'tuple.__lt__()', objs, [2])) return
+		if (__assert_num_args(span, 'tuple.__ge__()', objs, [2])) return
 		if (__assert_type(span, objs[0], 'tuple', 'tuple.__lt__()')) return
 		if (__assert_type(span, objs[1], 'tuple', 'tuple.__lt__()')) return
 		let cmp = __list_cmp(span, objs[0].value, objs[1].value)
@@ -5639,6 +5699,7 @@ class _Dict
 		objs[0].value = new Map()
 	}
 	update(span, objs) {
+		if (__assert_num_args(span, 'dict.update()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'dict', 'update')) return
 		let map1 = objs[0].value
 		let map2 = objs[1].value
@@ -5662,6 +5723,7 @@ class _Dict
 		}
 	}
 	__contains__(span, objs) {
+		if (__assert_num_args(span, 'dict.__contains__()', objs, [2])) return
 		let map = objs[0].value
 		let key = objs[1]
 		let h = __hash(span.children[0], key).value
@@ -5671,6 +5733,7 @@ class _Dict
 		return __list_contains(span.children[0], list[0], key)
 	}
 	__repr__(span, objs) {
+		if (__assert_num_args(span, 'dict.__repr__()', objs, [1])) return
 		let repr = ''
 		for (let [h,list] of objs[0].value) {
 			for (let i = 0; i < list[0].length; ++ i) {
@@ -5685,6 +5748,7 @@ class _Dict
 		return __new_obj('str', '{'+repr+'}')
 	}
 	keys(span, objs) {
+		if (__assert_num_args(span, 'dict.keys()', objs, [1])) return
 		let list = __new_obj('list', [])
 		for (let [h,ll] of objs[0].value) {
 			for (let i = 0; i < ll[0].length; ++ i) {
@@ -5695,12 +5759,14 @@ class _Dict
 		return list
 	}
 	__len__(span, objs) {
+		if (__assert_num_args(span, 'dict.__len__()', objs, [1])) return
 		let len = 0
 		for (let [h,ll] of objs[0].value)
 			len += ll[0].length
 		return __new_obj('int', len)
 	}
 	__iter__(span, objs) {
+		if (__assert_num_args(span, 'dict.__iter__()', objs, [1])) return
 		let keys = []
 		for (let [h,ll] of objs[0].value) {
 			for (let i = 0; i < ll[0].length; ++ i) {
@@ -5710,6 +5776,7 @@ class _Dict
 		return __new_obj('_iterator', [0,keys.length,keys])
 	}
 	items(span, objs) {
+		if (__assert_num_args(span, 'dict.items()', objs, [1])) return
 		let list = __new_obj('list', [])
 		for (let [h,ll] of objs[0].value) {
 			for (let i = 0; i < ll[0].length; ++ i) {
@@ -5721,6 +5788,7 @@ class _Dict
 		return list
 	}
 	__getitem__(span, objs) {
+		if (__assert_num_args(span, 'dict.__getitem__()', objs, [2])) return
 		let map = objs[0].value
 		let key = objs[1]
 		let h = __hash(span===null?null:span.children[1], key).value
@@ -5751,6 +5819,7 @@ class _Dict
 		return list[1][i]
 	}
 	__setitem__(span, objs) {
+		if (__assert_num_args(span, 'set.__setitem__()', objs, [3])) return
 		let map = objs[0].value
 		let key = objs[1]
 		let val = objs[2]
@@ -5767,7 +5836,32 @@ class _Dict
 			list[1][i] = val
 		return __none
 	}
+	pop(span, objs) {
+		if (__assert_num_args(span, 'set.pop()', objs, [2,3])) return
+		let map = objs[0].value
+		let key = objs[1]
+		let value = (objs.length>2 ? objs[2] : null)
+		let h = __hash(span===null?null:span.children[1], key).value
+		if (! map.has(h)) {
+			if (value!==null) return value
+			__raise_exception(span, __new_obj('KeyError', __repr(span, key).value))
+			return
+		}
+		let list = map.get(h)
+		let i = __list_index(span===null?null:span.children[1], list[0], key)
+		if (i == -1) {
+			if (value!==null) return value
+			__raise_exception(span, __new_obj('KeyError', __repr(span, key).value))
+			return
+		}
+		value = list[1][i]
+		list[0].splice(i,1)
+		list[1].splice(i,1)
+		if (list[0].length == 0) map.delete(h)
+		return value
+	}
 	__delitem__(span, objs) {
+		if (__assert_num_args(span, 'set.__delitem__()', objs, [2])) return
 		let map = objs[0].value
 		let key = objs[1]
 		let h = __hash(span===null?null:span.children[1], key).value
@@ -5850,6 +5944,7 @@ class _Set
 		return __none
 	}
 	update(span, objs) {
+		if (__assert_num_args(span, 'set.update()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'update')) return
 		let map1 = objs[0].value
 		let map2 = objs[1].value
@@ -5864,6 +5959,7 @@ class _Set
 		return __none
 	}
 	__contains__(span, objs) {
+		if (__assert_num_args(span, 'set.__contains__()', objs, [2])) return
 		let map = objs[0].value
 		let key = objs[1]
 		let h = __hash(span.children[0], key).value
@@ -5873,6 +5969,7 @@ class _Set
 		return __list_contains(span.children[0], list, key)
 	}
 	__repr__(span, objs) {
+		if (__assert_num_args(span, 'set.__repr__()', objs, [1])) return
 		if (objs[0].value.size==0)
 			return __new_obj('str', 'set()')
 		let repr = ''
@@ -5886,16 +5983,19 @@ class _Set
 		return __new_obj('str', '{'+repr+'}')
 	}
 	__len__(span, objs) {
+		if (__assert_num_args(span, 'set.__len__()', objs, [1])) return
 		let len = 0
 		for (let [h,ll] of objs[0].value)
 			len += ll.length
 		return __new_obj('int', len)
 	}
 	__iter__(span, objs) {
+		if (__assert_num_args(span, 'set.__iter__()', objs, [1])) return
 		let l = __set_to_list(objs[0])
 		return __new_obj('_iterator', [0,l.length,l])
 	}
 	add(span, objs) {
+		if (__assert_num_args(span, 'set.add()', objs, [2])) return
 		let map = objs[0].value
 		let key = objs[1]
 		let h = __hash(span===null?null:span.children[1], key).value
@@ -5909,6 +6009,7 @@ class _Set
 		return __none
 	}
 	remove(span, objs) {
+		if (__assert_num_args(span, 'set.remove()', objs, [2])) return
 		let map = objs[0].value
 		let key = objs[1]
 		let h = __hash(span===null?null:span.children[1], key).value
@@ -5941,6 +6042,7 @@ class _Set
 		return __new_obj('bool', !eq)
 	}
 	__lt__(span, objs) {
+		if (__assert_num_args(span, 'set.__lt__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'set.__lt__()')) return
 		let s = new _Set()
 		if (s.__len__(span, [objs[0]]).value >= s.__len__(span, [objs[1]]).value)
@@ -5953,6 +6055,7 @@ class _Set
 		return __new_obj('bool', true)
 	}
 	__gt__(span, objs) {
+		if (__assert_num_args(span, 'set.__gt__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'set.__gt__()')) return
 		let s = new _Set()
 		if (s.__len__(span, [objs[0]]).value <= s.__len__(span, [objs[1]]).value)
@@ -5965,6 +6068,7 @@ class _Set
 		return __new_obj('bool', true)
 	}
 	__le__(span, objs) {
+		if (__assert_num_args(span, 'set.__le__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'set.__le__()')) return
 		let s = new _Set()
 		let l = __set_to_list(objs[0])
@@ -5975,7 +6079,8 @@ class _Set
 		return __new_obj('bool', true)
 	}
 	__ge__(span, objs) {
-		if (__assert_type(span, objs[1], 'set', 'set.__gt__()')) return
+		if (__assert_num_args(span, 'set.__ge__()', objs, [2])) return
+		if (__assert_type(span, objs[1], 'set', 'set.__ge__()')) return
 		let s = new _Set()
 		let l = __set_to_list(objs[1])
 		for (let e of l) {
@@ -5985,6 +6090,7 @@ class _Set
 		return __new_obj('bool', true)
 	}
 	__and__(span, objs) {
+		if (__assert_num_args(span, 'set.__and__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'set.__and__()')) return
 		let s = new _Set()
 		let set3 = __new_obj('set', new Map())
@@ -5997,6 +6103,7 @@ class _Set
 		return set3
 	}
 	__xor__(span, objs) {
+		if (__assert_num_args(span, 'set.__xor__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'set.__xor__()')) return
 		let s = new _Set()
 		let set3 = __new_obj('set', new Map())
@@ -6015,6 +6122,7 @@ class _Set
 		return set3
 	}
 	__or__(span, objs) {
+		if (__assert_num_args(span, 'set.__or__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'set.__or__()')) return
 		let s = new _Set()
 		let set3 = __new_obj('set', new Map())
@@ -6027,6 +6135,7 @@ class _Set
 		return set3
 	}
 	__sub__(span, objs) {
+		if (__assert_num_args(span, 'set.__sub__()', objs, [2])) return
 		if (__assert_type(span, objs[1], 'set', 'set.__sub__()')) return
 		let s = new _Set()
 		let set3 = __new_obj('set', new Map())
@@ -6039,19 +6148,19 @@ class _Set
 		return set3
 	}
 }
-runtime.fetch_text_cache.set("py_lib/time.py", "\nimport _thread\n\ndef sleep(timeout):\n\tlock = _thread.allocate_lock()\n\tlock.acquire()\n\tlock.acquire(timeout=timeout)\n\ndef time():\n\treturn __rt_time()\n")
-runtime.fetch_text_cache.set("py_lib/textwrap.py", "\ndef dedent(text):\n\treturn '\\n'.join([l.lstrip() for l in text.split('\\n')])\n\n")
-runtime.fetch_text_cache.set("py_lib/_stdlib.py", "\ndef sum(list):\n\ts = 0\n\tfor x in list:\n\t\ts = s + x\n\treturn s\n\ndef enumerate(list):\n\ti = 0\n\tfor x in list:\n\t\tyield i,x\n\t\ti = i + 1\n\ndef zip(*lis):\n\tassert len(lis)>0\n\tits = []\n\tfor li in lis:\n\t\tits.append(iter(li))\n\twhile True:\n\t\tres = [next(it) for it in its]\n\t\tif len(res)<len(its):\n\t\t\traise StopIteration()\n\t\tyield res\n\ndef max(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m<e:\n\t\t\tm = e\n\treturn m\n\ndef min(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m>e:\n\t\t\tm = e\n\treturn m\n")
-runtime.fetch_text_cache.set("py_lib/_io.py", "\nclass TextIOWrapper:\n\tdef __init__(self,filename,mode,text):\n\t\tself.mode = mode\n\t\tself.filename = filename\n\t\tself.text = text if text is not None else ''\n\t\tif mode == 'r':\n\t\t\tif text is None:\n\t\t\t\traise FileNotFoundError(f\"[Errno 2] No such file or directory: '{filename}'\")\n\t\t\tself._rp = 0\n\t\t\tself._wp = None\n\t\telif mode == 'w':\n\t\t\tself.text = ''\n\t\t\tself._rp = None\n\t\t\tself._wp = 0\n\t\telif mode == 'x':\n\t\t\tif self.text is not None:\n\t\t\t\traise FileExistsError(f\"[Errno 17] File exists: '{filename}'\")\n\t\t\tself.text = ''\n\t\t\tself._rp = None\n\t\t\tself._wp = 0\n\t\telif mode in ('r+', '+', 'w+'):\n\t\t\tif self.text is None:\n\t\t\t\tself.text = ''\n\t\t\tself._rp = 0\n\t\t\tself._wp = 0\n\t\telif mode in ('a', 'a+'):\n\t\t\tself.text = text\n\t\t\tself._rp = 0\n\t\t\tself._wp = len(text)\n\t\telse:\n\t\t\traise ValueError(f\"Unsupported mode: '{mode}'\")\n\tdef __enter__(self):\n\t\treturn self\n\tdef __exit__(self,ex_type,ex_value,ex_stack):\n\t\tself.close()\n\tdef read(self):\n\t\tif self._rp is None:\n\t\t\traise UnsupportedOperation('not readable')\n\t\tif self._rp > 0:\n\t\t\treturn self.text[self._rp:]\n\t\treturn self.text\n\tdef readline(self):\n\t\tif self._rp is None:\n\t\t\traise UnsupportedOperation('not readable')\n\t\tif self._rp == len(self.text):\n\t\t\treturn None\n\t\trp = self._rp\n\t\twhile (rp < len(self.text)):\n\t\t\tif self.text[rp] == '\\n': break\n\t\t\trp = rp + 1\n\t\ttext = self.text[self._rp:rp]\n\t\tself._rp = rp if rp == len(self.text) else rp+1\n\t\treturn text\n\tdef readlines(self):\n\t\twhile True:\n\t\t\tline = self.readline()\n\t\t\tif line is None: break\n\t\t\tyield line\n\tdef truncate(self):\n\t\tif self._wp is None:\n\t\t\traise UnsupportedOperation('not writable')\n\t\tself.text = ''\n\t\tself._wp = 0\n\tdef write(self,text):\n\t\tif self._wp is None:\n\t\t\traise UnsupportedOperation('not writable')\n\t\ttail = ''\n\t\tif len(self.text) > (self._wp+len(text)):\n\t\t\ttail = self.text[self._wp+len(text):]\n\t\tself.text = (self.text[:self._wp] + text) + tail\n\t\tself._wp = self._wp + len(text)\n\tdef seek(self, p):\n\t\tif self._rp is not None:\n\t\t\tself._rp = p\n\t\tif self._wp is not None:\n\t\t\tself._wp = p\n\tdef close(self):\n\t\tif self.mode != 'r':\n\t\t\t__rt_save_file(self.filename, self.text)\n")
-runtime.fetch_text_cache.set("py_lib/traceback.py", "\ndef format_exc():\n\treturn __rt_format_exc()")
-runtime.fetch_text_cache.set("py_lib/urllib/request.py", "\ndef urlopen(url):\n\treturn open(url)")
-runtime.fetch_text_cache.set("py_lib/random.py", "\ndef random():\n\treturn javascript.Math.random().data()\n\ndef randint(min, max):\n\treturn min + int(random() * ((max+1)-min))\n\ndef choice(list):\n\ti = randint(0,len(list)-1)\n\treturn list[i]\n\ndef choices(a,k,weights=None,cum_weights=None):\n\tif weights is None:\n\t\tweights = [1 for i in range(len(a))]\n\ts = 0\n\tif cum_weights is None:\n\t\tcum_weights = []\n\t\tfor w in weights:\n\t\t\ts = s + w\n\t\t\tcum_weights.append(s)\n\tif s != 0:\n\t\tcum_weights = [w/s for w in cum_weights]\n\tres = []\n\tfor i in range(k):\n\t\tr = random()\n\t\tfor w,x in zip(cum_weights,a):\n\t\t\tif r < w:\n\t\t\t\tres.append(x)\n\t\t\t\tbreak\n\treturn res\n\ndef shuffle(list):\n\tl = len(list)-1\n\tfor i in range(l):\n\t\tr = randint(0,(l-1)-i)\n\t\tt = list[l-i]\n\t\tlist[l-i] = list[r]\n\t\tlist[r] = t\n\ndef sample(l, k):\n\tif (k<0) or (k>len(l)):\n\t\traise ValueError('Sample larger than population or is negative')\n\tidx = [i for i in range(len(l))]\n\tshuffle(idx)\n\tidx = idx[:k]\n\treturn [l[i] for i in idx]\n\n")
-runtime.fetch_text_cache.set("py_lib/threading.py", "import _thread\n\nclass Thread:\n    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):\n        self.target = target\n        self.args = args\n        self.kwargs = {} if kwargs is None else kwargs\n\n    def start(self):\n        _thread.start_new_thread(self.run, ())\n\n    def run(self):\n        self.target(*self.args, **self.kwargs)")
-runtime.fetch_text_cache.set("py_lib/os/path.py", "\ndef exists(path):\n\tl = listdir('.')\n\treturn path in l\n\ndef listdir(path):\n\treturn __rt_listdir(path)\n\ndef isdir(path):\n\treturn False\n\ndef isfile(path):\n\treturn exists(path)\n")
-runtime.fetch_text_cache.set("py_lib/math.py", "\n\npi = 3.141592653589793\ne = 2.718281828459045\ntau = 6.283185307179586\ninf = javascript.Infinity.data()\nnan = javascript.Number.NaN.data()\n\ndef ceil(x):\n\treturn javascript.Math.ceil(x).data()\n\ndef floor(x):\n\treturn javascript.Math.floor(x).data()\n\ndef abs(x):\n\treturn javascript.Math.abs(x).data()\n\ndef fabs(x):\n\treturn float(javascript.Math.abs(x).data())\n\ndef factorial(x):\n\tf = 1\n\tfor i in range(2, x+1):\n\t\tf = f * i\n\treturn f\n\ndef exp(x):\n\treturn float(javascript.Math.exp(x).data())\n\t\ndef log(x):\n\treturn float(javascript.Math.log(x).data())\n\t\ndef log2(x):\n\treturn float(javascript.Math.log2(x).data())\n\t\ndef log10(x):\n\treturn float(javascript.Math.log10(x).data())\n\t\ndef pow(x,y):\n\treturn float(javascript.Math.pow(x,y).data())\n\t\ndef sqrt(x):\n\treturn float(javascript.Math.sqrt(x).data())\n\t\ndef acos(x):\n\treturn float(javascript.Math.acos(x).data())\n\t\ndef asin(x):\n\treturn float(javascript.Math.asin(x).data())\n\t\ndef atan(x):\n\treturn float(javascript.Math.atan(x).data())\n\t\t\ndef cos(x):\n\treturn float(javascript.Math.cos(x).data())\n\t\ndef sin(x):\n\treturn float(javascript.Math.sin(x).data())\n\t\ndef tan(x):\n\treturn float(javascript.Math.tan(x).data())\n\t\ndef hypot(x):\n\treturn float(javascript.Math.hypot(x).data())\n\t\n")
-runtime.fetch_text_cache.set("py_lib/_thread.py", "\ndef start_new_thread(func, argv, **kwargs):\n\tif not callable(func):\n\t\traise TypeError('First arg must be callable')\n\tif not isinstance(argv, tuple):\n\t\traise('2nd arg must be a tuple')\n\treturn __rt_start_new_thread(func, argv, **kwargs) # builtin\ndef allocate_lock():\n\treturn lock()\n\ndef exit():\n\traise SystemExit()\n\ndef get_ident():\n\treturn __rt_get_ident() # builtin\n\nclass lock:\n\tdef __init__(self):\n\t\tself.__locked = False\n\tdef __repr__(self):\n\t\treturn f\"<{'locked' if self.__locked else 'unlocked'} _thread.lock object>\"\n\tdef acquire(self, waitflag=1, timeout=-1):\n\t\tif not self.__locked:\n\t\t\tself.__locked = True\n\t\t\treturn True\n\t\tif (waitflag == 0):\n\t\t\treturn False\n\t\treturn __rt_acquire_lock(self, timeout) # builtin\n\tdef release(self):\n\t\tif not self.__locked:\n\t\t\traise RuntimeError('release unlocked lock')\n\t\tself.__locked = False\n\t\t__rt_release_lock(self) # builtin\n\tdef locked(self):\n\t\treturn self.__locked\n")
-runtime.fetch_text_cache.set("py_lib/json.py", "\ndef dumps(obj):\n\treturn javascript.JSON.stringify(obj).data()\n\ndef loads(text):\n\treturn javascript.JSON.parse(text).data()\n\ndef dump(obj, fp):\n\ttext = javascript.JSON.stringify(obj).data()\n\tfp.write(text)\n\ndef load(fp):\n\ttext = fp.read()\n\treturn loads(text)\n\n")
-runtime.fetch_text_cache.set("py_lib/sys.py", "\nargv = __rt_argv()\n\ndef exit(code=0):\n\traise SystemExit()\n\ndef exc_info():\n\treturn __rt_exc_info()\n")
+runtime.fetch_text_cache.set("/web/py_lib/time.py", "\nimport _thread\n\ndef sleep(timeout):\n\tlock = _thread.allocate_lock()\n\tlock.acquire()\n\tlock.acquire(timeout=timeout)\n\ndef time():\n\treturn __rt_time()\n")
+runtime.fetch_text_cache.set("/web/py_lib/textwrap.py", "\ndef dedent(text):\n\treturn '\\n'.join([l.lstrip() for l in text.split('\\n')])\n\n")
+runtime.fetch_text_cache.set("/web/py_lib/_stdlib.py", "\ndef sum(list):\n\ts = 0\n\tfor x in list:\n\t\ts = s + x\n\treturn s\n\ndef enumerate(list):\n\ti = 0\n\tfor x in list:\n\t\tyield i,x\n\t\ti = i + 1\n\ndef zip(*lis):\n\tassert len(lis)>0\n\tits = []\n\tfor li in lis:\n\t\tits.append(iter(li))\n\twhile True:\n\t\tres = [next(it) for it in its]\n\t\tif len(res)<len(its):\n\t\t\traise StopIteration()\n\t\tyield res\n\ndef max(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m<e:\n\t\t\tm = e\n\treturn m\n\ndef min(*arr):\n\tm = arr[0]\n\tfor e in arr:\n\t\tif m>e:\n\t\t\tm = e\n\treturn m\n")
+runtime.fetch_text_cache.set("/web/py_lib/_io.py", "\nclass TextIOWrapper:\n\tdef __init__(self,filename,mode,text):\n\t\tself.mode = mode\n\t\tself.filename = filename\n\t\tself.text = text if text is not None else ''\n\t\tif mode == 'r':\n\t\t\tif text is None:\n\t\t\t\traise FileNotFoundError(f\"[Errno 2] No such file or directory: '{filename}'\")\n\t\t\tself._rp = 0\n\t\t\tself._wp = None\n\t\telif mode == 'w':\n\t\t\tself.text = ''\n\t\t\tself._rp = None\n\t\t\tself._wp = 0\n\t\telif mode == 'x':\n\t\t\tif self.text is not None:\n\t\t\t\traise FileExistsError(f\"[Errno 17] File exists: '{filename}'\")\n\t\t\tself.text = ''\n\t\t\tself._rp = None\n\t\t\tself._wp = 0\n\t\telif mode in ('r+', '+', 'w+'):\n\t\t\tif self.text is None:\n\t\t\t\tself.text = ''\n\t\t\tself._rp = 0\n\t\t\tself._wp = 0\n\t\telif mode in ('a', 'a+'):\n\t\t\tself.text = text\n\t\t\tself._rp = 0\n\t\t\tself._wp = len(text)\n\t\telse:\n\t\t\traise ValueError(f\"Unsupported mode: '{mode}'\")\n\tdef __enter__(self):\n\t\treturn self\n\tdef __exit__(self,ex_type,ex_value,ex_stack):\n\t\tself.close()\n\tdef read(self):\n\t\tif self._rp is None:\n\t\t\traise UnsupportedOperation('not readable')\n\t\tif self._rp > 0:\n\t\t\treturn self.text[self._rp:]\n\t\treturn self.text\n\tdef readline(self):\n\t\tif self._rp is None:\n\t\t\traise UnsupportedOperation('not readable')\n\t\tif self._rp == len(self.text):\n\t\t\treturn None\n\t\trp = self._rp\n\t\twhile (rp < len(self.text)):\n\t\t\tif self.text[rp] == '\\n': break\n\t\t\trp = rp + 1\n\t\ttext = self.text[self._rp:rp]\n\t\tself._rp = rp if rp == len(self.text) else rp+1\n\t\treturn text\n\tdef readlines(self):\n\t\twhile True:\n\t\t\tline = self.readline()\n\t\t\tif line is None: break\n\t\t\tyield line\n\tdef truncate(self):\n\t\tif self._wp is None:\n\t\t\traise UnsupportedOperation('not writable')\n\t\tself.text = ''\n\t\tself._wp = 0\n\tdef write(self,text):\n\t\tif self._wp is None:\n\t\t\traise UnsupportedOperation('not writable')\n\t\ttail = ''\n\t\tif len(self.text) > (self._wp+len(text)):\n\t\t\ttail = self.text[self._wp+len(text):]\n\t\tself.text = (self.text[:self._wp] + text) + tail\n\t\tself._wp = self._wp + len(text)\n\tdef seek(self, p):\n\t\tif self._rp is not None:\n\t\t\tself._rp = p\n\t\tif self._wp is not None:\n\t\t\tself._wp = p\n\tdef close(self):\n\t\tif self.mode != 'r':\n\t\t\t__rt_save_file(self.filename, self.text)\n")
+runtime.fetch_text_cache.set("/web/py_lib/traceback.py", "\ndef format_exc():\n\treturn __rt_format_exc()")
+runtime.fetch_text_cache.set("/web/py_lib/urllib/request.py", "\ndef urlopen(url):\n\treturn open(url)")
+runtime.fetch_text_cache.set("/web/py_lib/random.py", "\ndef random():\n\treturn javascript.Math.random().data()\n\ndef randint(min, max):\n\treturn min + int(random() * ((max+1)-min))\n\ndef choice(list):\n\ti = randint(0,len(list)-1)\n\treturn list[i]\n\ndef choices(a,k,weights=None,cum_weights=None):\n\tif weights is None:\n\t\tweights = [1 for i in range(len(a))]\n\ts = 0\n\tif cum_weights is None:\n\t\tcum_weights = []\n\t\tfor w in weights:\n\t\t\ts = s + w\n\t\t\tcum_weights.append(s)\n\tif s != 0:\n\t\tcum_weights = [w/s for w in cum_weights]\n\tres = []\n\tfor i in range(k):\n\t\tr = random()\n\t\tfor w,x in zip(cum_weights,a):\n\t\t\tif r < w:\n\t\t\t\tres.append(x)\n\t\t\t\tbreak\n\treturn res\n\ndef shuffle(list):\n\tl = len(list)-1\n\tfor i in range(l):\n\t\tr = randint(0,(l-1)-i)\n\t\tt = list[l-i]\n\t\tlist[l-i] = list[r]\n\t\tlist[r] = t\n\ndef sample(l, k):\n\tif (k<0) or (k>len(l)):\n\t\traise ValueError('Sample larger than population or is negative')\n\tidx = [i for i in range(len(l))]\n\tshuffle(idx)\n\tidx = idx[:k]\n\treturn [l[i] for i in idx]\n\n")
+runtime.fetch_text_cache.set("/web/py_lib/threading.py", "import _thread\n\nclass Thread:\n    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):\n        self.target = target\n        self.args = args\n        self.kwargs = {} if kwargs is None else kwargs\n\n    def start(self):\n        _thread.start_new_thread(self.run, ())\n\n    def run(self):\n        self.target(*self.args, **self.kwargs)")
+runtime.fetch_text_cache.set("/web/py_lib/os/path.py", "\ndef exists(path):\n\tl = listdir('.')\n\treturn path in l\n\ndef listdir(path):\n\treturn __rt_listdir(path)\n\ndef isdir(path):\n\treturn False\n\ndef isfile(path):\n\treturn exists(path)\n")
+runtime.fetch_text_cache.set("/web/py_lib/math.py", "\n\npi = 3.141592653589793\ne = 2.718281828459045\ntau = 6.283185307179586\ninf = javascript.Infinity.data()\nnan = javascript.Number.NaN.data()\n\ndef ceil(x):\n\treturn javascript.Math.ceil(x).data()\n\ndef floor(x):\n\treturn javascript.Math.floor(x).data()\n\ndef abs(x):\n\treturn javascript.Math.abs(x).data()\n\ndef fabs(x):\n\treturn float(javascript.Math.abs(x).data())\n\ndef factorial(x):\n\tf = 1\n\tfor i in range(2, x+1):\n\t\tf = f * i\n\treturn f\n\ndef exp(x):\n\treturn float(javascript.Math.exp(x).data())\n\t\ndef log(x):\n\treturn float(javascript.Math.log(x).data())\n\t\ndef log2(x):\n\treturn float(javascript.Math.log2(x).data())\n\t\ndef log10(x):\n\treturn float(javascript.Math.log10(x).data())\n\t\ndef pow(x,y):\n\treturn float(javascript.Math.pow(x,y).data())\n\t\ndef sqrt(x):\n\treturn float(javascript.Math.sqrt(x).data())\n\t\ndef acos(x):\n\treturn float(javascript.Math.acos(x).data())\n\t\ndef asin(x):\n\treturn float(javascript.Math.asin(x).data())\n\t\ndef atan(x):\n\treturn float(javascript.Math.atan(x).data())\n\t\t\ndef cos(x):\n\treturn float(javascript.Math.cos(x).data())\n\t\ndef sin(x):\n\treturn float(javascript.Math.sin(x).data())\n\t\ndef tan(x):\n\treturn float(javascript.Math.tan(x).data())\n\t\ndef hypot(x):\n\treturn float(javascript.Math.hypot(x).data())\n\t\n")
+runtime.fetch_text_cache.set("/web/py_lib/_thread.py", "\ndef start_new_thread(func, argv, **kwargs):\n\tif not callable(func):\n\t\traise TypeError('First arg must be callable')\n\tif not isinstance(argv, tuple):\n\t\traise('2nd arg must be a tuple')\n\treturn __rt_start_new_thread(func, argv, **kwargs) # builtin\ndef allocate_lock():\n\treturn lock()\n\ndef exit():\n\traise SystemExit()\n\ndef get_ident():\n\treturn __rt_get_ident() # builtin\n\nclass lock:\n\tdef __init__(self):\n\t\tself.__locked = False\n\tdef __repr__(self):\n\t\treturn f\"<{'locked' if self.__locked else 'unlocked'} _thread.lock object>\"\n\tdef acquire(self, waitflag=1, timeout=-1):\n\t\tif not self.__locked:\n\t\t\tself.__locked = True\n\t\t\treturn True\n\t\tif (waitflag == 0):\n\t\t\treturn False\n\t\treturn __rt_acquire_lock(self, timeout) # builtin\n\tdef release(self):\n\t\tif not self.__locked:\n\t\t\traise RuntimeError('release unlocked lock')\n\t\tself.__locked = False\n\t\t__rt_release_lock(self) # builtin\n\tdef locked(self):\n\t\treturn self.__locked\n")
+runtime.fetch_text_cache.set("/web/py_lib/json.py", "\ndef dumps(obj):\n\treturn javascript.JSON.stringify(obj).data()\n\ndef loads(text):\n\treturn javascript.JSON.parse(text).data()\n\ndef dump(obj, fp):\n\ttext = javascript.JSON.stringify(obj).data()\n\tfp.write(text)\n\ndef load(fp):\n\ttext = fp.read()\n\treturn loads(text)\n\n")
+runtime.fetch_text_cache.set("/web/py_lib/sys.py", "\nargv = __rt_argv()\n\ndef exit(code=0):\n\traise SystemExit()\n\ndef exc_info():\n\treturn __rt_exc_info()\n")
 let lex = null
 let parser = null
 let tree = null
@@ -6320,25 +6429,70 @@ function jswrt_init() {
 	__builtins.set("object", __make_builtin_class(_Object, "object"))
 	__builtins.set("super", __make_builtin_class(_Super, "super"))
 	__builtins.set("BaseException", __make_builtin_class(_BaseException, "BaseException"))
+	__builtins.set("SystemExit", __make_builtin_class(_SystemExit, "SystemExit"))
+	__builtins.set("KeyboardInterrupt", __make_builtin_class(_KeyboardInterrupt, "KeyboardInterrupt"))
+	__builtins.set("GeneratorExit", __make_builtin_class(_GeneratorExit, "GeneratorExit"))
+	__builtins.set("Exception", __make_builtin_class(_Exception, "Exception"))
+	__builtins.set("StopIteration", __make_builtin_class(_StopIteration, "StopIteration"))
+	__builtins.set("StopAsyncIteration", __make_builtin_class(_StopAsyncIteration, "StopAsyncIteration"))
+	__builtins.set("ArithmeticError", __make_builtin_class(_ArithmeticError, "ArithmeticError"))
+	__builtins.set("FloatingPointError", __make_builtin_class(_FloatingPointError, "FloatingPointError"))
+	__builtins.set("OverflowError", __make_builtin_class(_OverflowError, "OverflowError"))
+	__builtins.set("ZeroDivisionError", __make_builtin_class(_ZeroDivisionError, "ZeroDivisionError"))
 	__builtins.set("AssertionError", __make_builtin_class(_AssertionError, "AssertionError"))
-	__builtins.set("RuntimeError", __make_builtin_class(_RuntimeError, "RuntimeError"))
-	__builtins.set("NameError", __make_builtin_class(_NameError, "NameError"))
+	__builtins.set("AttributeError", __make_builtin_class(_AttributeError, "AttributeError"))
+	__builtins.set("BufferError", __make_builtin_class(_BufferError, "BufferError"))
+	__builtins.set("EOFError", __make_builtin_class(_EOFError, "EOFError"))
+	__builtins.set("ImportError", __make_builtin_class(_ImportError, "ImportError"))
+	__builtins.set("ModuleNotFoundError", __make_builtin_class(_ModuleNotFoundError, "ModuleNotFoundError"))
+	__builtins.set("LookupError", __make_builtin_class(_LookupError, "LookupError"))
+	__builtins.set("IndexError", __make_builtin_class(_IndexError, "IndexError"))
 	__builtins.set("KeyError", __make_builtin_class(_KeyError, "KeyError"))
+	__builtins.set("MemoryError", __make_builtin_class(_MemoryError, "MemoryError"))
+	__builtins.set("NameError", __make_builtin_class(_NameError, "NameError"))
+	__builtins.set("UnboundLocalError", __make_builtin_class(_UnboundLocalError, "UnboundLocalError"))
+	__builtins.set("OSError", __make_builtin_class(_OSError, "OSError"))
+	__builtins.set("BlockingIOError", __make_builtin_class(_BlockingIOError, "BlockingIOError"))
+	__builtins.set("ChildProcessError", __make_builtin_class(_ChildProcessError, "ChildProcessError"))
+	__builtins.set("ConnectionError", __make_builtin_class(_ConnectionError, "ConnectionError"))
+	__builtins.set("BrokenPipeError", __make_builtin_class(_BrokenPipeError, "BrokenPipeError"))
+	__builtins.set("ConnectionAbortedError", __make_builtin_class(_ConnectionAbortedError, "ConnectionAbortedError"))
+	__builtins.set("ConnectionRefusedError", __make_builtin_class(_ConnectionRefusedError, "ConnectionRefusedError"))
+	__builtins.set("ConnectionResetError", __make_builtin_class(_ConnectionResetError, "ConnectionResetError"))
+	__builtins.set("FileExistsError", __make_builtin_class(_FileExistsError, "FileExistsError"))
+	__builtins.set("FileNotFoundError", __make_builtin_class(_FileNotFoundError, "FileNotFoundError"))
+	__builtins.set("InterruptedError", __make_builtin_class(_InterruptedError, "InterruptedError"))
+	__builtins.set("IsADirectoryError", __make_builtin_class(_IsADirectoryError, "IsADirectoryError"))
+	__builtins.set("NotADirectoryError", __make_builtin_class(_NotADirectoryError, "NotADirectoryError"))
+	__builtins.set("PermissionError", __make_builtin_class(_PermissionError, "PermissionError"))
+	__builtins.set("ProcessLookupError", __make_builtin_class(_ProcessLookupError, "ProcessLookupError"))
+	__builtins.set("TimeoutError", __make_builtin_class(_TimeoutError, "TimeoutError"))
+	__builtins.set("ReferenceError", __make_builtin_class(_ReferenceError, "ReferenceError"))
+	__builtins.set("RuntimeError", __make_builtin_class(_RuntimeError, "RuntimeError"))
+	__builtins.set("NotImplementedError", __make_builtin_class(_NotImplementedError, "NotImplementedError"))
+	__builtins.set("RecursionError", __make_builtin_class(_RecursionError, "RecursionError"))
+	__builtins.set("SyntaxError", __make_builtin_class(_SyntaxError, "SyntaxError"))
+	__builtins.set("LexicalError", __make_builtin_class(_LexicalError, "LexicalError"))
+	__builtins.set("IndentationError", __make_builtin_class(_IndentationError, "IndentationError"))
+	__builtins.set("TabError", __make_builtin_class(_TabError, "TabError"))
+	__builtins.set("SystemError", __make_builtin_class(_SystemError, "SystemError"))
 	__builtins.set("TypeError", __make_builtin_class(_TypeError, "TypeError"))
 	__builtins.set("ValueError", __make_builtin_class(_ValueError, "ValueError"))
-	__builtins.set("LexicalError", __make_builtin_class(_LexicalError, "LexicalError"))
-	__builtins.set("SyntaxError", __make_builtin_class(_SyntaxError, "SyntaxError"))
-	__builtins.set("AttributeError", __make_builtin_class(_AttributeError, "AttributeError"))
-	__builtins.set("IndexError", __make_builtin_class(_IndexError, "IndexError"))
-	__builtins.set("UnboundLocalError", __make_builtin_class(_UnboundLocalError, "UnboundLocalError"))
-	__builtins.set("StopIteration", __make_builtin_class(_StopIteration, "StopIteration"))
-	__builtins.set("SystemExit", __make_builtin_class(_SystemExit, "SystemExit"))
-	__builtins.set("ModuleNotFoundError", __make_builtin_class(_ModuleNotFoundError, "ModuleNotFoundError"))
-	__builtins.set("FileNotFoundError", __make_builtin_class(_FileNotFoundError, "FileNotFoundError"))
-	__builtins.set("FileExistsError", __make_builtin_class(_FileExistsError, "FileExistsError"))
-	__builtins.set("UnsupportedOperation", __make_builtin_class(_UnsupportedOperation, "UnsupportedOperation"))
-	__builtins.set("EOFError", __make_builtin_class(_EOFError, "EOFError"))
-	__builtins.set("TimeoutError", __make_builtin_class(_TimeoutError, "TimeoutError"))
+	__builtins.set("UnicodeError", __make_builtin_class(_UnicodeError, "UnicodeError"))
+	__builtins.set("UnicodeDecodeError", __make_builtin_class(_UnicodeDecodeError, "UnicodeDecodeError"))
+	__builtins.set("UnicodeEncodeError", __make_builtin_class(_UnicodeEncodeError, "UnicodeEncodeError"))
+	__builtins.set("UnicodeTranslateError", __make_builtin_class(_UnicodeTranslateError, "UnicodeTranslateError"))
+	__builtins.set("Warning", __make_builtin_class(_Warning, "Warning"))
+	__builtins.set("DeprecationWarning", __make_builtin_class(_DeprecationWarning, "DeprecationWarning"))
+	__builtins.set("PendingDeprecationWarning", __make_builtin_class(_PendingDeprecationWarning, "PendingDeprecationWarning"))
+	__builtins.set("RuntimeWarning", __make_builtin_class(_RuntimeWarning, "RuntimeWarning"))
+	__builtins.set("SyntaxWarning", __make_builtin_class(_SyntaxWarning, "SyntaxWarning"))
+	__builtins.set("UserWarning", __make_builtin_class(_UserWarning, "UserWarning"))
+	__builtins.set("FutureWarning", __make_builtin_class(_FutureWarning, "FutureWarning"))
+	__builtins.set("ImportWarning", __make_builtin_class(_ImportWarning, "ImportWarning"))
+	__builtins.set("UnicodeWarning", __make_builtin_class(_UnicodeWarning, "UnicodeWarning"))
+	__builtins.set("BytesWarning", __make_builtin_class(_BytesWarning, "BytesWarning"))
+	__builtins.set("ResourceWarning", __make_builtin_class(_ResourceWarning, "ResourceWarning"))
 	__builtins.set("NoneType", __make_builtin_class(_NoneType, "NoneType"))
 	__builtins.set("generator", __make_builtin_class(_Generator, "generator"))
 	__builtins.set("int", __make_builtin_class(_Int, "int"))

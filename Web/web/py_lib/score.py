@@ -105,7 +105,7 @@ position_value = {
 	],
 }
 
-win_score=1E4
+win_score=10
 
 def has_king(board, player):
 	for _, chess in board.board_map.items():
@@ -113,8 +113,7 @@ def has_king(board, player):
 			return True
 	return False
 
-def score(board, player):
-
+def red_score(board):
 	# 先判断当前下棋方是否被将死
 	# 注意，当前下棋方被将死说明对面下的好，这时候要根据对面是什么方来给分数
 	# 如果对面是红方，则返回正无穷或一个较大的数字，反之返回负无穷或一个较小的数字
@@ -137,4 +136,9 @@ def score(board, player):
 		if chess.player=='Black':
 			 s = -s
 		score = score + s
-	return score
+	return score / 1000
+
+def score(board, player):
+	rs = red_score(board)
+	return rs if player=='Red' else -rs
+	

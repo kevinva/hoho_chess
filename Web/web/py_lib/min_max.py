@@ -14,21 +14,16 @@ class BoardNode:
 		self.best_move = None
 
 	def update_score(self):
-		self.best_move = None
+		self.score = None
 		for move, child in self.children.items():
-			if child.score is None: continue
-			if (self.best_move is None) or (self.score < (-child.score)):
+			if child.score is None:
+				continue
+			if (self.score is None) or (self.score < (-child.score)):
 				self.score = -child.score
 				self.best_move = move
-		self.update_parents()
-
-	def update_parents(self):
-		for p in self.parents:
-			p.update_score()
 
 class BoardExplorer:
 	def __init__(self, depth):
-		self.board_cache = None
 		self.depth = depth
 	def run(self, board):
 		self.board_cache = {}
@@ -37,7 +32,7 @@ class BoardExplorer:
 		node = BoardNode(board, self, height=self.depth)
 		search(node)
 		elapsed = time.time()-self.start_time
-		print(f'{self.explored} nodes of depth {self.depth} were explored in {round(elapsed*100)/100} seconds')
+		print(f'搜索结点:{self.explored} 深度:{self.depth} 用时:{round(elapsed*100)/100}')
 		self.board_cache = None
 		return node.best_move
 
@@ -71,7 +66,6 @@ def search(node):
 	player = 'Red' if ((node.explorer.depth-node.height)%2==0) else 'Black'
 	if (node.height==0) or (not (score.has_king(node.board, player))):
 		node.score = score.score(node.board, player)
-		# node.update_parents()
 		return node.score
 	node.explorer.explored = node.explorer.explored + 1
 	node.explorer.board_cache[(node.board_key, node.height)] = node
@@ -83,5 +77,5 @@ def search(node):
 	return node.score
 
 def auto_move(board):
-	best_move = BoardExplorer(4).run(board)
+	best_move = BoardExplorer(3).run(board)
 	return None if best_move is None else best_move[2:]
