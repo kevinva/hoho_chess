@@ -135,15 +135,17 @@ def __dir__(request_, response_, route_args_):
 		return response_.write_response_OK_(content_type_='text/plain', content_=content, charset_='UTF-8')
 	except Exception as ex:
 		return response_.write_response_not_found_()
+		
 
 def home(request_, response_, route_args_):
 	content = '<script>location.href="web/index.html"</script>'
 	return response_.write_response_OK_(content_type_='text/html', content_=content, charset_='UTF-8')
 
+rpc_registry = {}
 
 def ajax_(request_, response_, route_args_):
-	global rpc_registry, agent_updating, update_time
-	global hoho_agent, all_steps_count, hoho_replay_buffer, hoho_round
+	global rpc_registry
+	global agent_updating, update_time, hoho_agent, all_steps_count, hoho_replay_buffer, hoho_round
 
 	params_ = request_.params_
 	assert 'data' in params_, '服务请求参数中缺少 data'
@@ -295,14 +297,12 @@ def setup_seed(seed):
 
 def rpc_auto_move(board_key):
 	board = chess.board_from_key(board_key)
-	return auto_chess.auto_move(board)
+	# from web.py_lib.min_max import auto_move
+	from web.py_lib.alpha_beta import auto_move
+	return auto_move(board)
 
-
-rpc_registry = {}
 # 登记函数 RPC auto_move
 rpc_registry['rpc_auto_move'] = rpc_auto_move
-
-
 
 
 if __name__ == '__main__':

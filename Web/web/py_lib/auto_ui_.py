@@ -151,14 +151,14 @@ class Controller(ui_.Controller):
 
 
 def should_restart(match_count):
-	return (match_count%20)==0
+	return (match_count % 20) == 0
 
 def run_app():
 	chess_board = ui_.ChessBoard()
 	javascript.document.body.appendChild(chess_board.elt())
 	Controller(chess_board)
 
-# 为避免嵌套调用太深，适时将刷新整个网页
+# 为避免嵌套调用太深(blacks_turn和red_turn互相调用)，适时将刷新整个网页
 def restart_app(winner = None):
 	javascript.location.reload()  
 
