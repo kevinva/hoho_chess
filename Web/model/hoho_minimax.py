@@ -4,10 +4,15 @@ from hoho_cchessgame import *
 
 
 def minimax(game, depth_count):
+    # 若预先估计后3步，则depth_count = 3 - 1 = 2， 以此类推
 
     def max_value(game, done, depth):
         if depth == 0 or done:
-            return game.debug_evaluate(), None   # hoho_todo
+            score = game.debug_evaluate()
+
+            print(f"depth: {depth_count - depth}, max_score: {score}, best_move: {None}")
+
+            return score, None   # hoho_todo
 
         max_score = -float('inf')
         best_move = None
@@ -26,7 +31,11 @@ def minimax(game, depth_count):
 
     def min_value(game, done, depth):
         if depth == 0 or done:
-            return game.debug_evaluate(), None    # hoho_todo
+            score = game.debug_evaluate()
+
+            print(f"depth: {depth_count - depth}, min_score: {score}, best_move: {None}")
+
+            return score, None    # hoho_todo
 
         min_score = float('inf')
         best_move = None
@@ -43,9 +52,11 @@ def minimax(game, depth_count):
         return min_score, best_move
 
     if game.current_player == PLAYER_RED:
-        return max_value(game, False, depth_count)
+        score, best_move = max_value(game, False, depth_count)
+        return score, best_move
     else:
-        return min_value(game, False, depth_count)
+        score, best_move = min_value(game, False, depth_count)
+        return score, best_move
     
 
 if __name__ == "__main__":
