@@ -279,6 +279,25 @@ def convert_board_to_tensor(board_str):
     return board_tensor
 
 
+def convert_action_to_tensor(action):
+    ### 将动作转为2 * 10 * 9的向量，以便输入神经网络
+    ### 2 * 10 * 9的向量表示：第一个10 * 9的向量表示起始点，第二个10 * 9的向量表示目标点
+    ### 1表示该位置为起始点或目标点，0表示该位置不是起始点或目标点
+
+    src = action[0:2]
+    dst = action[2:4]
+    src_x = int(X_LABELS_2_INDEX[src[0]])
+    scr_y = int(src[1])
+    dst_x = int(X_LABELS_2_INDEX[dst[0]])
+    dst_y = int(dst[1])
+
+    action_tensor = torch.zeros((2, 10, 9), dtype=torch.float32)
+    action_tensor[0][scr_y][src_x] = 1
+    action_tensor[1][dst_y][dst_x] = 1
+
+    return action_tensor
+
+
 def check_bounds(toY, toX):
     if toY < 0 or toX < 0:
         return False
@@ -832,6 +851,21 @@ def chess_value_equal_to_pawn(chess_str):
     return 1.00  # 兵/卒的子力
 
 
+def differ_red_black_force(board_str):
+    """计算红黑双方的棋力差距"""
+    board_list = board_str_to_list1(board_str)
+    red_force = 0.0
+    black_force = 0.0
+    for row, line in enumerate(board_list):
+        positions = list(line)
+        for col, po in enumerate(positions):
+            if po.isalpha():
+                if po.isupper():
+                    red_force += chess_value_equal_to_pawn(po)
+                else:
+                    black_force += chess_value_equal_to_pawn(po)
+
+    return red_force - black_force
 
 
 
@@ -876,7 +910,11 @@ if __name__ == '__main__':
     # test_board_state5 = 'RNBAKABNR/9/9/P1P1c1P1P/9/9/p1p1C1p1p/7c1/9/r1bk1abnr'
     # print(f'{check_capture(test_board_state4, test_board_state5)}') # 吃p,C
 
-    t = torch.tensor([3, 4, -9, 1, 1], dtype = torch.float)
-    t_norm = F.softmax(t)
-    print(f'{t_norm}, {torch.sum(t_norm)}')
+    # t = torch.tensor([3, 4, -9, 1, 1], dtype = torch.float)
+    # t_norm = F.softmax(t)
+    # print(f'{t_norm}, {torch.sum(t_norm)}')
+
+    action = "b0c2"
+    action_tensor = convert_action_to_tensor(action)
+    print(action_tensor)
 

@@ -26,7 +26,7 @@ class CChessGame:
         LOGGER.info('CChessGame created!')
 
     def step(self, action):
-        state_new = do_action_on_board(self.state, action)  # 注意：这里state以红方视觉为准，黑方的action不用flip
+        state_new = do_action_on_board(self.state, action)  # 注意：这里state以红方视觉为准，so 黑方的action不用flip
         z = 0
         done = False
         if 'K' not in state_new:
@@ -42,6 +42,12 @@ class CChessGame:
             pass
 
         self.state = state_new
+
+        if self.current_player == PLAYER_RED:
+            self.current_player = PLAYER_BLACK
+        elif self.current_player == PLAYER_BLACK:
+            self.current_player = PLAYER_RED
+
         return state_new, z, done
 
     def reset(self):
