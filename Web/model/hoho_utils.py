@@ -722,7 +722,9 @@ def get_legal_actions(board_str, current_player):
         elif current_player == PLAYER_RED:
             actions.append(BOARD_POSITION_ARRAY[K_y][K_x] + BOARD_POSITION_ARRAY[k_y][k_x])
 
-    return actions
+    return random.sample(actions, 2)  # hoho_debug
+
+    # return actions
 
 
 def sample_rotation(state, num=8):

@@ -56,6 +56,9 @@ class CChessGame:
         self.winner = None
         self.current_player = PLAYER_RED
 
+    def debug_evaluate(self):
+        return differ_red_black_force(self.state)
+
 
 class ChessDataset(Dataset):
 

@@ -1,8 +1,9 @@
 from copy import deepcopy
-from model.hoho_utils import *
+from hoho_utils import *
+from hoho_cchessgame import *
 
 
-def minimax(game, done, depth):
+def minimax(game, depth):
 
     def max_value(game, done, depth):
         if depth == 0 or done:
@@ -42,6 +43,11 @@ def minimax(game, done, depth):
         return min_score, best_move
 
     if game.current_player == PLAYER_RED:
-        return max_value(game, done, depth)
+        return max_value(game, False, depth)
     else:
-        return min_value(game, done, depth)
+        return min_value(game, False, depth)
+    
+
+if __name__ == "__main__":
+    game = CChessGame()
+    minimax(game, 2)
