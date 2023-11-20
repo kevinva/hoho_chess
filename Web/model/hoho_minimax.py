@@ -3,7 +3,7 @@ from hoho_utils import *
 from hoho_cchessgame import *
 
 
-def minimax(game, depth):
+def minimax(game, depth_count):
 
     def max_value(game, done, depth):
         if depth == 0 or done:
@@ -19,7 +19,7 @@ def minimax(game, depth):
                 max_score = score
                 best_move = move
 
-        print(f"depth: {depth}, max_score: {max_score}, best_move: {best_move}")
+        print(f"depth: {depth_count - depth}, max_score: {max_score}, best_move: {best_move}")
 
         return max_score, best_move
 
@@ -38,14 +38,14 @@ def minimax(game, depth):
                 min_score = score
                 best_move = move
 
-        print(f"depth: {depth}, min_score: {min_score}, best_move: {best_move}")
+        print(f"depth: {depth_count - depth}, min_score: {min_score}, best_move: {best_move}")
 
         return min_score, best_move
 
     if game.current_player == PLAYER_RED:
-        return max_value(game, False, depth)
+        return max_value(game, False, depth_count)
     else:
-        return min_value(game, False, depth)
+        return min_value(game, False, depth_count)
     
 
 if __name__ == "__main__":
