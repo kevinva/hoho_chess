@@ -123,14 +123,76 @@ def get_all_actions():
 
     return actions
 
+def flip_board(board_str):
+    """翻转棋盘，一般用在使黑方以红方的视角走子（垂直翻转）"""
+
+    rows = board_str.split('/')
+
+    def swapcase(a):
+        if a.isalpha():
+            return a.lower() if a.isupper() else a.upper()
+        return a
+
+    def swapall(aa):
+        return "".join([swapcase(a) for a in aa])
+
+    return "/".join([swapall(row) for row in reversed(rows)])
+
+
+def flip_board_v2(board_str):
+    """翻转棋盘，一般用在使黑方以红方的视角走子（对角翻转）"""
+
+    def swapcase(a):
+        if a.isalpha():
+            return a.lower() if a.isupper() else a.upper()
+        return a
+
+    def swapall(aa):
+        return "".join([swapcase(a) for a in aa])
+
+    rows = board_str.split('/')
+    return "/".join([swapall(row[::-1]) for row in reversed(rows)])
+
+
 def flip_action(action):
+    '''垂直翻转动作'''
+
     return "".join([(str(BOARD_HEIGHT - 1 - int(a)) if a.isdigit() else a) for a in action])
 
+
+def flip_action_v2(action):
+    '''对角翻转动作'''
+    
+    result = []
+    for a in action:
+        if a.isdigit():
+            result.append(str(BOARD_HEIGHT - 1 - int(a)))
+        else:
+            label_idx = len(X_LABELS) - 1 - X_LABELS_2_INDEX[a]
+            result.append(X_LABELS[label_idx])
+
+    return "".join(result)
+
+
 def flip_action_probas(probas):
+    '''垂直翻转动作概率值'''
+
     result_probas = np.zeros(probas.shape)
     for idx, p in enumerate(probas):
         action = INDEXS_2_ACTION[idx]
         action_flipped = flip_action(action)
+        final_idx = ACTIONS_2_INDEX[action_flipped]
+        result_probas[final_idx] = p
+    return result_probas
+
+
+def flip_action_probas_v2(probas):
+    '''对角翻转动作概率值'''
+
+    result_probas = np.zeros(probas.shape)
+    for idx, p in enumerate(probas):
+        action = INDEXS_2_ACTION[idx]
+        action_flipped = flip_action_v2(action)
         final_idx = ACTIONS_2_INDEX[action_flipped]
         result_probas[final_idx] = p
     return result_probas
@@ -247,23 +309,6 @@ def do_action_on_board(board_str, action):
     board = board_list1_to_str(board_positions)
 
     return board
-
-
-def flip_board(board_str):
-    """翻转棋盘，一般用在使黑方以红方的视角走子"""
-
-    rows = board_str.split('/')
-
-    def swapcase(a):
-        if a.isalpha():
-            return a.lower() if a.isupper() else a.upper()
-        return a
-
-    def swapall(aa):
-        return "".join([swapcase(a) for a in aa])
-
-    return "/".join([swapall(row) for row in reversed(rows)])
-
 
 def convert_board_to_tensor(board_str):
     """将棋盘（以字符串输入）转为向量，以便输入神经网络"""
@@ -916,7 +961,13 @@ if __name__ == '__main__':
     # t_norm = F.softmax(t)
     # print(f'{t_norm}, {torch.sum(t_norm)}')
 
-    action = "b0c2"
-    action_tensor = convert_action_to_tensor(action)
-    print(action_tensor)
+    # action = "b0c2"
+    # action_tensor = convert_action_to_tensor(action)
+    # print(action_tensor)
 
+    # test_board_str2 = 'RNBAKABNR/9/1C7/P1P1P1P1P/9/9/p1p1p1pCp/1c2b2c1/8r/rnbaka1n1'
+    # print(flip_board_v2(test_board_str2))
+
+    test_action = "h9g7"
+    print(flip_action(test_action))
+    print(flip_action_v2(test_action))
