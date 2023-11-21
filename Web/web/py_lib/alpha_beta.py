@@ -7,8 +7,8 @@ BoardNode = min_max.BoardNode
 class BoardExplorer:
 	def __init__(self, min_depth, max_time):
 		self.board_cache = {}
-		self.min_depth = min_depth
-		self.max_time = max_time
+		self.min_depth = min_depth  ####   hoho_todo
+		self.max_time = max_time    ####   hoho_todo, 可以调节时间
 	def run(self, board):
 		self.start_time = time.time()
 		self.explored = 0

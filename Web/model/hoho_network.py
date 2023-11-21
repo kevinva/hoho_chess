@@ -1,6 +1,6 @@
 import torch
-
 import torch.nn as nn
+import torch.nn.functional as F
 
 class BoardNetwork(nn.Module):
 
@@ -11,17 +11,20 @@ class BoardNetwork(nn.Module):
         self.conv3 = nn.Conv2d(14, 14, kernel_size = 5, padding = 2)
         self.conv4 = nn.Conv2d(14, 10, kernel_size = 5, padding = 2)
         self.conv5 = nn.Conv2d(10, 2, kernel_size = 5, padding = 2)
+        self.softmax = nn.Softmax()
 
     def forward(self, x):
         x = self.conv1(x)
-        x = nn.functional.relu(x)
+        x = F.relu(x)
         x = self.conv2(x)
-        x = nn.functional.relu(x)
+        x = F.relu(x)
         x = self.conv3(x)
-        x = nn.functional.relu(x)
+        x = F.relu(x)
         x = self.conv4(x)
-        x = nn.functional.relu(x)
+        x = F.relu(x)
         x = self.conv5(x)
+        x = self.softmax(x)
+
         return x
     
 
@@ -34,3 +37,5 @@ if __name__ == "__main__":
 
     print("Input Tensor Size:", input_tensor.size())
     print("Output Tensor Size:", output_tensor.size())
+
+    print(f"Output: {output_tensor}")

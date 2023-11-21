@@ -132,9 +132,9 @@ def score(board, player):
 	for _, chess in board.board_map.items():
 		x, y = chess.x, chess.y
 		if chess.player=='Black':
-			 x, y = 8-x, 9-y
+			x, y = 8-x, 9-y   
 		s = position_value[chess.type][y][x] + chess_basic_value[chess.type]
 		if chess.player=='Black':
-			 s = -s
+			s = -s
 		score = score + s
 	return score

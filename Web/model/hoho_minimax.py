@@ -53,6 +53,7 @@ def minimax(game, depth_count):
 
     if game.current_player == PLAYER_RED:
         score, best_move = max_value(game, False, depth_count)
+        LOGGER.info(f"score = {score}, best_move = {best_move}")
         return score, best_move
     else:
         score, best_move = min_value(game, False, depth_count)
