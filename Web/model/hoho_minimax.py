@@ -63,3 +63,4 @@ def minimax(game, depth_count):
 if __name__ == "__main__":
     game = CChessGame()
     minimax(game, 2)
+

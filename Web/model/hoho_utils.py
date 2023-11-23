@@ -1,10 +1,15 @@
+import os
+import sys
+root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(root_dir)
+
 import random
 import time
 import numpy as np
 import torch
 import torch.nn.functional as F
 import logging
-import os
+from web.py_lib.score import chess_basic_value, position_value, win_score
 
 
 def config_logger():
@@ -968,6 +973,18 @@ if __name__ == '__main__':
     # test_board_str2 = 'RNBAKABNR/9/1C7/P1P1P1P1P/9/9/p1p1p1pCp/1c2b2c1/8r/rnbaka1n1'
     # print(flip_board_v2(test_board_str2))
 
-    test_action = "h9g7"
-    print(flip_action(test_action))
-    print(flip_action_v2(test_action))
+    # test_action = "h9g7"
+    # print(flip_action(test_action))
+    # print(flip_action_v2(test_action))
+
+    print(position_value)     # 最大值233
+    print(chess_basic_value)  # 最大值100
+    print(win_score)
+
+    value = -float('inf')
+    for k, rows in position_value.items():
+        for cols in rows:
+            for check_v in cols:
+                if check_v > value:
+                    value = check_v
+    print(value)
